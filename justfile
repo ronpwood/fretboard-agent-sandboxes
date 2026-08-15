@@ -37,6 +37,9 @@ config := env_var_or_default("SSSF_CONFIG", "adws/adw_sssf_config/sssf.config.ya
 # boot and test the Inkwell app itself
 mod inkwell 'just/inkwell.just'
 
+# swap the payload app under apps/ out for a different one, archiving the old one
+mod app 'just/app.just'
+
 # boot an orchestrator agent that works on THIS machine
 mod local 'just/local.just'
 
