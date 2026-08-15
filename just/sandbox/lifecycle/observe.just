@@ -34,7 +34,7 @@ observe RUN_ID:
     OBS_PORT=4600
     # The clone target is `app` relative to the exedev user's home, so this is
     # /home/exedev/app on a stock exeuntu VM. Expanded on the VM, not here.
-    APP_DIR='$HOME/app/apps/inkwell'
+    APP_DIR='$HOME/app/apps/fretboard'
     OBS_DIR='$HOME/app/.claude/skills/sssf/apps/visualizer'
     OBS_DB='$HOME/app/adws/adw_data/sssf.db'
 
@@ -70,9 +70,12 @@ observe RUN_ID:
         return 0
     }
 
-    # ── 1. inkwell app on 4501 ───────────────────────────────────────────────
+    # ── 1. app on 4501 ────────────────────────────────────────────────────────
     # Idempotent: observe is safe to re-run, and `just sbx mount` ends here, so a
     # second call must not stack a second bun on the same port.
+    #
+    # fretboard is a static Bun HTML entry, not a server.ts — PORT must be
+    # passed explicitly, since Bun's HTML dev server defaults to :3000.
     echo "[2/6] app  :$APP_PORT"
     if listening "$APP_PORT"; then
         echo "       already listening — leaving it alone"
@@ -80,11 +83,11 @@ observe RUN_ID:
         # All three detachment pieces are REQUIRED or ssh never returns: nohup
         # (survive session end), the redirect (release stdout/stderr), and
         # < /dev/null (release stdin). Dropping any one hangs this recipe.
-        ssh "$HOST" "cd $APP_DIR && ( nohup bun run server.ts > \$HOME/inkwell-app.log 2>&1 < /dev/null & echo \$! )" \
+        ssh "$HOST" "cd $APP_DIR && ( nohup env PORT=$APP_PORT bun index.html > \$HOME/fretboard-app.log 2>&1 < /dev/null & echo \$! )" \
             | sed 's/^/       started pid /'
         if ! wait_listen "$APP_PORT"; then
-            echo "observe: inkwell never bound :$APP_PORT — tail of ~/inkwell-app.log:" >&2
-            ssh "$HOST" 'tail -n 40 $HOME/inkwell-app.log' >&2 || true
+            echo "observe: fretboard never bound :$APP_PORT — tail of ~/fretboard-app.log:" >&2
+            ssh "$HOST" 'tail -n 40 $HOME/fretboard-app.log' >&2 || true
             exit 1
         fi
         echo "       up"

@@ -34,8 +34,8 @@ config := env_var_or_default("SSSF_CONFIG", "adws/adw_sssf_config/sssf.config.ya
 # its parent module's scope and working directory, which is why the phase files
 # under just/sandbox/ are imports and carry no `set` lines of their own.
 
-# boot and test the Inkwell app itself
-mod inkwell 'just/inkwell.just'
+# boot and test the payload app itself
+mod fretboard 'just/fretboard.just'
 
 # swap the payload app under apps/ out for a different one, archiving the old one
 mod app 'just/app.just'

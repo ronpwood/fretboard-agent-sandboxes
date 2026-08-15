@@ -102,7 +102,7 @@ say "wrote $HOME/.pi/agent/models.json ($(grep -c '"id"' "$HOME/.pi/agent/models
 
 # ── 5. bun install ───────────────────────────────────────────────────────────
 step "5/9 bun install"
-for dir in apps/inkwell .claude/skills/sssf/apps/visualizer; do
+for dir in apps/fretboard .claude/skills/sssf/apps/visualizer; do
   if [[ -f "$dir/package.json" ]]; then
     ( cd "$dir" && bun install )
     say "installed ${dir}"

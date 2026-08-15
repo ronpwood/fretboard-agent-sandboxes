@@ -1,9 +1,12 @@
-"""Deterministic lint, typecheck, and build blocks for the Inkwell app.
+"""Deterministic lint, typecheck, and build blocks for the payload app.
 
 The app intentionally has no local package toolchain. Linting uses a pinned
 Oxlint release through Bun; "typecheck" is the strongest zero-config Bun-native
 syntax/import/transpilation check available for the current JS/TS sources.
 Build blocks add minification and keep all outputs inside the ADW session.
+
+APP_DIR/ENTRY/TEST_FILE are the only things that change when `just app swap`
+puts a different app under apps/ — everything else in this file is generic.
 """
 
 from __future__ import annotations
@@ -37,6 +40,13 @@ TAIL_CHARS = 4_000
 # is not something to pre-empt: _run's OSError branch already records it as
 # exit 127 with the real error text.
 BUN = os.environ.get("BUN_PATH", "").strip() or "bun"
+
+# The fretboard app is a static, no-backend Bun HTML entry: index.html loads
+# main.ts as a module, and every other .ts file is a plain import off that
+# graph — there is no server.ts, so there is no "backend" area to check.
+APP_DIR = "apps/fretboard"
+ENTRY = f"{APP_DIR}/main.ts"
+TEST_FILE = f"{APP_DIR}/fretboard.test.ts"
 
 
 def _check_dir(run, name: str) -> Path:
@@ -117,70 +127,37 @@ def _run(spec: QualityCheckSpec, run) -> QualityCheckResult:
     )
 
 
-def frontend_lint(run) -> QualityCheckResult:
+def lint(run) -> QualityCheckResult:
     return _run(QualityCheckSpec(
-        name="frontend_lint",
+        name="lint",
         area="frontend",
         operation="lint",
-        argv=[BUN, "x", f"oxlint@{OXLINT_VERSION}", "apps/inkwell/public/app.js"],
+        argv=[BUN, "x", f"oxlint@{OXLINT_VERSION}", APP_DIR],
     ), run)
 
 
-def backend_lint(run) -> QualityCheckResult:
+def typecheck(run) -> QualityCheckResult:
+    output_dir = _check_dir(run, "typecheck") / "bundle"
     return _run(QualityCheckSpec(
-        name="backend_lint",
-        area="backend",
-        operation="lint",
-        argv=[BUN, "x", f"oxlint@{OXLINT_VERSION}", "apps/inkwell/server.ts"],
-    ), run)
-
-
-def frontend_typecheck(run) -> QualityCheckResult:
-    output_dir = _check_dir(run, "frontend_typecheck") / "bundle"
-    return _run(QualityCheckSpec(
-        name="frontend_typecheck",
+        name="typecheck",
         area="frontend",
         operation="typecheck",
-        argv=[BUN, "build", "--target=browser", "apps/inkwell/public/app.js",
-              "--outdir", str(output_dir)],
+        argv=[BUN, "build", "--target=browser", ENTRY, "--outdir", str(output_dir)],
     ), run)
 
 
-def backend_typecheck(run) -> QualityCheckResult:
-    output_dir = _check_dir(run, "backend_typecheck") / "bundle"
+def build(run) -> QualityCheckResult:
+    output_dir = _check_dir(run, "build") / "bundle"
     return _run(QualityCheckSpec(
-        name="backend_typecheck",
-        area="backend",
-        operation="typecheck",
-        argv=[BUN, "build", "--target=bun", "apps/inkwell/server.ts",
-              "--outdir", str(output_dir)],
-    ), run)
-
-
-def frontend_build(run) -> QualityCheckResult:
-    output_dir = _check_dir(run, "frontend_build") / "bundle"
-    return _run(QualityCheckSpec(
-        name="frontend_build",
+        name="build",
         area="frontend",
         operation="build",
-        argv=[BUN, "build", "--target=browser", "--minify",
-              "apps/inkwell/public/app.js", "--outdir", str(output_dir)],
-    ), run)
-
-
-def backend_build(run) -> QualityCheckResult:
-    output_dir = _check_dir(run, "backend_build") / "bundle"
-    return _run(QualityCheckSpec(
-        name="backend_build",
-        area="backend",
-        operation="build",
-        argv=[BUN, "build", "--target=bun", "--minify",
-              "apps/inkwell/server.ts", "--outdir", str(output_dir)],
+        argv=[BUN, "build", "--target=browser", "--minify", ENTRY, "--outdir", str(output_dir)],
     ), run)
 
 
 def tests(run) -> QualityCheckResult:
-    """Run the Inkwell suite. A known command — code, not an agent.
+    """Run the app's suite. A known command — code, not an agent.
 
     The command is written down once here because it is not a judgement call.
     An agent rediscovering `bun test` on every run cost ~1M tokens and 85s; this
@@ -188,14 +165,14 @@ def tests(run) -> QualityCheckResult:
     """
     return _run(QualityCheckSpec(
         name="tests",
-        area="backend",
+        area="frontend",
         operation="build",           # the enum has no "test"; the name carries it
-        argv=[BUN, "test", "apps/inkwell/server.test.ts"],
+        argv=[BUN, "test", TEST_FILE],
         timeout_seconds=600,
     ), run)
 
 
-def run_inkwell_tests(run) -> QualityResult:
+def run_tests(run) -> QualityResult:
     """The test suite as a QualityResult, so it reports like every other block."""
     check = tests(run)
     failures = ([] if check.passed else
@@ -220,16 +197,9 @@ def as_envelope(result: QualityResult, what: str) -> VerifyOutput:
     )
 
 
-def run_inkwell_quality(run) -> QualityResult:
-    """Run every frontend/backend quality block and collect all failures."""
-    blocks: list[Callable] = [
-        frontend_lint,
-        backend_lint,
-        frontend_typecheck,
-        backend_typecheck,
-        frontend_build,
-        backend_build,
-    ]
+def run_quality(run) -> QualityResult:
+    """Run every quality block, including tests, and collect all failures."""
+    blocks: list[Callable] = [lint, typecheck, build, tests]
     checks = [block(run) for block in blocks]
     # A failure is the command, its exit code, and what it actually printed —
     # everything a builder needs to repair without opening a log or being told

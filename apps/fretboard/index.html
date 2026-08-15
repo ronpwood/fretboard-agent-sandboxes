@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Circle of Fifths — Fretboard</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #12131a;
+    --panel: #1a1c26;
+    --text: #edf0f7;
+    --muted-text: #9aa1b5;
+    --accent: #7cc4ff;
+    --root-color: #ffb454;
+    --third-color: #7cc4ff;
+    --fifth-color: #8fe38f;
+    --border: #2b2e3d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+
+  main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  section.picker {
+    flex: 1 1 280px;
+    max-width: 340px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  section.stage {
+    flex: 2 1 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .stage-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  label {
+    display: block;
+    margin: 0.75rem 0 0.25rem;
+    font-size: 0.85rem;
+    color: var(--muted-text);
+  }
+
+  select {
+    width: 100%;
+    padding: 0.4rem;
+    background: #22242f;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  #mode-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  #mode-toggle button {
+    flex: 1;
+    padding: 0.4rem;
+    background: #22242f;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  #mode-toggle button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #12131a;
+    border-color: var(--accent);
+  }
+
+  #view-toggle {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  #view-toggle button {
+    padding: 0.4rem 0.9rem;
+    background: #22242f;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  #view-toggle button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #12131a;
+    border-color: var(--accent);
+  }
+
+  [hidden] { display: none !important; }
+
+  #chord-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  #chord-list button {
+    padding: 0.5rem;
+    background: #22242f;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  #chord-list button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #12131a;
+    border-color: var(--accent);
+  }
+
+  #chord-caption {
+    color: var(--muted-text);
+    font-size: 0.9rem;
+    margin: 0.5rem 0 0;
+  }
+
+  .voicing-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .voicing-controls button {
+    padding: 0.35rem 0.75rem;
+    background: #22242f;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .voicing-controls button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  #voicing-position {
+    color: var(--muted-text);
+    font-size: 0.85rem;
+    min-width: 5rem;
+    text-align: center;
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .triad-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .triad-controls > div {
+    flex: 1 1 160px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted-text);
+  }
+
+  .legend span.swatch {
+    display: inline-block;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Circle of Fifths — Fretboard</h1>
+  <div id="view-toggle" role="radiogroup" aria-label="Main view">
+    <button id="view-chord" type="button" role="radio" aria-pressed="true" data-view="chord">Chord diagram</button>
+    <button id="view-triad" type="button" role="radio" aria-pressed="false" data-view="triad">Triad layout</button>
+  </div>
+</header>
+<main>
+  <section class="picker">
+    <label for="key-select">Key</label>
+    <select id="key-select" aria-label="Key"></select>
+
+    <label id="mode-label">Mode</label>
+    <div id="mode-toggle" role="radiogroup" aria-labelledby="mode-label">
+      <button id="mode-major" type="button" role="radio" aria-pressed="true">Major</button>
+      <button id="mode-minor" type="button" role="radio" aria-pressed="false">Minor</button>
+    </div>
+
+    <label id="chord-list-label">Diatonic chords</label>
+    <div id="chord-list" role="group" aria-labelledby="chord-list-label"></div>
+  </section>
+
+  <section class="stage">
+    <div class="stage-panel" id="chord-panel">
+      <h2>Chord diagram</h2>
+      <svg id="chord-diagram" viewBox="0 0 220 260" aria-label="Chord fingering diagram"></svg>
+      <div class="voicing-controls">
+        <button id="voicing-prev" type="button" aria-label="Previous voicing">&#8592; Prev</button>
+        <span id="voicing-position" aria-live="polite"></span>
+        <button id="voicing-next" type="button" aria-label="Next voicing">Next &#8594;</button>
+      </div>
+      <p id="chord-caption" aria-live="polite"></p>
+    </div>
+
+    <div class="stage-panel" id="triad-panel" hidden>
+      <h2>Triad layout</h2>
+      <div class="triad-controls">
+        <div>
+          <label for="inversion-select">Inversion</label>
+          <select id="inversion-select" aria-label="Inversion">
+            <option value="root">Root position</option>
+            <option value="first">First inversion</option>
+            <option value="second">Second inversion</option>
+          </select>
+        </div>
+        <div>
+          <label for="string-set-select">String set</label>
+          <select id="string-set-select" aria-label="String set">
+            <option value="0">E–A–D</option>
+            <option value="1">A–D–G</option>
+            <option value="2" selected>D–G–B</option>
+            <option value="3">G–B–E</option>
+          </select>
+        </div>
+      </div>
+      <svg id="triad-diagram" viewBox="0 0 320 160" aria-label="Triad layout diagram"></svg>
+      <div class="legend">
+        <span><span class="swatch" style="background: var(--root-color);"></span>Root</span>
+        <span><span class="swatch" style="background: var(--third-color);"></span>Third</span>
+        <span><span class="swatch" style="background: var(--fifth-color);"></span>Fifth</span>
+      </div>
+      <p id="triad-caption" aria-live="polite"></p>
+    </div>
+  </section>
+</main>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

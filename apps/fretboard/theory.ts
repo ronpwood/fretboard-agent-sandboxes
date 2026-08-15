@@ -1,0 +1,103 @@
+// Pure music theory logic: pitch classes, triads, and diatonic key construction.
+// No DOM, no imports.
+
+export const NOTE_NAMES: string[] = [
+  "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+];
+
+export function pitchClass(name: string): number {
+  const idx = NOTE_NAMES.indexOf(name);
+  if (idx === -1) {
+    throw new RangeError(`Unknown note name: ${name}`);
+  }
+  return idx;
+}
+
+export function noteName(pc: number): string {
+  if (!Number.isInteger(pc) || pc < 0 || pc > 11) {
+    throw new RangeError(`Pitch class out of range: ${pc}`);
+  }
+  return NOTE_NAMES[pc];
+}
+
+export const CIRCLE_OF_FIFTHS_MAJORS: string[] = [
+  "C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "F",
+];
+
+export type Quality = "major" | "minor" | "diminished" | "augmented";
+
+export type Triad = {
+  degree: string;
+  root: number;
+  quality: Quality;
+  notes: [number, number, number];
+};
+
+const QUALITY_INTERVALS: Record<Quality, [number, number]> = {
+  major: [4, 7],
+  minor: [3, 7],
+  diminished: [3, 6],
+  augmented: [4, 8],
+};
+
+export function triadNotes(root: number, quality: Quality): [number, number, number] {
+  const [third, fifth] = QUALITY_INTERVALS[quality];
+  return [
+    ((root % 12) + 12) % 12,
+    ((root + third) % 12 + 12) % 12,
+    ((root + fifth) % 12 + 12) % 12,
+  ];
+}
+
+const MAJOR_SCALE_STEPS = [0, 2, 4, 5, 7, 9, 11];
+const NATURAL_MINOR_SCALE_STEPS = [0, 2, 3, 5, 7, 8, 10];
+
+function classifyQuality(thirdInterval: number, fifthInterval: number): Quality {
+  if (thirdInterval === 4 && fifthInterval === 7) return "major";
+  if (thirdInterval === 3 && fifthInterval === 7) return "minor";
+  if (thirdInterval === 3 && fifthInterval === 6) return "diminished";
+  if (thirdInterval === 4 && fifthInterval === 8) return "augmented";
+  // Fallback: pick the closest-matching quality by third interval alone.
+  return thirdInterval === 4 ? "major" : "minor";
+}
+
+function romanNumeral(degreeIndex: number, quality: Quality): string {
+  // degreeIndex is 0-based scale degree (0 = I/i)
+  const numerals = ["I", "II", "III", "IV", "V", "VI", "VII"];
+  let numeral = numerals[degreeIndex];
+  if (quality === "minor" || quality === "diminished") {
+    numeral = numeral.toLowerCase();
+  }
+  if (quality === "diminished") {
+    numeral += "\u00b0";
+  }
+  if (quality === "augmented") {
+    numeral += "+";
+  }
+  return numeral;
+}
+
+export function diatonicTriads(tonicPc: number, mode: "major" | "minor"): Triad[] {
+  const steps = mode === "major" ? MAJOR_SCALE_STEPS : NATURAL_MINOR_SCALE_STEPS;
+  const scalePcs = steps.map((s) => ((tonicPc + s) % 12 + 12) % 12);
+
+  const triads: Triad[] = [];
+  for (let i = 0; i < 7; i++) {
+    const rootPc = scalePcs[i];
+    const thirdPc = scalePcs[(i + 2) % 7];
+    const fifthPc = scalePcs[(i + 4) % 7];
+
+    const thirdInterval = ((thirdPc - rootPc) % 12 + 12) % 12;
+    const fifthInterval = ((fifthPc - rootPc) % 12 + 12) % 12;
+    const quality = classifyQuality(thirdInterval, fifthInterval);
+    const degree = romanNumeral(i, quality);
+
+    triads.push({
+      degree,
+      root: rootPc,
+      quality,
+      notes: [rootPc, thirdPc, fifthPc],
+    });
+  }
+  return triads;
+}
