@@ -98,6 +98,23 @@ fi
 printf '%s\n' "$models_json" > "$HOME/.pi/agent/models.json"
 chmod 600 "$HOME/.pi/agent/models.json"                            # it holds a live key
 unset models_json api_key
+
+# Fail HERE, at the moment the file is written, not only in `just sbx manage
+# doctor` run by hand afterward. A partial cost block parses as valid JSON but
+# fails pi's OWN schema validation, which then silently drops the entire
+# roster (--list-models prints "No models available" and exits 0) — the
+# comment above already names this as the most likely silent mount failure.
+python3 -c '
+import json, os, sys
+required = {"input", "output", "cacheRead", "cacheWrite"}
+path = os.path.expanduser("~/.pi/agent/models.json")
+models = json.load(open(path))["providers"]["openrouter"]["models"]
+bad = [m["id"] for m in models if set(m.get("cost", {})) != required]
+if bad:
+    sys.exit("models.json: %d model(s) with an incomplete cost block "
+              "(pi silently drops the WHOLE roster for this): %s"
+              % (len(bad), ", ".join(bad)))
+' || { echo "[provision] models.json failed schema validation" >&2; exit 1; }
 say "wrote $HOME/.pi/agent/models.json ($(grep -c '"id"' "$HOME/.pi/agent/models.json" || true) models)"
 
 # ── 5. bun install ───────────────────────────────────────────────────────────

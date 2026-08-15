@@ -6,19 +6,21 @@
 # name across phase files is a hard error. Everything is a bash local instead.
 #
 # Order is load-bearing: spend captured -> artifacts out -> commits harvested ->
-# key revoked -> VM destroyed. A crash between revoke and destroy leaves a dead
-# key and a live VM (visible, cheap). The reverse leaves a live key nobody can
-# find (invisible, spends). This is the ONLY file allowed to destroy a VM.
+# dirty tree checked -> key revoked -> VM destroyed. A crash between revoke and
+# destroy leaves a dead key and a live VM (visible, cheap). The reverse leaves a
+# live key nobody can find (invisible, spends). This is the ONLY file allowed to
+# destroy a VM.
 #
-# Everything that READS the box runs before anything that destroys it, and the
-# harvest failing ABORTS the whole teardown: destroying a VM whose commits were
-# never pulled is the one irreversible mistake available in this file.
+# Everything that READS the box runs before anything that destroys it, and both
+# the harvest failing AND the working tree being dirty ABORT the whole teardown:
+# destroying a VM whose commits were never pulled, or whose uncommitted work was
+# never even committed, are the two irreversible mistakes available in this file.
 #
 # IDEMPOTENT by construction: every step is individually guarded, because a run
 # can die anywhere — VM but no key, key but no VM, a record with neither. A
 # missing piece is the normal path, not an error.
 
-# tear down one run: spend -> artifacts -> harvest -> revoke -> destroy -> close -> gate
+# tear down one run: spend -> artifacts -> harvest -> dirty-check -> revoke -> destroy -> close -> gate
 teardown RUN_ID *FLAGS:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -35,10 +37,12 @@ teardown RUN_ID *FLAGS:
     # variadic into the list is a syntax error, via a variable it is zero iterations.
     RAW_FLAGS="{{ FLAGS }}"
     HARVEST=1
+    FORCE_DIRTY=0
     for a in $RAW_FLAGS; do
         case "$a" in
             --no-harvest) HARVEST=0 ;;
-            *) echo "teardown: unknown flag $a (only --no-harvest)"; exit 2 ;;
+            --force-dirty) FORCE_DIRTY=1 ;;
+            *) echo "teardown: unknown flag $a (only --no-harvest, --force-dirty)"; exit 2 ;;
         esac
     done
     # All *.exe.xyz share one host key and a wildcard known_hosts entry is already
@@ -103,6 +107,17 @@ teardown RUN_ID *FLAGS:
     if [ "$VM_ALIVE" = 1 ]; then
         mkdir -p "$ART"
         TAR_TMP=$(mktemp -t "sbx-$RUN_ID")
+        # tracer.py runs sssf.db in WAL mode (see its header) so the UI can read
+        # while ADWs write: recent events sit in adws/adw_data/sssf.db-wal until
+        # checkpointed, and a plain file copy of sssf.db alone can miss all of
+        # them — this is what actually produced the "zero events for this
+        # adw_id" backup the first sandbox session hit, not a wrong path. A
+        # checkpoint merges the WAL into the main file so the single-file copy
+        # below is complete. Best-effort: a failed/skipped checkpoint still
+        # copies whatever the main file has, same as before this fix existed.
+        ssh "${SSH_OPTS[@]}" "$VM".exe.xyz \
+            'cd app 2>/dev/null && python3 -c "import sqlite3; c = sqlite3.connect(\"adws/adw_data/sssf.db\"); c.execute(\"PRAGMA busy_timeout=5000;\"); c.execute(\"PRAGMA wal_checkpoint(FULL);\")" 2>&1' \
+            | sed 's/^/   trace db checkpoint: /' || true
         # One round trip, and `ls -d` filters to what actually exists so a run that
         # died before writing app_docs/ is not an error.
         ssh "${SSH_OPTS[@]}" "$VM".exe.xyz \
@@ -139,7 +154,30 @@ teardown RUN_ID *FLAGS:
         echo "   harvest: skipped (no vm)"
     fi
 
-    # ── 4. revoke the key -------------------------------------------------------
+    # ── 4. dirty working tree check ---------------------------------------------
+    # harvest only pulls committed history via a bundle — uncommitted work on the
+    # VM is invisible to it. This is the one irreversible mistake NEXTSTEPS.md
+    # found the hard way: a run's real changes existed only in the VM's working
+    # tree, the gate passed anyway (see the fix in adws/adw_modules/gates.py),
+    # and destroying the VM erased them for good. Refuse rather than auto-stash —
+    # a stash nobody pops is exactly as lost as never harvesting, and this
+    # codebase's gates never guess, they check.
+    if [ "$VM_ALIVE" = 1 ] && [ "$FORCE_DIRTY" != 1 ]; then
+        DIRTY=$(ssh "${SSH_OPTS[@]}" "$VM".exe.xyz 'cd app 2>/dev/null && git status --porcelain 2>/dev/null' || true)
+        if [ -n "$DIRTY" ]; then
+            echo "!! $VM's working tree is dirty — this uncommitted work would be destroyed:"
+            echo "$DIRTY" | sed 's/^/!!   /'
+            echo "!! refusing to destroy. VM left alive. Either:"
+            echo "!!   inspect and commit/discard by hand over ssh, then re-run teardown"
+            echo "!!   or accept the loss:  just sbx lifecycle teardown $RUN_ID --force-dirty"
+            exit 1
+        fi
+        echo "   tree: clean"
+    elif [ "$FORCE_DIRTY" = 1 ]; then
+        echo "   tree: dirty-tree check skipped (--force-dirty)"
+    fi
+
+    # ── 5. revoke the key -------------------------------------------------------
     if [ -z "$KEY_HASH" ]; then
         echo "   key: none minted for this run — nothing to revoke"
     elif [ -z "${OPENROUTER_PROVISIONING_KEY:-}" ]; then
@@ -156,7 +194,7 @@ teardown RUN_ID *FLAGS:
         esac
     fi
 
-    # ── 5. destroy the vm -------------------------------------------------------
+    # ── 6. destroy the vm -------------------------------------------------------
     if [ "$VM_ALIVE" = 1 ]; then
         ssh "${SSH_OPTS[@]}" exe.dev rm "$VM" > /dev/null
         echo "   vm: destroyed ($VM)"
@@ -164,7 +202,7 @@ teardown RUN_ID *FLAGS:
         echo "   vm: nothing to destroy"
     fi
 
-    # ── 6. close the record, shred the key file ---------------------------------
+    # ── 7. close the record, shred the key file ---------------------------------
     "$RR" close "$RUN_ID"
     if [ -e "$KEY_FILE" ]; then
         # shred where available, `rm -P` on macOS; -f last so a re-run never fails
@@ -175,7 +213,7 @@ teardown RUN_ID *FLAGS:
     fi
     echo "   record closed"
 
-    # ── 7. GATE: the key is ABSENT from the key LIST ----------------------------
+    # ── 8. GATE: the key is ABSENT from the key LIST ----------------------------
     # MEASURED: right after a successful DELETE, GET /api/v1/key still returns 200
     # for the dead key. The LIST is the authoritative view. Never gate on /key.
     if [ -z "$KEY_HASH" ]; then

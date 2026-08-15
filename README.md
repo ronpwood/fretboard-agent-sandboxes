@@ -43,9 +43,8 @@ Once oriented, you operate the whole system by talking to the agent. Two skills 
 
 ```bash
 cp .env.sample .env                  # add OPENROUTER_PROVISIONING_KEY (host-only, never leaves)
-cd apps/inkwell && bun install       # app deps
 just sbx manage doctor               # six-check preflight: ssh, key, helpers, rates, adw layer
-just inkwell test                    # 30 tests green = the payload works
+just fretboard test                  # the payload app's suite, green
 ```
 
 ### Required Tech
@@ -59,7 +58,7 @@ Every resource this system leans on, what it does, and whether you actually need
 | [`uv`](https://docs.astral.sh/uv/) | runs the PEP-723 Python ADW scripts | required | not needed |
 | [`just`](https://just.systems) | the whole command surface (all four namespaces) | required | helpful (to read the recipes) |
 | [exe.dev account](https://exe.dev) | the disposable VMs the factory runs inside | required to mount | not needed |
-| [OpenRouter provisioning key](https://openrouter.ai/settings/keys) | mints and revokes the per-run inference keys | required to mount | not needed |
+| [OpenRouter provisioning key](https://openrouter.ai/settings/management-keys) | mints and revokes the per-run inference keys | required to mount | not needed |
 | [Claude Code](https://claude.com/claude-code) + [Pi](https://github.com/badlogic/pi-mono) | the coding agents that do the work | preinstalled on the VM | not needed |
 
 Two credentials are the entire reason the sandbox is safe: the **exe.dev account** and the **OpenRouter provisioning key** live only on your host. Everything else is a fast, free toolchain install. If you only want to understand the design, clone the repo and read: no account, no key, nothing to spend.
@@ -128,9 +127,9 @@ just sbx run agent <id> "If you have not already: READ and EXECUTE .claude/skill
 A blog-writing app: drafts, a markdown editor with live preview, one-click publish. Bun plus `bun:sqlite`, zero dependencies, vanilla JS front end, port 4501. It is small on purpose: small enough to rebuild end to end, over and over, by agents. The 30-test suite is what the factory's test phase runs, by name, as code rather than an agent decision.
 
 ```bash
-just inkwell run      # boot on :4501
-just inkwell dev      # reload-on-save
-just inkwell test     # the suite the factory runs
+just fretboard run    # boot on :4501
+just fretboard dev    # reload-on-save
+just fretboard test   # the suite the factory runs
 ```
 
 ## Tier 2: the factory
@@ -246,7 +245,7 @@ Five namespaces, and the namespace answers *where the work happens*:
 
 ```
 justfile
-├── inkwell     boot and test the app itself: run / dev / test
+├── fretboard   boot and test the app itself: run / dev / test
 ├── adw         the workflows: sdlc, build-test, scout, simple-sdlc … (runs IN a sandbox)
 ├── sbx         sandbox orchestration: mount, lifecycle, run, manage, orch (host-only)
 ├── obs         read the trace: sessions, phases, tail, procs, ui

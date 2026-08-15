@@ -137,6 +137,14 @@ create RUN_ID *FLAGS:
     if [ "$CODE" != "200" ] && [ "$CODE" != "201" ]; then
         # Safe to show: a failed mint returned no key. A success is never printed.
         echo "create: OpenRouter key mint failed (HTTP $CODE): $(cat "$BODY")" >&2
+        if [ "$CODE" = "401" ] || [ "$CODE" = "403" ]; then
+            # MEASURED failure mode, not a guess: OPENROUTER_PROVISIONING_KEY set to a
+            # regular API key (right shape, wrong permissions) gets exactly this bare
+            # 401/403 from /api/v1/keys, and it cost real setup time to diagnose once.
+            echo "create: HTTP $CODE from /api/v1/keys usually means OPENROUTER_PROVISIONING_KEY is a" >&2
+            echo "create: regular API key, not a management key. Mint one at:" >&2
+            echo "create:   https://openrouter.ai/settings/management-keys  (NOT /settings/keys)" >&2
+        fi
         rm -f "$BODY"; exit 1
     fi
 
@@ -171,18 +179,29 @@ create RUN_ID *FLAGS:
     # ── 5. wait for ssh ────────────────────────────────────────────────────────
     # All *.exe.xyz share one host key and the wildcard known_hosts entry is
     # already installed, so BatchMode never stalls on a prompt.
-    echo "ssh:     waiting for $VM_NAME.exe.xyz (up to 60s) ..."
+    #
+    # 120s, not 60s: a MEASURED first-session boot took long enough to trip a
+    # 60s deadline on an otherwise-healthy VM, forcing a manual resume from
+    # `fill` once ssh actually came up. Backoff (2s growing to a 10s cap)
+    # instead of a fixed poll, since hammering a VM that is still booting buys
+    # nothing extra.
+    echo "ssh:     waiting for $VM_NAME.exe.xyz (up to 120s) ..."
     WAIT_START=$SECONDS
-    DEADLINE=$((SECONDS + 60))
+    DEADLINE=$((SECONDS + 120))
     READY=0
+    BACKOFF=2
     while [ "$SECONDS" -lt "$DEADLINE" ]; do
         if ssh -o BatchMode=yes -o ConnectTimeout=5 "$VM_NAME.exe.xyz" true >/dev/null 2>&1; then
             READY=1; break
         fi
-        sleep 2
+        sleep "$BACKOFF"
+        BACKOFF=$(( BACKOFF < 10 ? BACKOFF + 2 : 10 ))
     done
     if [ "$READY" -ne 1 ]; then
-        echo "create: ssh never answered on $VM_NAME.exe.xyz within 60s" >&2
+        echo "create: ssh never answered on $VM_NAME.exe.xyz within 120s" >&2
+        echo "create: the VM and key already exist (nothing destroyed) — once ssh answers," >&2
+        echo "create: resume by hand instead of re-minting a second VM+key:" >&2
+        echo "create:   just sbx lifecycle fill $RUN_ID" >&2
         exit 1
     fi
     echo "ssh:     up after $((SECONDS - WAIT_START))s"

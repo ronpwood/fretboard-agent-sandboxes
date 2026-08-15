@@ -28,6 +28,24 @@ doctor:
     chk() { if eval "$2" >/dev/null 2>&1; then printf '  ok    %s\n' "$1"; else printf '  FAIL  %s\n' "$1"; ok=1; fi; }
     chk "ssh exe.dev reachable"            'ssh -o BatchMode=yes -o ConnectTimeout=15 exe.dev whoami'
     chk "OPENROUTER_PROVISIONING_KEY set"  '[ -n "${OPENROUTER_PROVISIONING_KEY:-}" ]'
+
+    # A separate, non-generic check: a bare pass/fail here would hide WHY, and this
+    # exact failure mode (right shape, wrong key type — a regular API key, not a
+    # management key) already cost real setup time once. See NEXTSTEPS.md.
+    if [ -n "${OPENROUTER_PROVISIONING_KEY:-}" ]; then
+        CODE=$(curl -sS --max-time 15 -o /dev/null -w '%{http_code}' https://openrouter.ai/api/v1/keys \
+               -H "Authorization: Bearer $OPENROUTER_PROVISIONING_KEY" 2>/dev/null || echo "000")
+        case "$CODE" in
+            200) printf '  ok    OPENROUTER_PROVISIONING_KEY authorizes /api/v1/keys\n' ;;
+            401|403)
+                printf '  FAIL  OPENROUTER_PROVISIONING_KEY rejected by /api/v1/keys (HTTP %s)\n' "$CODE"
+                printf '        this is almost always a REGULAR API key, not a management key.\n'
+                printf '        mint one at https://openrouter.ai/settings/management-keys (NOT /settings/keys)\n'
+                ok=1 ;;
+            *)   printf '  FAIL  /api/v1/keys returned HTTP %s (expected 200)\n' "$CODE"; ok=1 ;;
+        esac
+    fi
+
     chk "run_record helper runs"           'sandbox_mount/host/run_record.py list'
     chk "provisioner present"              '[ -x sandbox_mount/guest/provision.sh ]'
     chk "models template has rates"        'python3 -c "import json;m=json.load(open(\"sandbox_mount/guest/models.json.tmpl\"))[\"providers\"][\"openrouter\"][\"models\"];assert all(set(x[\"cost\"])=={\"input\",\"output\",\"cacheRead\",\"cacheWrite\"} for x in m)"'
