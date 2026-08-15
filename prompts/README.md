@@ -14,9 +14,14 @@ lands somewhere a deterministic test can check.
 | `06-redesign-quiet-room.md` | redesign — the app as a quiet room; chrome leaves until called |
 | `07-redesign-editorial.md` | redesign — typography-first editorial instrument |
 | `08-redesign-progressive-focus.md` | redesign — progressive disclosure, full power in layers |
+| `09-triad-playback.md` | feature, frontend-only — Web Audio playback of the triad panel's current inversion |
 
 06–08 are one product goal (writing-first redesign, all features kept but folded into menus) in
 three creative directions — built for best-of-N: fire each at its own sandbox and compare.
+
+09 targets `apps/fretboard`, the current payload app — 01–08 target `apps/inkwell`, archived at
+`archive/inkwell-20260815-053427/` after `just app swap`. A prompt written against one app's file
+paths will not resolve against another; check which app is live before firing an old one.
 
 The five differ in shape on purpose: fire the same one at several models and the spread is worth
 reading. Fire five different ones at one target and they collide — one detached SDLC at a time.
