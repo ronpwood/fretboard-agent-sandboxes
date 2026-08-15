@@ -59,9 +59,18 @@ def json_parses(envelope: EnvelopeBase, run) -> GateReport:
 
 
 def diff_matches_claims(envelope: EnvelopeBase, run) -> GateReport:
-    """Every file claimed changed must exist on disk."""
+    """Every file claimed changed must exist on disk, and at least one must be claimed.
+
+    A builder that declares zero changed_files would otherwise pass every
+    per-file check vacuously (0 checked, 0 failed) — the emptiness itself is
+    the violation, so it gets its own check instead of a silent green.
+    """
     report = GateReport()
-    for f in getattr(envelope, "changed_files", []):
+    changed = getattr(envelope, "changed_files", [])
+    report.check("changed_files declared", bool(changed),
+                 f"{len(changed)} file(s) claimed" if changed
+                 else "no changed_files declared — the build claims nothing changed")
+    for f in changed:
         p = Path(f)
         report.check(f, p.exists(),
                      f"exists, {_size(p)}" if p.exists() else "claimed changed file does not exist")
