@@ -445,15 +445,12 @@ function getAudioContext(): AudioContext {
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     audioCtx = new Ctor();
   }
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume().catch(() => {});
-  }
   return audioCtx;
 }
 
 // Play the current triad layout as a short ascending arpeggio. Each note gets
 // a brief attack/decay envelope so it does not click on/off.
-function playTriad() {
+async function playTriad() {
   if (!state.selected) return;
   const stringSet = STRING_SETS[state.stringSetIndex];
   const layout = layoutTriadOnStringSet(
@@ -465,6 +462,13 @@ function playTriad() {
   if (!layout) return;
 
   const ctx = getAudioContext();
+  if (ctx.state === "suspended") {
+    try {
+      await ctx.resume();
+    } catch {
+      return;
+    }
+  }
   if (ctx.state !== "running") return;
 
   const now = ctx.currentTime;
