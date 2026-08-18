@@ -13,7 +13,14 @@ import {
   triadNotes,
   type Quality,
 } from "./theory.ts";
-import { pitchAtFret, STANDARD_TUNING } from "./fretboard.ts";
+import {
+  pitchAtFret,
+  STANDARD_TUNING,
+  STANDARD_TUNING_MIDI,
+  midiAtFret,
+  midiToFrequency,
+  frequencyAtFret,
+} from "./fretboard.ts";
 import { findVoicings, bestVoicing } from "./voicing.ts";
 import {
   clampVoicingIndex,
@@ -188,6 +195,46 @@ describe("findVoicings invariants", () => {
       }
     });
   }
+});
+
+describe("fretboard MIDI / frequency helpers", () => {
+  const midiToFreq = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
+  const openFreqs = [
+    midiToFreq(40), // E2
+    midiToFreq(45), // A2
+    midiToFreq(50), // D3
+    midiToFreq(55), // G3
+    midiToFreq(59), // B3
+    midiToFreq(64), // E4
+  ];
+
+  test("open strings resolve to their correct frequencies", () => {
+    expect(STANDARD_TUNING_MIDI).toEqual([40, 45, 50, 55, 59, 64]);
+    for (let s = 0; s < 6; s++) {
+      expect(frequencyAtFret(s, 0)).toBeCloseTo(openFreqs[s], 8);
+    }
+  });
+
+  test("fretted note matches hand-computed MIDI math", () => {
+    // A string (index 1, open MIDI 45); 3rd fret = C4 = MIDI 48.
+    expect(midiAtFret(1, 3)).toBe(48);
+    expect(midiToFrequency(48)).toBeCloseTo(midiToFreq(48), 8);
+    expect(frequencyAtFret(1, 3)).toBeCloseTo(midiToFreq(48), 8);
+    // High E string (index 5, open MIDI 64); 5th fret = A4 = MIDI 69 = 440Hz.
+    expect(midiAtFret(5, 5)).toBe(69);
+    expect(frequencyAtFret(5, 5)).toBeCloseTo(440, 8);
+  });
+
+  test("a note 12 frets higher is exactly double the frequency", () => {
+    for (let s = 0; s < 6; s++) {
+      expect(frequencyAtFret(s, 12) / frequencyAtFret(s, 0)).toBeCloseTo(2, 8);
+      expect(midiAtFret(s, 12)).toBe(midiAtFret(s, 0) + 12);
+    }
+  });
+
+  test("length of STANDARD_TUNING_MIDI matches string count", () => {
+    expect(STANDARD_TUNING_MIDI.length).toBe(STANDARD_TUNING.length);
+  });
 });
 
 describe("bestVoicing / findVoicings null case", () => {

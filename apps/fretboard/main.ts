@@ -7,7 +7,7 @@ import {
   pitchClass,
   type Triad,
 } from "./theory.ts";
-import { pitchAtFret, type Fingering } from "./fretboard.ts";
+import { pitchAtFret, frequencyAtFret, type Fingering } from "./fretboard.ts";
 import { findVoicings } from "./voicing.ts";
 import {
   layoutTriadOnStringSet,
@@ -58,6 +58,7 @@ const inversionSelect = document.getElementById("inversion-select") as HTMLSelec
 const stringSetSelect = document.getElementById("string-set-select") as HTMLSelectElement;
 const triadDiagramSvg = document.getElementById("triad-diagram") as unknown as SVGSVGElement;
 const triadCaptionEl = document.getElementById("triad-caption") as HTMLParagraphElement;
+const triadPlayBtn = document.getElementById("triad-play") as HTMLButtonElement;
 const viewChordBtn = document.getElementById("view-chord") as HTMLButtonElement;
 const viewTriadBtn = document.getElementById("view-triad") as HTMLButtonElement;
 const chordPanel = document.getElementById("chord-panel") as HTMLDivElement;
@@ -269,6 +270,7 @@ function renderTriadDiagram() {
       textNode(20, 80, "Select a chord to see its triad layout.", { fill: "#9aa1b5", "font-size": 12 })
     );
     triadCaptionEl.textContent = "";
+    triadPlayBtn.disabled = true;
     return;
   }
 
@@ -281,8 +283,11 @@ function renderTriadDiagram() {
       textNode(15, 80, "No layout found for this string set.", { fill: "#ff8080", "font-size": 12 })
     );
     triadCaptionEl.textContent = "";
+    triadPlayBtn.disabled = true;
     return;
   }
+
+  triadPlayBtn.disabled = false;
 
   const marginLeft = 40;
   const marginTop = 30;
@@ -418,6 +423,8 @@ function attachListeners() {
   voicingPrevBtn.addEventListener("click", () => stepVoicing(-1));
   voicingNextBtn.addEventListener("click", () => stepVoicing(1));
 
+  triadPlayBtn.addEventListener("click", () => playTriad());
+
   inversionSelect.addEventListener("change", () => {
     state.inversion = inversionSelect.value as Inversion;
     render();
@@ -426,6 +433,67 @@ function attachListeners() {
   stringSetSelect.addEventListener("change", () => {
     state.stringSetIndex = Number(stringSetSelect.value);
     render();
+  });
+}
+
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!audioCtx) {
+    const Ctor =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    audioCtx = new Ctor();
+  }
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+  return audioCtx;
+}
+
+// Play the current triad layout as a short ascending arpeggio. Each note gets
+// a brief attack/decay envelope so it does not click on/off.
+function playTriad() {
+  if (!state.selected) return;
+  const stringSet = STRING_SETS[state.stringSetIndex];
+  const layout = layoutTriadOnStringSet(
+    state.selected.root,
+    state.selected.quality,
+    state.inversion,
+    stringSet
+  );
+  if (!layout) return;
+
+  const ctx = getAudioContext();
+  if (ctx.state !== "running") return;
+
+  const now = ctx.currentTime;
+  const noteDur = 0.4;
+  const gap = 0.15;
+  const attack = 0.02;
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.6;
+  masterGain.connect(ctx.destination);
+
+  // layout[0] is the lowest string of the set; play low-to-high.
+  layout.forEach((pos, i) => {
+    const freq = frequencyAtFret(pos.string, pos.fret);
+    const t0 = now + i * (noteDur + gap);
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.4, t0 + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + noteDur);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(t0);
+    osc.stop(t0 + noteDur + 0.05);
   });
 }
 
