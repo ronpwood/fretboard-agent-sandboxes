@@ -17,7 +17,7 @@ fill RUN_ID *SHA:
     RR="sandbox_mount/host/run_record.py"
 
     # Public repo: no auth, no GitHub integration, no exe.dev git integration.
-    REPO="https://github.com/disler/inkwell-agent-sandboxes-and-software-factory.git"
+    REPO="https://github.com/ronpwood/fretboard-agent-sandboxes.git"
 
     # *SHA is variadic: it interpolates to "" when unpinned, space-joined otherwise.
     # Only the first token is meaningful; extra words are a caller mistake we ignore.

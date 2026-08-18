@@ -161,3 +161,104 @@ for a fretboard/music-theory app via `just app swap`, archived at
 `archive/inkwell-20260815-053427/`. Model roster drift (the one remaining Threat) is
 still open — nothing in this session touched it. Best-of-N fan-out no longer has the
 gate prerequisite blocking it.
+
+## Session (2026-08-18): first single-VM smoke test since the app swap
+
+Ran the `triad-playback` task (`prompts/09-triad-playback.md`) end-to-end through
+mount → fill → setup → observe → execute → harvest → teardown, for real, on one VM.
+The loop worked and the `diff_matches_claims` gate fix from the 2026-08-15 update was
+proven live (build gate correctly verified 4 claimed files actually changed). It also
+surfaced two infrastructure bugs that had nothing to do with the ADW itself — both are
+now fixed.
+
+### Bug 1: `create.just`'s SSH-boot-timeout diagnosis was wrong
+
+`create` failed twice with "ssh never answered on `<vm>`.exe.xyz within 120s" — the
+exact symptom the 2026-08-15 update's item 4 (60s → 120s, backoff) was supposed to have
+fixed. It hadn't recurred because of timing; the real cause was `ssh -o BatchMode=yes ...
+true` failing immediately with `Host key verification failed`, which the wait loop's
+`>/dev/null 2>&1` swallows, so every failure — instant or after 120s — reports as a
+timeout.
+
+Root cause: `ai_docs/exedev_sandbox_mounting.md` already documents that every `*.exe.xyz`
+VM presents the same RSA host key as `exe.dev` itself
+(`SHA256:JJOP/lwiBGOMilfONPWZCXUrfK154cnJFXcqlsi6lPo`) and says to add one wildcard
+`known_hosts` line so future sandboxes connect non-interactively. That line was never
+actually added — `~/.ssh/known_hosts` only had literal per-hostname entries for the two
+VMs someone had manually SSH'd into before. Every *new* run id (a new hostname every
+time, by design) had no matching entry and `BatchMode=yes` can't prompt, so it failed
+outright rather than being slow.
+
+Fixed by hand this session (host-local `~/.ssh/known_hosts`, not a repo change):
+```
+*.exe.xyz ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEKtEcRW8OBtro5B/MG+EaisD+ZVwwHFa5m7M8wFwBlMmPJJssY+1aGBRW3b9InAeCnTU2Kt7gazqbg/9od1KnK6x5piQNVQZ4C/lrjsC2ScBrOydnw9ry9G2+voFCAk+dQGabIrIT6gqqDJNOqxgFiG/lA3Xx6KwpfwI2BH5f3ab2fHCR2BGAC5jlB2RJXPgly80hMxYEHqexhJxYRwC+deeLrQSG795we9rSzPmdz58t9+9jLTKkyyqWKe/hmBvty1AYrEmRsefu6/TUrIGi/UWJfa+RBIQtFgWqN6xT1F6rRwELeVOfwwr5tZbsmgWY5frZU3EOtVWcF7Ve3gfL
+```
+Worth doing properly: either have `create.just` add this line itself on first run (it
+already knows the fingerprint is constant), or at least surface ssh's real stderr in the
+timeout message instead of swallowing it — a wrong diagnosis costs more debugging time
+than a timeout ever should.
+
+### Bug 2: `fill.just` cloned the wrong repo entirely
+
+Even after fixing SSH, `setup` passed its health gate but `observe` failed —
+`apps/fretboard` didn't exist on the VM. `fill.just` clones a hardcoded URL,
+`https://github.com/disler/inkwell-agent-sandboxes-and-software-factory.git` — the
+original public template this project started from. This repo's `origin` was still
+pointed at that same URL, and local `main` was 5 commits ahead of `origin/main`
+(unpushed): the entire app swap (`4d84a68`), the gate fix (`cb35ac9`), and everything
+after. Every sandbox mount was therefore always going to clone pre-swap, pre-gate-fix
+Inkwell code, regardless of what was sitting in the local working tree — there is no
+"local working tree" concept in this design at all; the VM is a pure client of whatever
+`origin/main` is on GitHub.
+
+This surfaced a real ownership question: `origin` was never a fork, it was IndyDevDan's
+own upstream repo, so pushing local work there would have been both wrong (not our repo)
+and almost certainly impossible (no write access).
+
+Fixed: created `ronpwood/fretboard-agent-sandboxes` (public, to keep `fill.just`'s
+unauthenticated `git clone` working unchanged), repointed `origin` there, pushed all 6
+local commits, and updated `fill.just`'s `REPO=` line to match. A VM with a stale local
+clone (from before this fix) needed its `app/` directory removed by hand before a re-fill
+would pick up the new `REPO` — fill only uses that variable on a *fresh* clone; an
+existing `app/.git` re-fetches from whatever remote it already has.
+
+### The smoke test itself, once both bugs were fixed
+
+- `sdlc` on `prompts/09-triad-playback.md`: 5/5 phases, $0.3734, commit `f69fc34`. Web
+  Audio Play button for the triad panel, built by `deepseek-v4-flash-0731` from a plan by
+  `gemini-3.6-flash`.
+- The shipped code had a real bug: `getAudioContext()` fired `audioCtx.resume()` without
+  awaiting it, and `playTriad()` checked `ctx.state !== "running"` synchronously right
+  after — a fresh `AudioContext` starts `"suspended"` per browser autoplay policy, so the
+  unawaited check almost always lost the race and `playTriad` returned before scheduling
+  any sound, no error, first click every time.
+- Fed that exact diagnosis back in as a second, targeted `build-test` pass (no planning
+  phase needed, the bug was already understood): 3/3 phases, $0.0016, 31s, commit
+  `ee49663`. Fixed correctly in one shot — `playTriad` made `async`, awaits `resume()`
+  before checking state.
+- `build-test` does not include a commit phase (unlike `sdlc`'s 5-phase chain) — the fix
+  sat uncommitted until committed by hand. Worth knowing before relying on it for
+  anything unattended: teardown's dirty-tree refusal would have caught this, but it is a
+  gap in the "fix loop" recipe, not just this run.
+- Harvested clean (2 commits, verified bundle), merged `--ff-only` into local `main`,
+  teardown clean: tree checked clean, key revoked and confirmed absent from OpenRouter,
+  VM destroyed. Total session spend: $0.192.
+- Confirmed working in Chrome (correct pitches, correct low-to-high ordering per
+  inversion/string-set). Reported broken in Safari — not investigated; out of scope for
+  the original task prompt (which named no target browser), left open for later.
+
+### Changes worth making, next session
+
+1. `create.just`'s SSH wait loop should not swallow ssh's stderr — a host-key failure and
+   a genuine boot timeout are different problems with different fixes, and conflating
+   them cost real time twice in one session before the real cause was found.
+2. Either `create.just` provisions the wildcard `known_hosts` line itself (fingerprint is
+   constant and already known), or the README/setup docs get an explicit one-time setup
+   step for it — right now it is a fact recorded in `ai_docs/` that nothing enforces.
+3. `fill.just`'s `REPO=` should not be a silent hardcoded assumption that `origin` and the
+   clone source are the same repo — nothing checked that, and the mismatch was invisible
+   until `observe` failed on a missing directory. At minimum, `setup`'s gate could assert
+   the app's own signature file(s) exist, the way gate A already checks the commit sha.
+4. Give `build-test` (and any other non-`sdlc` ADW recipe without a trailing commit phase)
+   the same commit step `sdlc` has, or document clearly that its caller is responsible for
+   committing before teardown.
