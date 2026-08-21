@@ -1,0 +1,46 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Circle of Fifths — Fretboard" [level=1] [ref=e3]
+    - radiogroup "Main view" [ref=e4]:
+      - radio "Chord diagram" [ref=e5] [cursor=pointer]
+      - radio "Triad layout" [ref=e6] [cursor=pointer]
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]: Key
+      - combobox "Key" [ref=e10]:
+        - option "C" [selected]
+        - option "G"
+        - option "D"
+        - option "A"
+        - option "E"
+        - option "B"
+        - option "F#"
+        - option "C#"
+        - option "G#"
+        - option "D#"
+        - option "A#"
+        - option "F"
+      - generic [ref=e11]: Mode
+      - radiogroup "Mode" [ref=e12]:
+        - radio "Major" [ref=e13] [cursor=pointer]
+        - radio "Minor" [ref=e14] [cursor=pointer]
+      - generic [ref=e15]: Diatonic chords
+      - group "Diatonic chords" [ref=e16]:
+        - button "I — C" [pressed] [ref=e17] [cursor=pointer]
+        - button "ii — D m" [ref=e18] [cursor=pointer]
+        - button "iii — E m" [ref=e19] [cursor=pointer]
+        - button "IV — F" [ref=e20] [cursor=pointer]
+        - button "V — G" [ref=e21] [cursor=pointer]
+        - button "vi — A m" [ref=e22] [cursor=pointer]
+        - button "vii° — B dim" [ref=e23] [cursor=pointer]
+    - generic [ref=e25]:
+      - heading "Chord diagram" [level=2] [ref=e26]
+      - img "Chord fingering diagram" [ref=e27]:
+        - generic [ref=e28]: ×
+        - generic [ref=e31]: ○
+        - generic [ref=e33]: ○
+      - generic [ref=e34]:
+        - button "Previous voicing" [disabled] [ref=e35]: ← Prev
+        - generic [ref=e36]: 1 of 10
+        - button "Next voicing" [ref=e37] [cursor=pointer]: Next →
+      - paragraph [ref=e38]: "C : x 3 2 0 1 0 (voicing 1 of 10)"

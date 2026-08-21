@@ -262,3 +262,44 @@ existing `app/.git` re-fetches from whatever remote it already has.
 4. Give `build-test` (and any other non-`sdlc` ADW recipe without a trailing commit phase)
    the same commit step `sdlc` has, or document clearly that its caller is responsible for
    committing before teardown.
+
+## Session (2026-08-21): the Safari `playTriad` silence, resolved
+
+Followed up on the 2026-08-18 session's open item: `playTriad()` played fine in Chrome but
+made no sound in Safari, with no console errors. Investigated live against the user's real
+desktop Safari (no WebKit binary available for Playwright in this sandbox, and scripting
+Safari's UI via AppleScript's `do JavaScript` needed a one-time "Allow JavaScript from Apple
+Events" toggle in the Develop menu) by adding temporary diagnostic logging to
+`apps/fretboard/main.ts`'s `playTriad()` and reading back the user's console output.
+
+Two distinct things were found and fixed in `main.ts`, both real Safari-hardening bugs
+independent of the actual root cause:
+- `playTriad()` computed `now = ctx.currentTime` and called `osc.start(t0)` for every note
+  *before* awaiting `ctx.resume()`. Chrome tolerates scheduling against a suspended
+  context's timeline; Safari freezes `currentTime` while suspended, so by the time
+  `resume()` resolves, real time has already passed the scheduled start times and Safari
+  drops the notes silently. Fixed by awaiting `resume()` first, then computing `now` and
+  scheduling only once the context is confirmed `"running"`.
+- `getAudioContext()` reused a cached `AudioContext` indefinitely. Safari has a WebKit-only
+  `"interrupted"` `AudioContextState` (outside the spec's suspended/running/closed) that
+  `resume()` often cannot recover from — seen once during this session's diagnosis. Fixed
+  by discarding and recreating the context when its cached state is `"closed"` or
+  `"interrupted"`.
+
+Neither of those was the actual cause of the user's silence, though. With both fixes in
+place, `ctx.resume()` still never settled — state stuck at `"suspended"` and `currentTime`
+stuck at `0` for a 3-second diagnostic timeout, no error, no rejection. Root cause: Safari's
+per-site **Auto-Play** permission (Safari menu → Settings for This Website… while the tab is
+active) was set to `Stop Media with Sound Automatically` / `Never Auto-Play` for
+`localhost:4501`. When blocked this way, Safari's `AudioContext.resume()` promise hangs
+forever instead of rejecting — there is no error to catch, which is why dev tools showed
+nothing. Setting it to `Allow All Auto-Play` and reloading fixed playback immediately, no
+further code changes needed. Chrome has no equivalent per-site gate for Web Audio, which is
+why it always worked there.
+
+The two code fixes above are still worth keeping (they're genuine Safari-correctness bugs
+that would bite again once autoplay is allowed, e.g. after a context interruption from a
+route change), but they were not what fixed the user's reported symptom — the Auto-Play
+permission was. Worth remembering for the next Web-Audio-in-Safari report: check the
+per-site Auto-Play setting first, since a permanently-hanging (non-rejecting) `resume()`
+with zero console output is its signature.

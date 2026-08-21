@@ -1,0 +1,64 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - heading "Circle of Fifths — Fretboard" [level=1] [ref=e3]
+    - radiogroup "Main view" [ref=e4]:
+      - radio "Chord diagram" [ref=e5] [cursor=pointer]
+      - radio "Triad layout" [ref=e6] [cursor=pointer]
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]: Key
+      - combobox "Key" [ref=e10]:
+        - option "C" [selected]
+        - option "G"
+        - option "D"
+        - option "A"
+        - option "E"
+        - option "B"
+        - option "F#"
+        - option "C#"
+        - option "G#"
+        - option "D#"
+        - option "A#"
+        - option "F"
+      - generic [ref=e11]: Mode
+      - radiogroup "Mode" [ref=e12]:
+        - radio "Major" [ref=e13] [cursor=pointer]
+        - radio "Minor" [ref=e14] [cursor=pointer]
+      - generic [ref=e15]: Diatonic chords
+      - group "Diatonic chords" [ref=e16]:
+        - button "I — C" [pressed] [ref=e39] [cursor=pointer]
+        - button "ii — D m" [ref=e40] [cursor=pointer]
+        - button "iii — E m" [ref=e41] [cursor=pointer]
+        - button "IV — F" [ref=e42] [cursor=pointer]
+        - button "V — G" [ref=e43] [cursor=pointer]
+        - button "vi — A m" [ref=e44] [cursor=pointer]
+        - button "vii° — B dim" [ref=e45] [cursor=pointer]
+    - generic [ref=e46]:
+      - heading "Triad layout" [level=2] [ref=e47]
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]: Inversion
+          - combobox "Inversion" [ref=e51]:
+            - option "Root position" [selected]
+            - option "First inversion"
+            - option "Second inversion"
+        - generic [ref=e52]:
+          - generic [ref=e53]: String set
+          - combobox "String set" [ref=e54]:
+            - option "E–A–D"
+            - option "A–D–G"
+            - option "D–G–B" [selected]
+            - option "G–B–E"
+      - img "Triad layout diagram" [ref=e55]:
+        - generic [ref=e57]: C
+        - generic [ref=e58]: fret 10
+        - generic [ref=e60]: E
+        - generic [ref=e61]: fret 9
+        - generic [ref=e63]: G
+        - generic [ref=e64]: fret 8
+      - generic [ref=e65]:
+        - generic [ref=e66]: Root
+        - generic [ref=e68]: Third
+        - generic [ref=e70]: Fifth
+      - button "Play" [active] [ref=e73] [cursor=pointer]
+      - paragraph [ref=e74]: D–G–B strings, root inversion

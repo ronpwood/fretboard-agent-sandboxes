@@ -438,14 +438,34 @@ function attachListeners() {
 
 let audioCtx: AudioContext | null = null;
 
-function getAudioContext(): AudioContext {
-  if (!audioCtx) {
-    const Ctor =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    audioCtx = new Ctor();
+function getAudioContext(): AudioContext | null {
+  // Safari has a WebKit-only "interrupted" AudioContextState (outside the
+  // suspended/running/closed spec) that resume() often cannot recover from,
+  // so a context left interrupted (e.g. by an audio route/focus change) is
+  // discarded and replaced rather than reused.
+  const state = audioCtx?.state as string | undefined;
+  if (audioCtx && state !== "closed" && state !== "interrupted") return audioCtx;
+
+  if (audioCtx) {
+    audioCtx.close().catch(() => {});
   }
+
+  const Ctor =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctor) return null;
+
+  audioCtx = new Ctor();
   return audioCtx;
+}
+
+function unlockAudioContext(ctx: AudioContext): void {
+  const buffer = ctx.createBuffer(1, 1, 22050);
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ctx.destination);
+  source.start(0);
+  source.stop(0.01);
 }
 
 // Play the current triad layout as a short ascending arpeggio. Each note gets
@@ -462,15 +482,21 @@ async function playTriad() {
   if (!layout) return;
 
   const ctx = getAudioContext();
-  if (ctx.state === "suspended") {
+  if (!ctx) return;
+
+  unlockAudioContext(ctx);
+  if (ctx.state !== "running") {
     try {
       await ctx.resume();
     } catch {
       return;
     }
   }
-  if (ctx.state !== "running") return;
 
+  // Schedule notes only once the context is confirmed running. Safari
+  // freezes currentTime while suspended, so scheduling against it before
+  // resume() resolves causes the start times to already be in the past by
+  // the time playback actually begins, and Safari drops them silently.
   const now = ctx.currentTime;
   const noteDur = 0.4;
   const gap = 0.15;
