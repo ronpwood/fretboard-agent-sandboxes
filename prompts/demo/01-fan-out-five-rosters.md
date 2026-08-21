@@ -1,4 +1,4 @@
-Run the redesign in prompts/06-redesign-quiet-room.md five times — once per agent config in
+Run the redesign in prompts/10-circle-of-fifths-wheel.md five times — once per agent config in
 adws/adw_sssf_config/ (default, frontier, deepestseek, open-weights, top-speed), each in its own
 sandbox. Use the name of the config in the name of the sandbox.
 Use the agent-mediated kickoff path: delegate to the orchestrator agent inside each box
