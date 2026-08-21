@@ -51,11 +51,23 @@ observe RUN_ID:
     fi
     echo "[1/6] ssh ok — $HOST"
 
-    # `ss -ltn` column 4 is Local Address:Port. bun binds 0.0.0.0 by default so
-    # a live server shows as *:4501, which the :PORT suffix match catches. The
-    # proxy cannot reach a 127.0.0.1 bind, so this doubles as a bind check.
+    # `ss -ltn` column 4 is Local Address:Port. The proxy cannot reach a
+    # 127.0.0.1 bind, so this is a REACHABILITY check, not just a liveness one:
+    # only *:PORT and 0.0.0.0:PORT count as listening.
+    #
+    # MEASURED: `bun index.html` (Bun's HTML dev server) binds 127.0.0.1 in the
+    # bun shipped by the exeuntu image, NOT 0.0.0.0 as an earlier comment here
+    # assumed. A plain ":$1$" suffix match accepted that loopback bind, so all
+    # five arms of a fan-out passed [2/6] and then died at [6/6] on an anonymous
+    # 403 — the app was up, healthy, and answering 200 on localhost, unreachable
+    # from outside. Matching on the bind address turns that into a failure at
+    # the step that can still fix it. The app is now started via serve_app.ts,
+    # which binds 0.0.0.0 (see below), so this check should pass on the first
+    # probe; it stays strict because a silent regression to loopback is exactly
+    # the failure it was written for.
     listening() {
-        ssh "$HOST" 'ss -ltn' 2>/dev/null | awk '{print $4}' | grep -q ":$1\$"
+        ssh "$HOST" 'ss -ltn' 2>/dev/null | awk '{print $4}' \
+            | grep -Eq "^(\*|0\.0\.0\.0|\[::\]):$1\$"
     }
 
     # Poll rather than sleep-a-guess: bun is up in well under a second warm, but
@@ -74,8 +86,19 @@ observe RUN_ID:
     # Idempotent: observe is safe to re-run, and `just sbx mount` ends here, so a
     # second call must not stack a second bun on the same port.
     #
-    # fretboard is a static Bun HTML entry, not a server.ts — PORT must be
-    # passed explicitly, since Bun's HTML dev server defaults to :3000.
+    # NOT `bun index.html`. That starts Bun's HTML dev server, which binds
+    # 127.0.0.1 AND enforces a Host-header check — behind the exe.dev proxy that
+    # is a 403 either way, and neither behaviour is configurable (--host is not
+    # a flag in that mode, BUN_HOSTNAME and bunfig are ignored, and bridging the
+    # loopback bind with socat just exposes the Host check underneath). All of
+    # that was measured on a live box.
+    #
+    # sandbox_mount/guest/serve_app.ts wraps the same HTML entry in a plain
+    # Bun.serve, which binds 0.0.0.0 and does no Host checking, while still
+    # bundling main.ts via the HTML import. Same shape the visualizer uses on
+    # :4600 — the one app that was reachable through the proxy all along.
+    #
+    # APP_HTML is absolute and expanded ON THE VM, so it is single-quoted here.
     echo "[2/6] app  :$APP_PORT"
     if listening "$APP_PORT"; then
         echo "       already listening — leaving it alone"
@@ -83,10 +106,11 @@ observe RUN_ID:
         # All three detachment pieces are REQUIRED or ssh never returns: nohup
         # (survive session end), the redirect (release stdout/stderr), and
         # < /dev/null (release stdin). Dropping any one hangs this recipe.
-        ssh "$HOST" "cd $APP_DIR && ( nohup env PORT=$APP_PORT bun index.html > \$HOME/fretboard-app.log 2>&1 < /dev/null & echo \$! )" \
+        ssh "$HOST" "cd $APP_DIR && ( nohup env PORT=$APP_PORT APP_HTML=$APP_DIR/index.html bun \$HOME/app/sandbox_mount/guest/serve_app.ts > \$HOME/fretboard-app.log 2>&1 < /dev/null & echo \$! )" \
             | sed 's/^/       started pid /'
         if ! wait_listen "$APP_PORT"; then
-            echo "observe: fretboard never bound :$APP_PORT — tail of ~/fretboard-app.log:" >&2
+            echo "observe: fretboard never bound 0.0.0.0:$APP_PORT — tail of ~/fretboard-app.log:" >&2
+            echo "observe: (a 127.0.0.1 bind counts as NOT listening here — the proxy cannot reach it)" >&2
             ssh "$HOST" 'tail -n 40 $HOME/fretboard-app.log' >&2 || true
             exit 1
         fi
