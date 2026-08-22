@@ -392,3 +392,128 @@ The bun fix was first attempted as a rewrite of the serving layer and **pushed s
 Two lessons: framework changes go on a branch and get approved first, and read the git
 history *before* concluding a recipe is wrong — the history said `observe` had worked with
 this exact code, which is what pointed at the environment instead.
+
+## Session (2026-08-22): five-roster fan-out, and what it actually measured
+
+Five sandboxes, one prompt file (`prompts/10-circle-of-fifths-wheel.md`), one commit pin
+(`5d0de55`), `adw_simple_sdlc` on each, launched via the **agent-mediated** path
+(`just sbx run agent` → in-box Claude Code reads `/sssf`, then launches the ADW itself).
+Nothing harvested, nothing merged — see "Why nothing was harvested" below.
+
+### Results
+
+| Arm | Status | Tokens | Cost | Insertions | Notes |
+|---|---|---|---|---|---|
+| deepestseek | 10/10 | 2,463,736 | **$0.088** | 525 | cheapest by 5.5x, most tokens |
+| default | 10/10 | 1,659,433 | $0.486 | 488 | |
+| open-weights | 10/10 | 1,096,942 | $0.563 | 523 | fewest tokens |
+| top-speed | 10/10 | 1,916,363 | $0.587 | 519 | |
+| frontier | **5/6 fail** | 951,308 | **$1.197** | (uncommitted) | reviewer SIGTERM, see below |
+
+Total ~$2.92. Rosters (per-agent models) read from `agent_sessions`:
+
+- **deepestseek** — deepseek-v4-flash everywhere (planner/builder/reviewer/documenter)
+- **default** — planner gemini-3.6-flash, builder deepseek-v4-flash, reviewer glm-5.2, documenter gpt-5.6-luna
+- **open-weights** — planner+reviewer glm-5.2, builder kimi-k3, documenter deepseek-v4-flash
+- **top-speed** — planner+reviewer gemini-3.6-flash, builder deepseek-v4-flash, documenter gpt-5.6-luna
+- **frontier** — planner claude-opus-5, builder kimi-k3
+
+### The experiment's real flaw: the spec was a plan, not a brief
+
+The four successful arms produced **near-identical output**: same 5 files, exactly 16
+deletions each, insertions within 7% (488/519/523/525). Four different model families did
+not converge by coincidence — the prompt left nothing to decide.
+
+`prompts/10-circle-of-fifths-wheel.md` is ~250 lines specifying exact file paths, export
+signatures, the angle convention, SVG path commands, CSS class names, and 16 numbered test
+cases. That is a **completed plan**. The planner phase had only to transcribe it.
+
+So this run measured **transcription cost**, not planning quality — a real result (13.6x
+spread on identical output; take the cheap roster for spec-in/code-out work) but not the
+one intended. The identical `16 deletions` across all four arms is the tell: the spec said
+"replace all three bodies with a single `applyKey`" and supplied the code.
+
+**Next run: hand all five a one-line brief** ("Add a clickable circle-of-fifths wheel;
+clicking a key selects it; the current key should be obvious at a glance; keep it
+consistent with the existing app") and diff the **plan documents**, not the code. That is
+where intelligence/speed/cost actually separate — two rings or one? how is the relative
+minor surfaced? SVG or CSS? what deserves a test? Expect real failures too (a planner that
+forgets tests, or specs a forbidden dependency); those are signal.
+
+**Gotcha for that run:** `prompts/10-circle-of-fifths-wheel.md` is ON `main`, so any arm
+can read the detailed spec no matter what brief you pass. Pin the loose-brief run to a
+commit where that file does not exist, or the "loose" brief is not loose.
+
+### Why nothing was harvested
+
+`harvest` is non-destructive — it fetches into `refs/sandbox/<run-id>`, which is not a
+branch and is never cloned by `fill`. **Merging** a harvest into `main` is the contaminating
+act, and it is separate and deliberate (the 2026-08-18 session did exactly that with
+`triad-playback`, which is why `ee49663` is reachable from `main` today).
+
+Deliberately skipped here: `fill` clones `origin/main`, so a merged wheel implementation
+would hand every future arm `circle-wheel.ts`, the theory helpers, 214 passing tests and a
+22KB spec doc — the answer, pre-supplied. The loose-brief experiment would then measure
+nothing, and would fail *quietly*: five plausible plans all downstream of one leaked design.
+
+This codebase is a **testbed for one-of-N model/skill comparisons**, not a product. The
+wheel was load, not deliverable. `main` stays at `5d0de55` with no `circle-wheel.ts`.
+
+### Frontier's failure: `pkill -f` in a shared process tree
+
+`14181b08` passed plan → commit → build → test, then died at `review_1` with
+`pi exited 143` (128+15 = SIGTERM). Gates all passed; tests were green. The reviewer
+(claude-opus-5 planning, kimi-k3 building) tried to independently verify the wheel by
+restarting the dev server and ran:
+
+```
+pkill -f "bun apps/fretboard/index.html"
+```
+
+That pattern matched its own process tree — pi was running the bash child — so it killed
+itself before emitting its final envelope. No `envelope.json`, phase fails, run aborts with
+its work uncommitted.
+
+Notable: opus-5 was the only roster that tried to *independently verify* rather than trust
+the test suite. On this over-specified task that initiative bought nothing and cost the run;
+on a loose brief it might be the differentiator. The same broad-`pkill` mistake bit the
+human-side orchestrator earlier in the same session (killed its own ssh). **Worth a prompt
+or tooling guard: never `pkill -f` on a pattern that can match the agent's own tree.**
+
+### Infrastructure notes
+
+- **bun pin verified.** `5d0de55` (pin 1.3.14) was exercised by six mounts today; every one
+  passed `observe` `[6/6]` with `app 200 anonymous`. The 403 is gone.
+- Bun 1.3.14 **also binds 127.0.0.1** — the exe.dev proxy reaches a loopback bind fine. The
+  earlier "must bind 0.0.0.0" diagnosis was wrong even for the working version; 1.4.0's
+  **Host-header check** was the only real defect. Good thing the `Bun.serve` rewrite was
+  reverted: it fixed a non-problem and its stricter `listening()` check would have rejected
+  a healthy 1.3.14 box.
+- **herdr for fan-out** (validated 0.8.0; the bundled skill is 0.7.1 and the verbs MOVED:
+  `herdr wait output` → `herdr pane wait-output`, `herdr wait agent-status` → `herdr agent
+  wait`). One pane per arm gives live per-arm agent reasoning side by side.
+  - `pane read` returns **raw text, not JSON** — piping it through `jq` silently yields
+    nothing and makes working panes look dead.
+  - A pane running a shell script is `agent_status: unknown` forever, so `agent wait` never
+    fires. `herdr pane report-agent --state working|idle` turns any script into a tracked
+    agent — that is what makes "watcher sub-agent notifies you" work for arbitrary work.
+    Pattern used: a watcher pane polling the arm's remote `sssf.db`, self-reporting state,
+    and printing a split sentinel (`ARM_""DONE`) that `pane wait-output --regex` blocks on.
+    Beats `sleep N` + re-check, which is what the orchestrator did for most of this session.
+- **Panes are live terminals, not dashboards** — stray human typing landed in one arm's pane
+  mid-run. Harmless here; worth knowing.
+- Verify against the trace db, not the pane viewport: a pane read said "3 of 4 launched"
+  while `sessions` said 4 of 4. Same lesson as the bun 403 — authoritative source, not the
+  convenient one.
+
+### Future project: a master trace database
+
+Each VM carries its own `adws/adw_data/sssf.db` and it dies with the box. Harvest today
+only bundles **git commits**, not traces — so every cross-run comparison in this session was
+done by ssh-ing into five boxes and running five queries.
+
+Worth designing: pull each arm's `sssf.db` at teardown into a local master (namespaced by
+run_id, since `adw_id`s are only unique per box) so fan-out comparisons become one local
+query. Open questions: schema merge vs. one file per run + `ATTACH`; whether to capture at
+teardown or continuously; whether `run_record.json` and the db should join on run_id. Needs
+planning — noted, not started.
