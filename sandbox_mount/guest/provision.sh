@@ -31,12 +31,40 @@ say "$REPO_ROOT"
 say "commit $(git rev-parse --short HEAD 2>/dev/null || echo 'not a git checkout')"
 
 # ── 2. bun ───────────────────────────────────────────────────────────────────
-step "2/9 bun"
-if command -v bun >/dev/null 2>&1; then
+# PINNED, and the pin is load-bearing. This install used to be unversioned
+# (`| bash`), which meant every mount got whatever bun shipped that day.
+#
+# MEASURED FAILURE: bun 1.4.0 released 2026-08-20. The last good mount was
+# 2026-08-18 on 1.3.x; the next mounts, on 2026-08-21, were the first to get
+# 1.4.0 and all five failed OBSERVE's public-access check with a 403. Cause: in
+# 1.4.0 `bun index.html` (the HTML dev server) binds 127.0.0.1 instead of
+# 0.0.0.0 AND enforces a Host-header check, answering "Blocked: Host header does
+# not match the dev server" to requests arriving as <vm>.exe.xyz. The exe.dev
+# proxy can reach neither. Nothing in this repo had changed — observe.just was
+# byte-identical to the successful run. The toolchain moved underneath it.
+#
+# Neither behaviour is configurable in that mode: `--host` is not a flag (bun
+# reads the value as a FILENAME), BUN_HOSTNAME is ignored, `[serve.static]
+# hostname` in bunfig.toml is ignored, and bridging the loopback bind with socat
+# just exposes the Host check underneath. All four were tried on a live box.
+#
+# 1.3.14 is the last release before 1.4.0 and the line every prior successful
+# cycle ran on. Bumping this is a deliberate act: re-verify OBSERVE's [6/6]
+# public check on a real box before changing it.
+BUN_VERSION="1.3.14"
+step "2/9 bun (pinned ${BUN_VERSION})"
+# Version-aware, not just presence-aware. `command -v bun` alone would accept a
+# WRONG version left on a re-provisioned or golden-copied VM and skip the
+# install silently — which is the same class of bug the pin exists to kill.
+if [[ "$(bun --version 2>/dev/null || true)" == "$BUN_VERSION" ]]; then
   say "already installed: $(bun --version)"
 else
-  curl -fsSL https://bun.sh/install | bash
-  say "installed"
+  if command -v bun >/dev/null 2>&1; then
+    say "found $(bun --version), replacing with pinned ${BUN_VERSION}"
+  fi
+  # `-s bun-v<version>` is the installer's own pin argument.
+  curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+  say "installed ${BUN_VERSION}"
 fi
 # The installer only edits shell rc files, which this non-interactive shell never
 # reads — put it on PATH by hand for the rest of the run.
@@ -54,6 +82,13 @@ if [[ -x "$HOME/.bun/bin/bun" ]] && [[ ! -e /usr/local/bin/bun ]]; then
   say "linked into /usr/local/bin for non-interactive ssh"
 fi
 command -v bun >/dev/null 2>&1 || { echo "[provision] bun not on PATH after install" >&2; exit 1; }
+# Assert the pin actually took. A silent drift here reintroduces the exact 403
+# this pin was added to prevent, and it would surface three phases later as an
+# unexplained proxy failure rather than as an install problem.
+if [[ "$(bun --version)" != "$BUN_VERSION" ]]; then
+  echo "[provision] bun version mismatch: wanted ${BUN_VERSION}, got $(bun --version)" >&2
+  exit 1
+fi
 
 # ── 3. just ──────────────────────────────────────────────────────────────────
 # Never apt. Note for anything that calls just in here later:

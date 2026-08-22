@@ -303,3 +303,92 @@ route change), but they were not what fixed the user's reported symptom — the 
 permission was. Worth remembering for the next Web-Audio-in-Safari report: check the
 per-site Auto-Play setting first, since a permanently-hanging (non-rejecting) `resume()`
 with zero console output is its signature.
+
+## Session (2026-08-21b): five-arm fan-out blocked by an unpinned bun
+
+Attempted the five-roster fan-out (default / frontier / deepestseek / open-weights /
+top-speed) on `prompts/10-circle-of-fifths-wheel.md`. **No ADW ever launched.** All five
+arms mounted and passed the full A–E health gate, then failed identically at `observe`'s
+`[6/6]` public-access check with a 403. All five were torn down; spend was ~$0.0055 total,
+entirely gate pings.
+
+### Root cause: bun 1.4.0, pulled unpinned
+
+`provision.sh` installed bun with `curl -fsSL https://bun.sh/install | bash` — no version.
+Every mount got whatever was latest that day.
+
+| | |
+|---|---|
+| bun 1.4.0 released | 2026-08-20 14:07 UTC |
+| last successful mount | 2026-08-18 → bun 1.3.x |
+| these runs | 2026-08-21 → **first ever on 1.4.0** |
+
+In 1.4.0 `bun index.html` (the HTML dev server) binds `127.0.0.1` instead of `0.0.0.0`
+**and** enforces a Host-header check, answering `Blocked: Host header does not match the
+dev server` to requests arriving as `<vm>.exe.xyz`. The exe.dev proxy can reach neither.
+
+Nothing in this repo had changed. `observe.just` was byte-identical to the Aug-18 run that
+worked. `observe.just`'s comment "bun binds 0.0.0.0 by default" was *true when written* and
+silently became false. The toolchain moved under a correct recipe.
+
+Neither behaviour is configurable in that mode — `--host` is not a flag (bun reads the
+value as a filename and dies with `File not found "0.0.0.0"`), `BUN_HOSTNAME` is ignored,
+`[serve.static] hostname` in `bunfig.toml` is ignored, and bridging the loopback bind with
+socat only exposes the Host check underneath. All four were tried on a live box.
+
+**Fixed** by pinning `BUN_VERSION="1.3.14"` (last release before 1.4.0, the line every
+prior successful cycle ran on), making the install version-aware rather than
+presence-aware so a stale bun on a re-provisioned or golden-copied VM gets replaced rather
+than silently accepted, and asserting the version after install so drift fails at the
+install step instead of surfacing three phases later as an unexplained 403.
+
+### The real hazard: the whole toolchain is unpinned
+
+The bun pin fixes today's break. It does not fix the class, and this needs thought before
+anyone pins the rest reflexively — pinning has its own blowback.
+
+Currently unversioned in `provision.sh`:
+
+| Tool | Line | Install | Blast radius if it moves |
+|---|---|---|---|
+| `just` | ~101 | `curl just.systems/install.sh \| sudo bash` | recipe syntax, module/import semantics — breaks *every* phase |
+| `uv` | 8b/9 warm step | ships in the exeuntu image | Python resolution for all ADWs |
+| `pi` | image | image | the coding agent itself: flags, session format, `--list-models` output the gate parses |
+| `claude` | image | image | the in-box orchestrator and `run agent`'s `--session-id`/`--resume` contract |
+| exeuntu base image | — | exe.dev | all of the above at once |
+
+Note the split: bun and just are pulled from CDNs *by us* and are ours to pin. pi, claude
+and uv arrive **in the base image**, so pinning them is not a one-line change — it means
+either version-asserting at gate time and failing loudly, or installing our own versions
+over the image's, which is slower and duplicates what the image is for.
+
+Questions worth answering before acting:
+
+1. **Pin, or detect?** A pin freezes a known-good world but goes stale silently and
+   invisibly — you stop getting fixes and only find out when something else forces a bump.
+   A version *assertion* in the setup gate (record the known-good set, fail loudly on
+   drift) keeps you current-aware and turns a mystery 403 into "pi moved 0.84.2 → 0.85.0".
+   The gate already has five assertions; a sixth is cheap. **This is probably the better
+   default for the image-supplied tools**, where we cannot pin anyway.
+2. **Where does the known-good set live?** A file the gate reads, so updating it is a
+   reviewable commit rather than an edit buried in a shell script.
+3. **What is the bump ritual?** A pin nobody ever raises is technical debt with a date on
+   it. Minimum: bump, mount one box, verify `observe` `[6/6]` publicly, record the version
+   in this file.
+4. **Golden VMs make this worse.** That path `cp`s a warm VM, so it freezes a toolchain
+   *and* the date it was built, with no install step to re-assert anything. A version
+   assertion at gate time covers the golden path; a pin in `provision.sh` does not.
+5. **Does the 403 deserve a defence regardless?** Even correctly pinned, the app is served
+   by a dev server whose network policy is not ours to control. A `Bun.serve` wrapper
+   (binds 0.0.0.0, no Host check, still bundles `main.ts` via the HTML import — the shape
+   `apps/visualizer/server/index.ts` already uses on :4600, which was reachable through the
+   proxy all along) is version-independent. Rejected *for now* as the wrong layer to fix an
+   unpinned-dependency bug, but it is the right answer if bun's dev server keeps moving.
+
+### Process note
+
+The bun fix was first attempted as a rewrite of the serving layer and **pushed straight to
+`main` without asking**, before it had been verified on a box. It was reverted (`16fc798`).
+Two lessons: framework changes go on a branch and get approved first, and read the git
+history *before* concluding a recipe is wrong — the history said `observe` had worked with
+this exact code, which is what pointed at the environment instead.
