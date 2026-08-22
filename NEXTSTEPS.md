@@ -517,3 +517,48 @@ run_id, since `adw_id`s are only unique per box) so fan-out comparisons become o
 query. Open questions: schema merge vs. one file per run + `ATTACH`; whether to capture at
 teardown or continuously; whether `run_record.json` and the db should join on run_id. Needs
 planning — noted, not started.
+
+### Next experiment's rig: herdr panes that live INSIDE the boxes
+
+Today's fan-out used herdr panes as **launchers**: each pane ran a host-side
+`just sbx run agent <id> "..."`, which ssh'd in, delivered one prompt, and returned to a
+local shell prompt. After that turn the pane was inert and the orchestrator went back to
+`sleep`+ssh polling. The panes showed the kickoff, not the run.
+
+Better shape: **the pane's process IS the ssh session into the sandbox.** `ssh
+<run-id>.exe.xyz`, then drive the ADW from inside. What that buys:
+
+- `tail -f run.log`, `just obs tail <adw_id>`, `sqlite3 adws/adw_data/sssf.db ...` become
+  plain typing. No ssh round trip per query and no nested quoting — recall `just sbx run
+  cmd` broke today on a two-level-quoted sqlite string and needed a raw-ssh fallback.
+- **Intervention becomes possible.** An arm goes sideways, you drop into its pane and fix
+  it by hand. Today the only in-box handle was another one-shot delegation.
+- The trace is local to the pane instead of five ssh calls away.
+
+Suggested layout: a **tab per arm**, split two ways — one pane running the ADW, one pane
+tailing its log/trace. `herdr tab create --label <arm>` per arm, or one "runners" tab and
+one "logs" tab, whichever reads better at five arms.
+
+Two things to VERIFY before building on this — both unknown today:
+
+1. **Does herdr's agent detection see through an ssh pane?** If a pane ssh's in and runs
+   `claude`/`pi` directly, herdr may register a real agent and populate `agent_status`
+   natively — which would make `herdr agent wait` fire without the `pane report-agent`
+   shim this session had to hand-roll. If detection only inspects the LOCAL process (ssh),
+   the pane stays `unknown` and the shim is still required. Test with `herdr agent explain`
+   on an ssh pane before designing around it.
+2. **Reconnection.** If ssh drops, the pane dies while the detached ADW keeps running —
+   the run survives but the window on it does not. Either wrap in an auto-reconnect loop,
+   or go to the ambitious version below.
+
+**The ambitious version: `herdr --remote`.** Run a herdr server INSIDE each sandbox and
+attach to it from the host. Panes then belong to the VM, not the laptop, so they survive
+host disconnection entirely and the in-box agent gets a real multiplexed workspace. Pairs
+naturally with the master-trace-db item above: both are about making cross-arm observation
+cheap instead of five-ssh-calls expensive. Note provision.sh would need to install herdr
+in the guest (and see `cookbooks/setup-disable-network-checks.md` — herdr phones home by
+default, which a sandbox should not).
+
+Version note for whoever picks this up: the bundled skill is validated against 0.7.1, the
+host runs 0.8.0, and the wait verbs MOVED (`herdr wait output` → `herdr pane wait-output`,
+`herdr wait agent-status` → `herdr agent wait`). Trust `--help`, not the skill.
