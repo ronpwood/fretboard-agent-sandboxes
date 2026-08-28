@@ -617,3 +617,39 @@ Gotchas found and recorded in the plan's amendments:
 Next up: the A/B experiment this exists for — same prompt through `sdlc` vs `tdd` across the
 five-roster fan-out, and the best-of-N cross-grading matrix (`cases[].requirement` is already
 in the envelope for it).
+
+---
+
+# 2026-08-27 — first sdlc-vs-tdd A/B: same prompt, two arms, cross-graded
+
+Same prompt (`prompts/11-tdd-smoke.md`, interval-naming helper), same pinned commit (`e8d658b`),
+two fresh VMs: `ab-simple-20260828-ba208d` ran `simple-sdlc` (control), `ab-tdd-20260828-ee031e`
+ran `tdd`. Both completed clean. VMs LEFT UP for inspection; teardown pending.
+
+| | control (simple-sdlc) | tdd |
+|---|---|---|
+| adw / phases | `426ca812` · 10/10 | `02320fc7` · 12/12 |
+| tokens / cost | 368,309 · $0.284 | 610,553 · $0.400 |
+| wall clock (agent phases) | ~2.4 min | ~4.8 min |
+| commits | 3 (plan/code/docs) | 4 (plan/red-suite/code/docs) |
+| tests it produced | 16 (builder-written, NEVER gate-run) | 9 (designer-written, red-gated pre-build) |
+
+Cross-grade (each arm's suite on the other's tree):
+- control suite → tdd tree: **16/16 pass**
+- tdd suite → control tree: **import error** — control never exported `INTERVAL_NAMES`, which the
+  TDD designer asserted on beyond the prompt's contract; with that one over-spec assertion
+  stripped, **9/9 pass (215 asserts)**. Both implementations are behaviorally equivalent on the
+  prompt's actual contract.
+
+What the run actually measured:
+1. The TDD premium on this prompt: +$0.12 (+41%), +2.4 min (+100%), for a mechanically-proven
+   suite. The control's builder DID write 16 good tests unprompted — but nothing gated them; they
+   passed by luck of a competent builder, not by proof. `test_1` in the control ran the fixed
+   suite only (0.1s) and could not see the feature at all — exactly the blind spot the plan named.
+2. Cross-grading works and is cheap (one file copy + `bun test`), but suites over-spec: the
+   designer asserted an export the prompt never asked for. A future judge needs to score against
+   `cases[].requirement` (the prompt's words), not raw pass/fail.
+3. One prompt is an anecdote, not a result. The interesting arm-separator will be a prompt where
+   the builder is likely to half-implement: multi-requirement features with edge cases (the
+   FTS5-style prompts), where the control's unseen gaps survive to review and the TDD arm's red
+   suite catches them mechanically.
