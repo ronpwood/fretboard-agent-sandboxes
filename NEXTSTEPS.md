@@ -562,3 +562,26 @@ default, which a sandbox should not).
 Version note for whoever picks this up: the bundled skill is validated against 0.7.1, the
 host runs 0.8.0, and the wait verbs MOVED (`herdr wait output` → `herdr pane wait-output`,
 `herdr wait agent-status` → `herdr agent wait`). Trust `--help`, not the skill.
+
+---
+
+# 2026-08-27 — app.manifest.yaml landed: `just app swap` is now a one-file edit
+
+`specs/payload-app-manifest.md` built to completion (commit `14dca2f`, plan status
+`complete`). The payload app's identity — dir, entry, test file, generated-tests dir, and
+the repo FILL clones — now lives in one root-level `app.manifest.yaml`. Consumers rewired:
+`quality.py` loads paths via `adws/adw_modules/manifest.py` (pydantic reader + `get` CLI),
+`fill.just` reads `source.repo` through the CLI, `observe.just` derives `APP_DIR` and log
+names from `app.name`/`app.dir`, `provision.sh` globs `apps/*/`. All five roster configs
+now protect the manifest (frontier had NO `protected_files` block at all — pre-existing
+gap, closed in passing). Verified live: run `manifest-e2e-20260828-dab2ab` — fill cloned
+`14dca2f` via the manifest URL, setup gate 5/5, torn down clean ($0.001 spend).
+
+Unblocked next, in order:
+- **`specs/tdd-red-gate-phase.md`** — the TDD phase consumes `app.test_file` and
+  `app.generated_tests_dir` from this manifest; it was waiting on this landing.
+- **Blank-repo bootstrap** (`source.repo: blank` → skeleton instead of clone) — the
+  from-scratch cold-start experiment is now a one-field change plus a small fill branch.
+- The swap checklist printed by `just app swap` dropped from six manual rewiring steps to
+  editing the manifest plus the honestly-per-stack items (quality command blocks,
+  `just/<name>.just`, observe's boot command).

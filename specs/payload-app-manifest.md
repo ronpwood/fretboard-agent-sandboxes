@@ -3,16 +3,20 @@ plan: payload-app-manifest
 created: 2026-08-27T18:58:46-07:00
 modified:
   - 2026-08-27T18:58:46-07:00
+  - 2026-08-27T19:41:05-07:00
 commits:
   - 6dd748c
+  - 14dca2f
 agents:
+  - claude-fable-5
   - claude-fable-5
 sessions:
   - cc-interactive-20260827
+  - cc-interactive-20260827-build
 back_refs: []
 forward_refs:
   - specs/tdd-red-gate-phase.md — the TDD phase consumes this manifest's `app.test_file` and `app.generated_tests_dir`
-status: ready
+status: complete
 ---
 
 # Plan: Payload App Manifest — de-hardcode the app's identity
@@ -123,84 +127,84 @@ against a proven interface.
 
 #### 1. Author `app.manifest.yaml`
 
-- [ ] Write `app.manifest.yaml` at repo root with the schema from Solution, values matching today's constants exactly (byte-for-byte the same paths `quality.py:47-49` and `fill.just:20` hold now)
+- [x] Write `app.manifest.yaml` at repo root with the schema from Solution, values matching today's constants exactly (byte-for-byte the same paths `quality.py:47-49` and `fill.just:20` hold now)
 
 #### 2. Author `adws/adw_modules/manifest.py`
 
-- [ ] Pydantic models (`AppSection`, `SourceSection`, `Manifest`) with no relative imports and a `# /// script` uv header (`pydantic`, `pyyaml`)
-- [ ] `load(repo_root: Path | None = None) -> Manifest` — walks up to find `app.manifest.yaml`; raises with a clear message if missing
-- [ ] `get <dotted.key>` CLI — prints the scalar and exits 0; unknown key or missing file exits 1 with the error on stderr (never prints an empty string on the happy path)
+- [x] Pydantic models (`AppSection`, `SourceSection`, `Manifest`) with no relative imports and a `# /// script` uv header (`pydantic`, `pyyaml`)
+- [x] `load(repo_root: Path | None = None) -> Manifest` — walks up to find `app.manifest.yaml`; raises with a clear message if missing
+- [x] `get <dotted.key>` CLI — prints the scalar and exits 0; unknown key or missing file exits 1 with the error on stderr (never prints an empty string on the happy path)
 
 #### Validation — Phase 1
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `uv run adws/adw_modules/manifest.py get app.dir` — prints `apps/fretboard`, exit 0
-- [ ] `uv run adws/adw_modules/manifest.py get source.repo` — prints the ronpwood fork URL, exit 0
-- [ ] `uv run adws/adw_modules/manifest.py get app.nope; echo "exit=$?"` — prints `exit=1`, error on stderr (typos fail loudly)
+- [x] `uv run adws/adw_modules/manifest.py get app.dir` — prints `apps/fretboard`, exit 0
+- [x] `uv run adws/adw_modules/manifest.py get source.repo` — prints the ronpwood fork URL, exit 0
+- [x] `uv run adws/adw_modules/manifest.py get app.nope; echo "exit=$?"` — prints `exit=1`, error on stderr (typos fail loudly)
 
 ### Phase 2: Rewire the Python consumer
 
 #### 1. `quality.py` reads the manifest
 
-- [ ] Replace the `APP_DIR`/`ENTRY`/`TEST_FILE` literals with values from `manifest.load()` (keep the same three module-level names so `lint`/`typecheck`/`build`/`tests` bodies stay diff-free)
-- [ ] Update the module docstring: "the only things that change on app swap" now points at `app.manifest.yaml`, not at this file
+- [x] Replace the `APP_DIR`/`ENTRY`/`TEST_FILE` literals with values from `manifest.load()` (keep the same three module-level names so `lint`/`typecheck`/`build`/`tests` bodies stay diff-free)
+- [x] Update the module docstring: "the only things that change on app swap" now points at `app.manifest.yaml`, not at this file
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `uv run adws/adw_quality.py "manifest rewire validation"` — the full deterministic quality chain (lint, typecheck, build, tests) passes through the manifest-driven paths; zero LLM agents involved (`REQUIRED_AGENTS` is empty in that script)
-- [ ] `grep -n "apps/fretboard" adws/adw_modules/quality.py` — zero hits; the file no longer knows the app's name
+- [x] `uv run adws/adw_quality.py "manifest rewire validation"` — the full deterministic quality chain (lint, typecheck, build, tests) passes through the manifest-driven paths; zero LLM agents involved (`REQUIRED_AGENTS` is empty in that script)
+- [x] `grep -n "apps/fretboard" adws/adw_modules/quality.py` — zero hits; the file no longer knows the app's name
 
 ### Phase 3: Rewire the host recipes
 
 #### 1. `fill.just` clone URL
 
-- [ ] Replace the `REPO=` literal with `REPO=$(uv run adws/adw_modules/manifest.py get source.repo)`; keep the "public repo, no auth" comment, now noting the value's source
-- [ ] Fail fast if the CLI call fails (`set -euo pipefail` already covers a non-zero exit; confirm the command substitution isn't in a context that swallows it)
+- [x] Replace the `REPO=` literal with `REPO=$(uv run adws/adw_modules/manifest.py get source.repo)`; keep the "public repo, no auth" comment, now noting the value's source
+- [x] Fail fast if the CLI call fails (`set -euo pipefail` already covers a non-zero exit; confirm the command substitution isn't in a context that swallows it)
 
 #### 2. `app.just` swap checklist
 
-- [ ] Rewrite the printed six-step checklist: step 2 becomes "edit `app.manifest.yaml` (dir/entry/test_file/repo)"; step 5's provision.sh mention drops (Phase 4 makes it generic); keep the honest per-stack items (quality command blocks, `just/<name>.just`, observe boot command)
+- [x] Rewrite the printed six-step checklist: step 2 becomes "edit `app.manifest.yaml` (dir/entry/test_file/repo)"; step 5's provision.sh mention drops (Phase 4 makes it generic); keep the honest per-stack items (quality command blocks, `just/<name>.just`, observe boot command)
 
 #### 3. Protect the manifest
 
-- [ ] Add `app.manifest.yaml` to `defaults.protected_files` in `adws/adw_sssf_config/sssf.config.yaml` — and mirror into the other four roster configs (`sssf.frontier`, `sssf.deepestseek`, `sssf.open-weights`, `sssf.top-speed`), which share the same defaults block
+- [x] Add `app.manifest.yaml` to `defaults.protected_files` in `adws/adw_sssf_config/sssf.config.yaml` — and mirror into the other four roster configs (`sssf.frontier`, `sssf.deepestseek`, `sssf.open-weights`, `sssf.top-speed`), which share the same defaults block — deviation: `sssf.frontier` had NO `protected_files` key at all; the full four-entry block was added there rather than appending to an existing one
 
 #### Validation — Phase 3
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `grep -n "github.com" just/sandbox/lifecycle/fill.just` — zero hardcoded URL hits
-- [ ] `grep -c "app.manifest.yaml" adws/adw_sssf_config/*.yaml` — all five roster files protect the manifest
-- [ ] `just app` — recipe list still renders (no just syntax breakage from the edits)
+- [x] `grep -n "github.com" just/sandbox/lifecycle/fill.just` — zero hardcoded URL hits
+- [x] `grep -c "app.manifest.yaml" adws/adw_sssf_config/*.yaml` — all five roster files protect the manifest
+- [x] `just app` — recipe list still renders (no just syntax breakage from the edits)
 
 ### Phase 4: Sandbox guest layer and end-to-end proof
 
 #### 1. `observe.just`
 
-- [ ] Derive `APP_DIR` from `uv run adws/adw_modules/manifest.py get app.dir` (observe runs on the host, so the host checkout's manifest is authoritative); name log files from `app.name` instead of `fretboard`
-- [ ] Leave the `bun index.html` boot command as-is with a comment marking it per-app (same rationale as quality.py's command blocks)
+- [x] Derive `APP_DIR` from `uv run adws/adw_modules/manifest.py get app.dir` (observe runs on the host, so the host checkout's manifest is authoritative); name log files from `app.name` instead of `fretboard`
+- [x] Leave the `bun index.html` boot command as-is with a comment marking it per-app (same rationale as quality.py's command blocks)
 
 #### 2. `provision.sh`
 
-- [ ] Change the bun-install loop from `for dir in apps/fretboard ...` to glob `apps/*/` — guest-side needs no manifest read; `apps/` holds exactly one payload by convention (enforced by `just app swap`'s archive-first behavior)
+- [x] Change the bun-install loop from `for dir in apps/fretboard ...` to glob `apps/*/` — guest-side needs no manifest read; `apps/` holds exactly one payload by convention (enforced by `just app swap`'s archive-first behavior)
 
 #### Validation — Phase 4
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `grep -rn "apps/fretboard" adws/ just/ sandbox_mount/` — zero hits outside comments; the factory and sandbox layers no longer name the app (`just/fretboard.just` at the repo root is the app's own module and is exempt)
-- [ ] `bash -n sandbox_mount/guest/provision.sh` — provision still parses
-- [ ] One live sandbox run — `just sbx lifecycle create/fill/setup` against a fresh VM, confirming fill clones from the manifest URL and provision's glob loop installs the app (mark `fail` with reason if credits/VM access block this; do not silently skip)
+- [x] `grep -rn "apps/fretboard" adws/ just/ sandbox_mount/` — zero hits outside comments; the factory and sandbox layers no longer name the app (`just/fretboard.just` at the repo root is the app's own module and is exempt)
+- [x] `bash -n sandbox_mount/guest/provision.sh` — provision still parses
+- [x] One live sandbox run — `just sbx lifecycle create/fill/setup` against a fresh VM, confirming fill clones from the manifest URL and provision's glob loop installs the app (mark `fail` with reason if credits/VM access block this; do not silently skip) — run `manifest-e2e-20260828-dab2ab`: fill cloned HEAD `14dca2f` via the manifest URL, setup gate passed 5/5; the glob loop enumerated `apps/fretboard/` and correctly *skipped* install because the app has no `package.json` (zero-dep Bun HTML entry — the old hardcoded loop skipped for the same reason); visualizer installed; VM torn down clean ($0.001 spend, key revoked)
 
 ## Global Validation
 
-- [ ] `uv run adws/adw_quality.py "post-manifest full check"` — the deterministic quality chain is green end-to-end
-- [ ] `bun test apps/fretboard/fretboard.test.ts` — the fixed suite passes, run exactly as `quality.py` will run it
-- [ ] `uv run adws/adw_modules/manifest.py get app.test_file` — prints the path the suite above just ran (reader and reality agree)
-- [ ] `git log --oneline -3` — work is committed with the plan/build/docs discipline the repo uses
+- [x] `uv run adws/adw_quality.py "post-manifest full check"` — the deterministic quality chain is green end-to-end (adw 2f65538f, 4/4 checks)
+- [x] `bun test apps/fretboard/fretboard.test.ts` — the fixed suite passes, run exactly as `quality.py` will run it (287 pass, 0 fail)
+- [x] `uv run adws/adw_modules/manifest.py get app.test_file` — prints the path the suite above just ran (reader and reality agree)
+- [x] `git log --oneline -3` — work is committed with the plan/build/docs discipline the repo uses (`14dca2f`)
 
 ## Notes
 
@@ -243,4 +247,24 @@ run record at create time — noted, not planned.
 <summary>— no amendments yet</summary>
 
 Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+</details>
+
+<details>
+<summary>2026-08-27T19:41:05-07:00 — frontier config had no protected_files block; live run's "install" was a correct skip</summary>
+
+Two contacts with reality during the build (commit `14dca2f`):
+
+1. The plan assumed all five roster configs "share the same defaults block."
+   `sssf.frontier.config.yaml` had **no `protected_files` key at all** — the other
+   four had the three-entry block. Fix: the frontier config gained the full
+   four-entry block (the three standard protections plus `app.manifest.yaml`)
+   rather than an appended line. This also closes a pre-existing gap: frontier
+   builders previously had no protected-files guard whatsoever.
+
+2. Phase 4's live-run box says "provision's glob loop installs the app." The
+   fretboard app has no `package.json` (zero-dependency Bun HTML entry), so the
+   glob loop found `apps/fretboard/` and correctly took the skip branch — same
+   behavior as the old hardcoded loop. The check's real target (the loop
+   enumerates `apps/*/` generically and the mount still gates healthy) passed:
+   run `manifest-e2e-20260828-dab2ab`, gate 5/5, torn down clean.
 </details>
