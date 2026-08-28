@@ -585,3 +585,35 @@ Unblocked next, in order:
 - The swap checklist printed by `just app swap` dropped from six manual rewiring steps to
   editing the manifest plus the honestly-per-stack items (quality command blocks,
   `just/<name>.just`, observe's boot command).
+
+---
+
+# 2026-08-27 — TDD red gate landed: the factory now writes its tests before its code
+
+`specs/tdd-red-gate-phase.md` built to completion. New `adw_tdd_sdlc.py` beside the untouched
+`adw_simple_sdlc.py` control group: planner → **test_designer** (gated by `gates.tests_red`) →
+commit_tests → builder → test(fixed + generated) → reviewer → documenter. The red gate proves a
+generated suite is non-vacuous the only mechanically checkable way — it must FAIL on the
+pre-build tree (containment / oxlint-parses / RED / fixed-suite-untouched, self-tested in all
+three directions before any agent depended on it).
+
+Smoke-tested end to end in a sandbox (`just sbx lifecycle execute <id> prompts/11-tdd-smoke.md
+'' tdd`, run `tdd-smoke-20260828-fd7307`, adw `808d1837`): 12/12 phases, $0.25, ~2.5 min. Four
+commits, four authors — plan `9ff2027`, red suite `3aeb2c0`, code `e7ba9f5`, docs `ecef68b` —
+harvested to `.sandbox/runs/tdd-smoke-20260828-fd7307.bundle` (all four work products present;
+the 2026-08-15 dropped-code failure did not recur). The trace holds the pre-build RED evidence.
+The harvested interval-helper feature is in the bundle, deliberately NOT merged to main — merge
+is the operator's call.
+
+Gotchas found and recorded in the plan's amendments:
+- `permissions.py` glob semantics: a `writes` pattern with both `*` and a trailing `/` never
+  matches (prefix branch wins) — `test_designer` uses `apps/*/tests/generated/**`.
+- **Host-local agent ADWs are broken**: pi 0.84.3 does not resolve models.json's
+  `env:OPENROUTER_API_KEY` placeholder (401 on a bare `pi -p`). VMs work because provision.sh
+  bakes the literal key. The host now has `~/.pi/agent/models.json` from the template,
+  placeholder intact; bake a key in (or fix pi's env resolution) before running agent ADWs
+  locally.
+
+Next up: the A/B experiment this exists for — same prompt through `sdlc` vs `tdd` across the
+five-roster fan-out, and the best-of-N cross-grading matrix (`cases[].requirement` is already
+in the envelope for it).

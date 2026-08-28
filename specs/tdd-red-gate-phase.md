@@ -3,16 +3,20 @@ plan: tdd-red-gate-phase
 created: 2026-08-27T18:58:46-07:00
 modified:
   - 2026-08-27T18:58:46-07:00
+  - 2026-08-27T20:03:50-07:00
 commits:
   - 6dd748c
+  - 29687d0
 agents:
+  - claude-fable-5
   - claude-fable-5
 sessions:
   - cc-interactive-20260827
+  - cc-interactive-20260827-build
 back_refs:
   - specs/payload-app-manifest.md — consumes `app.test_file` and `app.generated_tests_dir`; build that plan first
 forward_refs: []
-status: building
+status: complete
 ---
 
 # Plan: Spec-to-Test Phase with a Red Gate
@@ -218,27 +222,27 @@ smoke under the detector — before any agent depends on it.
 
 #### 1. Author the smoke prompt
 
-- [ ] Write `prompts/11-tdd-smoke.md`: one small, genuinely new fretboard behavior (something the current suite cannot already cover — e.g. a small theory helper with crisp input/output semantics), phrased like the existing numbered prompts
+- [x] Write `prompts/11-tdd-smoke.md`: one small, genuinely new fretboard behavior (something the current suite cannot already cover — e.g. a small theory helper with crisp input/output semantics), phrased like the existing numbered prompts — an interval-naming helper (`intervals.ts`: `intervalSemitones`/`intervalName`/`intervalBetween`)
 
 #### 2. Run it
 
-- [ ] `uv run adws/adw_tdd_sdlc.py prompts/11-tdd-smoke.md` locally, end to end
-- [ ] Inspect the trace: the red gate ran and recorded a genuine RED before the build; the same generated file is green in the final test phase
+- [x] `uv run adws/adw_tdd_sdlc.py prompts/11-tdd-smoke.md` locally, end to end — ran in a SANDBOX instead of on the host (deviation, see Amendments): the host's pi 0.84.3 does not resolve the registry's `env:OPENROUTER_API_KEY` placeholder (401 reproduced outside the ADW) and baking the key locally was blocked; the sandbox path (`just sbx lifecycle execute <id> prompts/11-tdd-smoke.md '' tdd`) provisions credentials itself and additionally proves the execute→`adw tdd` integration. Run `tdd-smoke-20260828-fd7307`, adw `808d1837`: 12/12 phases, $0.25, 399k tokens
+- [x] Inspect the trace: the red gate ran and recorded a genuine RED before the build (bun test exit 1, import-shaped — evidence in the gate report); the same generated file is green in the final test phase (7 pass / 0 fail on the final tree)
 
 #### Validation — Phase 5
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `git log --oneline -6` — four run commits in order: plan, tests, code, docs, each in its author-agent's words
-- [ ] The generated `<adw_id>.test.ts` is on the branch, under `tests/generated/`, and `bun test <that file>` passes on the final tree
-- [ ] `bun test apps/fretboard/fretboard.test.ts` — the fixed suite is untouched and green
-- [ ] The trace's `tests_red` gate report shows the pre-build failure evidence (the smoke that proved the detector)
+- [x] `git log --oneline -6` — four run commits in order: plan, tests, code, docs, each in its author-agent's words (`9ff2027` plan → `3aeb2c0` red suite → `e7ba9f5` code → `ecef68b` docs; harvested to `refs/sandbox/tdd-smoke-20260828-fd7307` and `.sandbox/runs/tdd-smoke-20260828-fd7307.bundle`, all four work products present in the diff)
+- [x] The generated `<adw_id>.test.ts` is on the branch, under `tests/generated/`, and `bun test <that file>` passes on the final tree (`apps/fretboard/tests/generated/808d1837.test.ts`, 7 pass / 0 fail, 53 expect() calls)
+- [x] `bun test apps/fretboard/fretboard.test.ts` — the fixed suite is untouched and green (287 pass / 0 fail on the VM's final tree)
+- [x] The trace's `tests_red` gate report shows the pre-build failure evidence (the smoke that proved the detector) — containment ok (3.4KB), oxlint exit 0, RED `bun test exit 1`, fixed suite clean
 
 ## Global Validation
 
-- [ ] `uv run adws/adw_quality.py "post-tdd regression check"` — the deterministic chain is green
-- [ ] `uv run adws/adw_simple_sdlc.py --help` — the control-group chain is untouched and intact
-- [ ] Both specs' checkboxes reconciled and this plan's frontmatter synced
+- [x] `uv run adws/adw_quality.py "post-tdd regression check"` — the deterministic chain is green (adw 81a6a9c8)
+- [x] `uv run adws/adw_simple_sdlc.py --help` — the control-group chain is untouched and intact (zero-line diff against pre-build)
+- [x] Both specs' checkboxes reconciled and this plan's frontmatter synced
 
 ## Notes
 
@@ -291,4 +295,34 @@ is the only integration point; create/fill/setup/observe/harvest are untouched.
 <summary>— no amendments yet</summary>
 
 Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+</details>
+
+<details>
+<summary>2026-08-27T20:03:50-07:00 — writes glob corrected; smoke ran in a sandbox, not on the host</summary>
+
+Three departures from the plan as written (build commit `29687d0`):
+
+1. **The `writes` pattern.** The plan's `apps/*/tests/generated/` would never match:
+   `permissions._matches` checks the trailing-`/` prefix branch BEFORE the glob branch, so a
+   pattern holding both `*` and a trailing `/` string-prefix-matches a literal star. Shipped as
+   `apps/*/tests/generated/**` and verified against the loaded config (6/6 `permitted()` cases).
+
+2. **The smoke ran in a sandbox, not locally.** The host's pi 0.84.3 returns
+   `401: Missing Authentication header` through openrouter even with `OPENROUTER_API_KEY`
+   exported — the models.json `apiKey: "env:OPENROUTER_API_KEY"` placeholder does not resolve
+   (reproduced with a bare `pi -p` outside the ADW). On VMs provision.sh sidesteps this by baking
+   the literal key into the registry; doing the same on the host was blocked as a
+   credential-handling action for the operator to decide. The sandbox path
+   (`just sbx lifecycle execute <id> prompts/11-tdd-smoke.md '' tdd`) needed no host credentials
+   and additionally proved the `execute → adw tdd` integration the plan only claimed by
+   inspection. Host-local runs of any agent ADW remain broken until the registry gets a real key
+   (or pi's env resolution is fixed) — `~/.pi/agent/models.json` now exists on the host with the
+   `env:` placeholder, installed from `sandbox_mount/guest/models.json.tmpl`.
+
+3. **`extra_files` default.** Declared as `list[str] | None = None` rather than the plan's
+   literal `= []` (mutable default); call sites and behavior identical.
+
+Smoke run economics, for the A/B record: adw `808d1837`, 12/12 phases, 399,410 tokens, $0.2523,
+~2.5 min wall clock. The red gate caught nothing on this run (the designer's suite was properly
+red on the first try); its value on this run was the recorded evidence trail.
 </details>
