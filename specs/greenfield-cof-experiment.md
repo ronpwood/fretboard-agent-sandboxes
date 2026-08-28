@@ -116,11 +116,11 @@ judgment items scored in the live apps via Playwright. Screenshots in
 | 8 | Interaction | 1 | 0 | 2 |
 | 9 | Test quality | 2 | 1 | 2 |
 | 10 | Delivery | 2 | 0 | 2 |
-| | **Total /20** | **13** | **9** | **19** |
+| | **Total /20** | **15** | **9** | **19** |
 
 Per-arm notes:
 
-- **gf-1 (13)** — engine flawless; UI is a wireframe of its cathedral plan. The "wheel"
+- **gf-1 (15)** — engine flawless; UI is a wireframe of its cathedral plan. The "wheel"
   is a wrapping row of 24 flat circles; chord "diagrams" are raw fret-number strings;
   key signatures computed but never displayed; the diatonic chord panel does not
   re-render on key change (verified: wheel and fretboard updated to G, chords stayed C).
