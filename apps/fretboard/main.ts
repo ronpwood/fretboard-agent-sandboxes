@@ -7,13 +7,22 @@ import {
   pitchClass,
   type Triad,
 } from "./theory.ts";
-import { pitchAtFret, frequencyAtFret, type Fingering } from "./fretboard.ts";
+import { pitchAtFret, type Fingering } from "./fretboard.ts";
 import { findVoicings } from "./voicing.ts";
 import {
   layoutTriadOnStringSet,
   STRING_SETS,
   type Inversion,
+  type TriadPosition,
 } from "./triad-layout.ts";
+import {
+  notesForVoicing,
+  notesForPositions,
+  soundedNote,
+  noteEnvelope,
+  gainForVoiceCount,
+  type SoundedNote,
+} from "./playback.ts";
 import {
   clampVoicingIndex,
   stepVoicingIndex,
@@ -21,6 +30,26 @@ import {
   voicingPositionLabel,
 } from "./voicing-browser.ts";
 import { DEFAULT_VIEW, panelVisibility, type ViewMode } from "./view-mode.ts";
+import {
+  STORAGE_KEY,
+  DEFAULT_PERSISTED_STATE,
+  serializeState,
+  parseState,
+  resolveDegreeIndex,
+  type PersistedState,
+} from "./persisted-state.ts";
+import {
+  WHEEL_SEGMENTS,
+  WHEEL_GEOMETRY,
+  selectionForKey,
+  keyForSelection,
+  relativeSelection,
+  neighborIndices,
+  wedgePath,
+  labelPoint,
+  ringLabel,
+  type WheelRing,
+} from "./circle-wheel.ts";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -35,14 +64,70 @@ type State = {
 };
 
 const state: State = {
-  tonicPc: pitchClass("C"),
-  mode: "major",
+  tonicPc: DEFAULT_PERSISTED_STATE.tonicPc,
+  mode: DEFAULT_PERSISTED_STATE.mode,
   selected: null,
-  voicingIndex: 0,
-  inversion: "root",
-  stringSetIndex: 2,
-  view: DEFAULT_VIEW,
+  voicingIndex: DEFAULT_PERSISTED_STATE.voicingIndex,
+  inversion: DEFAULT_PERSISTED_STATE.inversion,
+  stringSetIndex: DEFAULT_PERSISTED_STATE.stringSetIndex,
+  view: DEFAULT_PERSISTED_STATE.view,
 };
+
+// --- Persistence -----------------------------------------------------------
+
+function readStoredState(): string | null {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    // Private browsing / disabled storage: property access itself can throw.
+    return null;
+  }
+}
+
+function writeStoredState(json: string): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, json);
+  } catch {
+    // Quota exceeded or storage unavailable — persistence is best-effort.
+  }
+}
+
+function currentPersistedState(): PersistedState {
+  const triads = currentTriads();
+  const degreeIndex = state.selected
+    ? Math.max(0, triads.findIndex((t) => t.degree === state.selected!.degree))
+    : 0;
+  return {
+    tonicPc: state.tonicPc,
+    mode: state.mode,
+    degreeIndex,
+    view: state.view,
+    voicingIndex: state.voicingIndex,
+    inversion: state.inversion,
+    stringSetIndex: state.stringSetIndex,
+  };
+}
+
+function saveState() {
+  writeStoredState(serializeState(currentPersistedState()));
+}
+
+function restoreState() {
+  const stored = parseState(readStoredState());
+
+  state.tonicPc = stored.tonicPc;
+  state.mode = stored.mode;
+  state.view = stored.view;
+  state.inversion = stored.inversion;
+  state.stringSetIndex = stored.stringSetIndex;
+
+  const triads = currentTriads();
+  const degreeIndex = resolveDegreeIndex(stored.degreeIndex, triads.length);
+  state.selected = degreeIndex === null ? null : triads[degreeIndex];
+
+  // A voicing index from a previous chord may not exist for this one.
+  state.voicingIndex = clampVoicingIndex(stored.voicingIndex, currentVoicings().length);
+}
 
 // Cache DOM references once.
 const keySelect = document.getElementById("key-select") as HTMLSelectElement;
@@ -58,11 +143,100 @@ const inversionSelect = document.getElementById("inversion-select") as HTMLSelec
 const stringSetSelect = document.getElementById("string-set-select") as HTMLSelectElement;
 const triadDiagramSvg = document.getElementById("triad-diagram") as unknown as SVGSVGElement;
 const triadCaptionEl = document.getElementById("triad-caption") as HTMLParagraphElement;
-const triadPlayBtn = document.getElementById("triad-play") as HTMLButtonElement;
 const viewChordBtn = document.getElementById("view-chord") as HTMLButtonElement;
 const viewTriadBtn = document.getElementById("view-triad") as HTMLButtonElement;
 const chordPanel = document.getElementById("chord-panel") as HTMLDivElement;
 const triadPanel = document.getElementById("triad-panel") as HTMLDivElement;
+const wheelSvg = document.getElementById("circle-wheel") as unknown as SVGSVGElement;
+const wheelCaptionEl = document.getElementById("wheel-caption") as HTMLParagraphElement;
+const chordPlayBtn = document.getElementById("chord-play") as HTMLButtonElement;
+const triadPlayBtn = document.getElementById("triad-play") as HTMLButtonElement;
+
+// --- Web Audio ------------------------------------------------------------
+// Created lazily on the first user gesture so autoplay policy never blocks us.
+
+type Voice = { osc: OscillatorNode; gain: GainNode };
+
+let audioCtx: AudioContext | null = null;
+let activeVoices: Voice[] = [];
+
+function ensureAudio(): AudioContext {
+  if (!audioCtx) {
+    const Ctor = window.AudioContext ?? (window as any).webkitAudioContext;
+    audioCtx = new Ctor();
+  }
+  if (audioCtx.state === "suspended") void audioCtx.resume();
+  return audioCtx;
+}
+
+const FAST_RELEASE = 0.04;
+
+function stopAllVoices(ctx: AudioContext) {
+  const now = ctx.currentTime;
+  for (const { osc, gain } of activeVoices) {
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, now + FAST_RELEASE);
+    try {
+      osc.stop(now + FAST_RELEASE);
+    } catch {
+      // Already stopped; ignore.
+    }
+  }
+  activeVoices = [];
+}
+
+function playNotes(notes: readonly SoundedNote[]) {
+  if (notes.length === 0) return;
+  const ctx = ensureAudio();
+  stopAllVoices(ctx);
+
+  const start = ctx.currentTime + 0.02;
+  const peak = gainForVoiceCount(notes.length);
+
+  for (const note of notes) {
+    const env = noteEnvelope(start + note.offset, peak);
+
+    const osc = ctx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(note.frequency, env.startAt);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, env.startAt);
+    gain.gain.linearRampToValueAtTime(env.peakGain, env.peakAt);
+    gain.gain.linearRampToValueAtTime(env.sustainGain, env.sustainAt);
+    gain.gain.setValueAtTime(env.sustainGain, env.releaseAt);
+    gain.gain.linearRampToValueAtTime(0, env.stopAt);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(env.startAt);
+    osc.stop(env.stopAt);
+
+    const voice: Voice = { osc, gain };
+    osc.onended = () => {
+      activeVoices = activeVoices.filter((v) => v !== voice);
+      gain.disconnect();
+    };
+    activeVoices.push(voice);
+  }
+}
+
+function makePlayable(node: SVGElement, label: string, notes: readonly SoundedNote[]) {
+  node.classList.add("note-marker");
+  node.setAttribute("role", "button");
+  node.setAttribute("tabindex", "0");
+  node.setAttribute("aria-label", label);
+  node.addEventListener("click", () => playNotes(notes));
+  node.addEventListener("keydown", (event) => {
+    const e = event as KeyboardEvent;
+    if (e.key === "Enter" || e.key === " ") {
+      if (e.key === " ") e.preventDefault();
+      playNotes(notes);
+    }
+  });
+}
 
 const STRING_SET_LABELS = ["E–A–D", "A–D–G", "D–G–B", "G–B–E"];
 
@@ -135,6 +309,21 @@ function currentVoicings(): Fingering[] {
   return findVoicings(state.selected.notes, state.selected.root);
 }
 
+function currentVoicing(): Fingering | null {
+  const voicings = currentVoicings();
+  return voicingAt(voicings, state.voicingIndex);
+}
+
+function currentTriadLayout(): TriadPosition | null {
+  if (!state.selected) return null;
+  return layoutTriadOnStringSet(
+    state.selected.root,
+    state.selected.quality,
+    state.inversion,
+    STRING_SETS[state.stringSetIndex]
+  );
+}
+
 function renderVoicingControls(index: number, count: number) {
   voicingPositionEl.textContent = voicingPositionLabel(index, count);
   voicingPrevBtn.disabled = count <= 1 || index <= 0;
@@ -150,13 +339,14 @@ function renderChordDiagram() {
     );
     chordCaptionEl.textContent = "";
     renderVoicingControls(0, 0);
+    chordPlayBtn.disabled = true;
     return;
   }
 
   const chord = state.selected;
   const voicings = currentVoicings();
   state.voicingIndex = clampVoicingIndex(state.voicingIndex, voicings.length);
-  const voicing = voicingAt(voicings, state.voicingIndex);
+  const voicing = currentVoicing();
   renderVoicingControls(state.voicingIndex, voicings.length);
 
   if (!voicing) {
@@ -164,8 +354,11 @@ function renderChordDiagram() {
       textNode(15, 130, "No fingering found in this position.", { fill: "#ff8080", "font-size": 12 })
     );
     chordCaptionEl.textContent = `${noteName(chord.root)} ${qualityLabel(chord.quality)}: no voicing found.`;
+    chordPlayBtn.disabled = true;
     return;
   }
+
+  chordPlayBtn.disabled = false;
 
   const marginLeft = 30;
   const marginTop = 30;
@@ -231,9 +424,10 @@ function renderChordDiagram() {
     }
 
     if (fret === 0) {
-      chordDiagramSvg.appendChild(
-        textNode(x, marginTop - 12, "\u25cb", { fill: "#9aa1b5", "font-size": 12, "text-anchor": "middle" })
-      );
+      const openText = textNode(x, marginTop - 12, "\u25cb", { fill: "#9aa1b5", "font-size": 12, "text-anchor": "middle" });
+      const openPc = pitchAtFret(s, fret);
+      makePlayable(openText, `Play ${noteName(openPc)}, string ${6 - s} fret 0`, [soundedNote(s, fret)]);
+      chordDiagramSvg.appendChild(openText);
       continue;
     }
 
@@ -242,16 +436,16 @@ function renderChordDiagram() {
     const pc = pitchAtFret(s, fret);
     const isRoot = pc === chord.root;
 
-    chordDiagramSvg.appendChild(
-      el("circle", {
-        cx: x,
-        cy: y,
-        r: 9,
-        fill: isRoot ? "#ffb454" : "#7cc4ff",
-        stroke: isRoot ? "#fff" : "none",
-        "stroke-width": isRoot ? 2 : 0,
-      })
-    );
+    const circle = el("circle", {
+      cx: x,
+      cy: y,
+      r: 9,
+      fill: isRoot ? "#ffb454" : "#7cc4ff",
+      stroke: isRoot ? "#fff" : "none",
+      "stroke-width": isRoot ? 2 : 0,
+    });
+    makePlayable(circle, `Play ${noteName(pc)}, string ${6 - s} fret ${fret}`, [soundedNote(s, fret)]);
+    chordDiagramSvg.appendChild(circle);
   }
 
   const grid = voicing.map((f) => (f === null ? "x" : String(f))).join(" ");
@@ -275,8 +469,7 @@ function renderTriadDiagram() {
   }
 
   const chord = state.selected;
-  const stringSet = STRING_SETS[state.stringSetIndex];
-  const layout = layoutTriadOnStringSet(chord.root, chord.quality, state.inversion, stringSet);
+  const layout = currentTriadLayout();
 
   if (!layout) {
     triadDiagramSvg.appendChild(
@@ -334,22 +527,25 @@ function renderTriadDiagram() {
     const x = xForFret(pos.fret);
     const pc = pitchAtFret(pos.string, pos.fret);
 
-    triadDiagramSvg.appendChild(
-      el("circle", {
-        cx: x,
-        cy: y,
-        r: 12,
-        fill: roleColor[pos.role],
-      })
-    );
-    triadDiagramSvg.appendChild(
-      textNode(x, y + 4, `${noteName(pc)}`, {
-        fill: "#12131a",
-        "font-size": 11,
-        "text-anchor": "middle",
-        "font-weight": "600",
-      })
-    );
+    const circle = el("circle", {
+      cx: x,
+      cy: y,
+      r: 12,
+      fill: roleColor[pos.role],
+    });
+    const nameText = textNode(x, y + 4, `${noteName(pc)}`, {
+      fill: "#12131a",
+      "font-size": 11,
+      "text-anchor": "middle",
+      "font-weight": "600",
+    });
+
+    const group = el("g");
+    group.appendChild(circle);
+    group.appendChild(nameText);
+    makePlayable(group, `Play ${noteName(pc)}, ${pos.role}, fret ${pos.fret}`, [soundedNote(pos.string, pos.fret)]);
+    triadDiagramSvg.appendChild(group);
+
     triadDiagramSvg.appendChild(
       textNode(x, y + 24, `fret ${pos.fret}`, {
         fill: "#9aa1b5",
@@ -370,11 +566,87 @@ function renderView() {
   viewTriadBtn.setAttribute("aria-pressed", String(visible.triad));
 }
 
+function syncKeyControls() {
+  keySelect.value = String(state.tonicPc);
+  modeMajorBtn.setAttribute("aria-pressed", String(state.mode === "major"));
+  modeMinorBtn.setAttribute("aria-pressed", String(state.mode === "minor"));
+}
+
+function applyKey(tonicPc: number, mode: "major" | "minor") {
+  state.tonicPc = ((tonicPc % 12) + 12) % 12;
+  state.mode = mode;
+  state.voicingIndex = 0;
+  state.selected = diatonicTriads(state.tonicPc, state.mode)[0] ?? null;
+  render();
+}
+
+function renderWheel() {
+  wheelSvg.replaceChildren();
+
+  const selection = selectionForKey(state.tonicPc, state.mode);
+  const related = relativeSelection(selection);
+  const { previous, next } = neighborIndices(selection.index);
+
+  for (const segment of WHEEL_SEGMENTS) {
+    for (const ring of ["major", "minor"] as const) {
+      const isSelected = segment.index === selection.index && ring === selection.ring;
+      const isRelated = segment.index === related.index && ring === related.ring;
+      const isNeighbor = segment.index === previous || segment.index === next;
+
+      const classes = ["wheel-wedge"];
+      if (isSelected) classes.push("is-selected");
+      if (isRelated) classes.push("is-related");
+      if (isNeighbor) classes.push("is-neighbor");
+
+      const path = el("path", {
+        d: wedgePath(segment.index, ring),
+        class: classes.join(" "),
+        role: "button",
+        tabindex: 0,
+        "aria-label": ringLabel(segment.index, ring),
+        "aria-pressed": String(isSelected),
+      });
+
+      const activate = () => {
+        const { tonicPc, mode } = keyForSelection({ index: segment.index, ring });
+        applyKey(tonicPc, mode);
+      };
+
+      path.addEventListener("click", activate);
+      path.addEventListener("keydown", (event) => {
+        const keyboardEvent = event as KeyboardEvent;
+        if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+          if (keyboardEvent.key === " ") keyboardEvent.preventDefault();
+          activate();
+        }
+      });
+
+      wheelSvg.appendChild(path);
+
+      const point = labelPoint(segment.index, ring);
+      const labelClasses = ["wheel-label"];
+      if (ring === "minor") labelClasses.push("minor");
+      if (isSelected) labelClasses.push("on-selected");
+      const labelText = ring === "major" ? segment.majorName : `${segment.minorName}m`;
+      wheelSvg.appendChild(
+        textNode(point.x, point.y + 4, labelText, { class: labelClasses.join(" ") })
+      );
+    }
+  }
+
+  const relativeKey = keyForSelection(related);
+  wheelCaptionEl.textContent =
+    `${noteName(state.tonicPc)} ${state.mode} \u2014 relative ${state.mode === "major" ? "minor" : "major"}: ${noteName(relativeKey.tonicPc)}`;
+}
+
 function render() {
   renderView();
+  syncKeyControls();
+  renderWheel();
   renderChordList();
   renderChordDiagram();
   renderTriadDiagram();
+  saveState();
 }
 
 function stepVoicing(delta: number) {
@@ -396,34 +668,19 @@ function attachListeners() {
   viewTriadBtn.addEventListener("click", () => setView("triad"));
 
   keySelect.addEventListener("change", () => {
-    state.tonicPc = Number(keySelect.value);
-    state.selected = null;
-    state.voicingIndex = 0;
-    render();
+    applyKey(Number(keySelect.value), state.mode);
   });
 
   modeMajorBtn.addEventListener("click", () => {
-    state.mode = "major";
-    state.selected = null;
-    state.voicingIndex = 0;
-    modeMajorBtn.setAttribute("aria-pressed", "true");
-    modeMinorBtn.setAttribute("aria-pressed", "false");
-    render();
+    applyKey(state.tonicPc, "major");
   });
 
   modeMinorBtn.addEventListener("click", () => {
-    state.mode = "minor";
-    state.selected = null;
-    state.voicingIndex = 0;
-    modeMajorBtn.setAttribute("aria-pressed", "false");
-    modeMinorBtn.setAttribute("aria-pressed", "true");
-    render();
+    applyKey(state.tonicPc, "minor");
   });
 
   voicingPrevBtn.addEventListener("click", () => stepVoicing(-1));
   voicingNextBtn.addEventListener("click", () => stepVoicing(1));
-
-  triadPlayBtn.addEventListener("click", () => playTriad());
 
   inversionSelect.addEventListener("change", () => {
     state.inversion = inversionSelect.value as Inversion;
@@ -434,107 +691,24 @@ function attachListeners() {
     state.stringSetIndex = Number(stringSetSelect.value);
     render();
   });
-}
 
-let audioCtx: AudioContext | null = null;
+  chordPlayBtn.addEventListener("click", () => {
+    const voicing = currentVoicing();
+    if (voicing) playNotes(notesForVoicing(voicing));
+  });
 
-function getAudioContext(): AudioContext | null {
-  // Safari has a WebKit-only "interrupted" AudioContextState (outside the
-  // suspended/running/closed spec) that resume() often cannot recover from,
-  // so a context left interrupted (e.g. by an audio route/focus change) is
-  // discarded and replaced rather than reused.
-  const state = audioCtx?.state as string | undefined;
-  if (audioCtx && state !== "closed" && state !== "interrupted") return audioCtx;
-
-  if (audioCtx) {
-    audioCtx.close().catch(() => {});
-  }
-
-  const Ctor =
-    window.AudioContext ??
-    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
-
-  audioCtx = new Ctor();
-  return audioCtx;
-}
-
-function unlockAudioContext(ctx: AudioContext): void {
-  const buffer = ctx.createBuffer(1, 1, 22050);
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.connect(ctx.destination);
-  source.start(0);
-  source.stop(0.01);
-}
-
-// Play the current triad layout as a short ascending arpeggio. Each note gets
-// a brief attack/decay envelope so it does not click on/off.
-async function playTriad() {
-  if (!state.selected) return;
-  const stringSet = STRING_SETS[state.stringSetIndex];
-  const layout = layoutTriadOnStringSet(
-    state.selected.root,
-    state.selected.quality,
-    state.inversion,
-    stringSet
-  );
-  if (!layout) return;
-
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  unlockAudioContext(ctx);
-  if (ctx.state !== "running") {
-    try {
-      await ctx.resume();
-    } catch {
-      return;
-    }
-  }
-
-  // Schedule notes only once the context is confirmed running. Safari
-  // freezes currentTime while suspended, so scheduling against it before
-  // resume() resolves causes the start times to already be in the past by
-  // the time playback actually begins, and Safari drops them silently.
-  const now = ctx.currentTime;
-  const noteDur = 0.4;
-  const gap = 0.15;
-  const attack = 0.02;
-
-  const masterGain = ctx.createGain();
-  masterGain.gain.value = 0.6;
-  masterGain.connect(ctx.destination);
-
-  // layout[0] is the lowest string of the set; play low-to-high.
-  layout.forEach((pos, i) => {
-    const freq = frequencyAtFret(pos.string, pos.fret);
-    const t0 = now + i * (noteDur + gap);
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(0.4, t0 + attack);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + noteDur);
-
-    osc.connect(gain);
-    gain.connect(masterGain);
-    osc.start(t0);
-    osc.stop(t0 + noteDur + 0.05);
+  triadPlayBtn.addEventListener("click", () => {
+    const layout = currentTriadLayout();
+    if (layout) playNotes(notesForPositions(layout));
   });
 }
 
 function init() {
+  restoreState();
   initKeySelect();
   initInversionSelect();
   initStringSetSelect();
   attachListeners();
-  const triads = currentTriads();
-  state.selected = triads[0] ?? null;
-  state.voicingIndex = 0;
   render();
 }
 

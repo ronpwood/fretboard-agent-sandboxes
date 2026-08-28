@@ -16,6 +16,8 @@
     --third-color: #7cc4ff;
     --fifth-color: #8fe38f;
     --border: #2b2e3d;
+    --wheel-fill: #22242f;
+    --wheel-related: #35506b;
   }
 
   * { box-sizing: border-box; }
@@ -186,6 +188,25 @@
     cursor: default;
   }
 
+  .play-button {
+    padding: 0.35rem 0.75rem;
+    background: #22242f;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .play-button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .play-button:disabled { opacity: 0.4; cursor: default; }
+
+  .triad-play-controls { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
+
+  .note-marker { cursor: pointer; }
+  .note-marker:focus-visible { outline: none; stroke: var(--accent); stroke-width: 3; }
+  .note-marker text { pointer-events: none; user-select: none; }
+
   #voicing-position {
     color: var(--muted-text);
     font-size: 0.85rem;
@@ -226,25 +247,17 @@
     vertical-align: middle;
   }
 
-  .play-row {
-    margin-top: 0.75rem;
-  }
-
-  .play-row button {
-    padding: 0.4rem 1.2rem;
-    background: var(--accent);
-    color: #12131a;
-    border: 1px solid var(--accent);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-
-  .play-row button:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
+  .wheel-heading { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; }
+  .wheel-caption { margin: .35rem 0 0; font-size: .8rem; color: var(--muted-text); text-align: center; }
+  .wheel-wedge { fill: var(--wheel-fill); stroke: var(--border); stroke-width: 1; cursor: pointer; transition: fill .12s ease; }
+  .wheel-wedge:hover { fill: #2e3140; }
+  .wheel-wedge:focus-visible { outline: none; stroke: var(--accent); stroke-width: 2.5; }
+  .wheel-wedge.is-related { fill: var(--wheel-related); }
+  .wheel-wedge.is-neighbor { stroke: var(--muted-text); stroke-width: 1.75; }
+  .wheel-wedge.is-selected { fill: var(--accent); stroke: #fff; stroke-width: 2; }
+  .wheel-label { pointer-events: none; user-select: none; fill: var(--text); font-size: 13px; text-anchor: middle; dominant-baseline: middle; }
+  .wheel-label.minor { font-size: 11px; fill: var(--muted-text); }
+  .wheel-label.on-selected { fill: #12131a; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -257,6 +270,10 @@
 </header>
 <main>
   <section class="picker">
+    <h2 class="wheel-heading">Circle of fifths</h2>
+    <svg id="circle-wheel" viewBox="0 0 320 320" role="group" aria-label="Circle of fifths"></svg>
+    <p id="wheel-caption" class="wheel-caption" aria-live="polite"></p>
+
     <label for="key-select">Key</label>
     <select id="key-select" aria-label="Key"></select>
 
@@ -278,6 +295,7 @@
         <button id="voicing-prev" type="button" aria-label="Previous voicing">&#8592; Prev</button>
         <span id="voicing-position" aria-live="polite"></span>
         <button id="voicing-next" type="button" aria-label="Next voicing">Next &#8594;</button>
+        <button id="chord-play" type="button" class="play-button" aria-label="Play chord">&#9654; Play chord</button>
       </div>
       <p id="chord-caption" aria-live="polite"></p>
     </div>
@@ -303,14 +321,14 @@
           </select>
         </div>
       </div>
+      <div class="triad-play-controls">
+        <button id="triad-play" type="button" class="play-button" aria-label="Play triad">&#9654; Play triad</button>
+      </div>
       <svg id="triad-diagram" viewBox="0 0 320 160" aria-label="Triad layout diagram"></svg>
       <div class="legend">
         <span><span class="swatch" style="background: var(--root-color);"></span>Root</span>
         <span><span class="swatch" style="background: var(--third-color);"></span>Third</span>
         <span><span class="swatch" style="background: var(--fifth-color);"></span>Fifth</span>
-      </div>
-      <div class="play-row">
-        <button id="triad-play" type="button" disabled>Play</button>
       </div>
       <p id="triad-caption" aria-live="polite"></p>
     </div>

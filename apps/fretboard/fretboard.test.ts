@@ -11,17 +11,44 @@ import {
 import {
   diatonicTriads,
   triadNotes,
+  pitchClass,
+  noteName,
+  relativeMinorPc,
+  relativeMajorPc,
+  CIRCLE_OF_FIFTHS_MAJORS,
   type Quality,
 } from "./theory.ts";
 import {
-  pitchAtFret,
-  STANDARD_TUNING,
-  STANDARD_TUNING_MIDI,
-  midiAtFret,
-  midiToFrequency,
-  frequencyAtFret,
-} from "./fretboard.ts";
+  WHEEL_SEGMENTS,
+  WHEEL_SEGMENT_COUNT,
+  WHEEL_GEOMETRY,
+  segmentAt,
+  selectionForKey,
+  keyForSelection,
+  relativeSelection,
+  neighborIndices,
+  polarPoint,
+  wedgePath,
+  labelPoint,
+  ringLabel,
+  type WheelRing,
+} from "./circle-wheel.ts";
+import { pitchAtFret, midiAtFret, STANDARD_TUNING, STANDARD_TUNING_MIDI } from "./fretboard.ts";
 import { findVoicings, bestVoicing } from "./voicing.ts";
+import {
+  A4_MIDI,
+  A4_FREQUENCY,
+  MAX_TOTAL_GAIN,
+  NOTE_STAGGER_SECONDS,
+  ENVELOPE_DEFAULTS,
+  midiToFrequency,
+  soundedNote,
+  notesForPositions,
+  notesForVoicing,
+  gainForVoiceCount,
+  noteEnvelope,
+  playbackDuration,
+} from "./playback.ts";
 import {
   clampVoicingIndex,
   stepVoicingIndex,
@@ -34,6 +61,21 @@ import {
   STRING_SETS,
   type Inversion,
 } from "./triad-layout.ts";
+import {
+  STORAGE_KEY,
+  STORAGE_VERSION,
+  DEFAULT_PERSISTED_STATE,
+  serializeState,
+  parseState,
+  toTonicPc,
+  toMode,
+  toDegreeIndex,
+  toVoicingIndex,
+  toInversion,
+  toStringSetIndex,
+  resolveDegreeIndex,
+  type PersistedState,
+} from "./persisted-state.ts";
 
 describe("diatonicTriads", () => {
   test("C major", () => {
@@ -195,46 +237,6 @@ describe("findVoicings invariants", () => {
       }
     });
   }
-});
-
-describe("fretboard MIDI / frequency helpers", () => {
-  const midiToFreq = (m: number) => 440 * Math.pow(2, (m - 69) / 12);
-  const openFreqs = [
-    midiToFreq(40), // E2
-    midiToFreq(45), // A2
-    midiToFreq(50), // D3
-    midiToFreq(55), // G3
-    midiToFreq(59), // B3
-    midiToFreq(64), // E4
-  ];
-
-  test("open strings resolve to their correct frequencies", () => {
-    expect(STANDARD_TUNING_MIDI).toEqual([40, 45, 50, 55, 59, 64]);
-    for (let s = 0; s < 6; s++) {
-      expect(frequencyAtFret(s, 0)).toBeCloseTo(openFreqs[s], 8);
-    }
-  });
-
-  test("fretted note matches hand-computed MIDI math", () => {
-    // A string (index 1, open MIDI 45); 3rd fret = C4 = MIDI 48.
-    expect(midiAtFret(1, 3)).toBe(48);
-    expect(midiToFrequency(48)).toBeCloseTo(midiToFreq(48), 8);
-    expect(frequencyAtFret(1, 3)).toBeCloseTo(midiToFreq(48), 8);
-    // High E string (index 5, open MIDI 64); 5th fret = A4 = MIDI 69 = 440Hz.
-    expect(midiAtFret(5, 5)).toBe(69);
-    expect(frequencyAtFret(5, 5)).toBeCloseTo(440, 8);
-  });
-
-  test("a note 12 frets higher is exactly double the frequency", () => {
-    for (let s = 0; s < 6; s++) {
-      expect(frequencyAtFret(s, 12) / frequencyAtFret(s, 0)).toBeCloseTo(2, 8);
-      expect(midiAtFret(s, 12)).toBe(midiAtFret(s, 0) + 12);
-    }
-  });
-
-  test("length of STANDARD_TUNING_MIDI matches string count", () => {
-    expect(STANDARD_TUNING_MIDI.length).toBe(STANDARD_TUNING.length);
-  });
 });
 
 describe("bestVoicing / findVoicings null case", () => {
@@ -411,5 +413,632 @@ describe("view mode", () => {
     expect(viewLabel("chord")).toBe("Chord diagram");
     expect(viewLabel("triad")).toBe("Triad layout");
     expect(viewLabel("chord")).not.toBe(viewLabel("triad"));
+  });
+});
+
+describe("circle of fifths wheel", () => {
+  describe("model", () => {
+    test("has one wedge per key, indexed in order", () => {
+      expect(WHEEL_SEGMENTS.length).toBe(12);
+      expect(WHEEL_SEGMENT_COUNT).toBe(12);
+      WHEEL_SEGMENTS.forEach((segment, i) => {
+        expect(segment.index).toBe(i);
+      });
+      expect(WHEEL_SEGMENTS.map((s) => s.majorName)).toEqual(CIRCLE_OF_FIFTHS_MAJORS);
+    });
+
+    test("major pitch classes ascend by a fifth and cover all 12", () => {
+      for (let i = 1; i < 12; i++) {
+        const prev = WHEEL_SEGMENTS[i - 1].majorPc;
+        const curr = WHEEL_SEGMENTS[i].majorPc;
+        expect(curr).toBe((prev + 7) % 12);
+      }
+      const majorPcs = WHEEL_SEGMENTS.map((s) => s.majorPc).slice().sort((a, b) => a - b);
+      expect(majorPcs).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
+      for (let i = 1; i < 12; i++) {
+        const prev = WHEEL_SEGMENTS[i - 1].minorPc;
+        const curr = WHEEL_SEGMENTS[i].minorPc;
+        expect(curr).toBe((prev + 7) % 12);
+      }
+      const minorPcs = WHEEL_SEGMENTS.map((s) => s.minorPc).slice().sort((a, b) => a - b);
+      expect(minorPcs).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    });
+
+    test("minor pc is the relative minor of the major pc, three wedges ahead", () => {
+      WHEEL_SEGMENTS.forEach((segment) => {
+        expect(segment.minorPc).toBe(relativeMinorPc(segment.majorPc));
+        const relativeMajorSegment = segmentAt(segment.index + 3);
+        expect(segment.minorName).toBe(relativeMajorSegment.majorName);
+      });
+    });
+
+    test("spot checks for specific wedges", () => {
+      expect(WHEEL_SEGMENTS[0].majorName).toBe("C");
+      expect(WHEEL_SEGMENTS[0].minorName).toBe("A");
+      expect(WHEEL_SEGMENTS[1].majorName).toBe("G");
+      expect(WHEEL_SEGMENTS[1].minorName).toBe("E");
+      expect(WHEEL_SEGMENTS[6].majorName).toBe("F#");
+      expect(WHEEL_SEGMENTS[6].minorName).toBe("D#");
+      expect(WHEEL_SEGMENTS[11].majorName).toBe("F");
+      expect(WHEEL_SEGMENTS[11].minorName).toBe("D");
+    });
+  });
+
+  describe("selection sync", () => {
+    test("keyForSelection(selectionForKey(pc, mode)) round trips for all keys", () => {
+      for (let pc = 0; pc < 12; pc++) {
+        for (const mode of ["major", "minor"] as const) {
+          const key = keyForSelection(selectionForKey(pc, mode));
+          expect(key).toEqual({ tonicPc: pc, mode });
+        }
+      }
+    });
+
+    test("selectionForKey(...keyForSelection(sel)) round trips for all wedges/rings", () => {
+      for (let index = 0; index < 12; index++) {
+        for (const ring of ["major", "minor"] as const) {
+          const key = keyForSelection({ index, ring });
+          const selection = selectionForKey(key.tonicPc, key.mode);
+          expect(selection).toEqual({ index, ring });
+        }
+      }
+    });
+
+    test("named selection cases", () => {
+      expect(selectionForKey(pitchClass("A"), "minor")).toEqual({ index: 0, ring: "minor" });
+      expect(selectionForKey(pitchClass("C"), "major")).toEqual({ index: 0, ring: "major" });
+      expect(selectionForKey(pitchClass("E"), "minor")).toEqual({ index: 1, ring: "minor" });
+    });
+
+    test("relativeSelection flips the ring, keeps the index, and is its own inverse", () => {
+      for (let index = 0; index < 12; index++) {
+        for (const ring of ["major", "minor"] as const) {
+          const selection: { index: number; ring: WheelRing } = { index, ring };
+          const related = relativeSelection(selection);
+          expect(related.index).toBe(index);
+          expect(related.ring).toBe(ring === "major" ? "minor" : "major");
+          expect(relativeSelection(related)).toEqual(selection);
+
+          const original = keyForSelection(selection);
+          const relatedKey = keyForSelection(related);
+          if (ring === "major") {
+            expect(relatedKey.tonicPc).toBe(relativeMinorPc(original.tonicPc));
+          } else {
+            expect(relatedKey.tonicPc).toBe(relativeMajorPc(original.tonicPc));
+          }
+        }
+      }
+    });
+
+    test("segmentAt wraps modulo 12, including negatives", () => {
+      expect(segmentAt(12)).toEqual(segmentAt(0));
+      expect(segmentAt(-1)).toEqual(segmentAt(11));
+    });
+
+    test("neighborIndices returns a fifth up and a fifth down, wrapping", () => {
+      for (let index = 0; index < 12; index++) {
+        const { previous, next } = neighborIndices(index);
+        expect(next).toBe((index + 1) % 12);
+        expect(previous).toBe((index + 11) % 12);
+      }
+      expect(neighborIndices(0)).toEqual({ previous: 11, next: 1 });
+      expect(neighborIndices(11)).toEqual({ previous: 10, next: 0 });
+    });
+
+    test("ringLabel produces readable, distinct labels", () => {
+      expect(ringLabel(0, "major")).toBe("C major");
+      expect(ringLabel(0, "minor")).toBe("A minor");
+      const labels = new Set<string>();
+      for (let index = 0; index < 12; index++) {
+        for (const ring of ["major", "minor"] as const) {
+          const label = ringLabel(index, ring);
+          expect(label.length).toBeGreaterThan(0);
+          labels.add(label);
+        }
+      }
+      expect(labels.size).toBe(24);
+    });
+  });
+
+  describe("geometry", () => {
+    test("wedges span exactly 30 degrees and tile 360 degrees", () => {
+      WHEEL_SEGMENTS.forEach((segment) => {
+        expect(segment.endAngle - segment.startAngle).toBe(30);
+        expect(segment.startAngle).toBeLessThan(segment.midAngle);
+        expect(segment.midAngle).toBeLessThan(segment.endAngle);
+      });
+      for (let i = 0; i < 11; i++) {
+        expect(WHEEL_SEGMENTS[i].endAngle).toBe(WHEEL_SEGMENTS[i + 1].startAngle);
+      }
+      const totalSpan = WHEEL_SEGMENTS.reduce(
+        (sum, s) => sum + (s.endAngle - s.startAngle),
+        0
+      );
+      expect(totalSpan).toBe(360);
+    });
+
+    test("polarPoint places points at expected clock positions", () => {
+      const top = polarPoint(160, 160, 100, 0);
+      expect(top.x).toBeCloseTo(160);
+      expect(top.y).toBeCloseTo(60);
+
+      const right = polarPoint(160, 160, 100, 90);
+      expect(right.x).toBeCloseTo(260);
+      expect(right.y).toBeCloseTo(160);
+
+      const bottom = polarPoint(160, 160, 100, 180);
+      expect(bottom.x).toBeCloseTo(160);
+      expect(bottom.y).toBeCloseTo(260);
+    });
+
+    test("wedgePath emits a well-formed, in-bounds annular sector path", () => {
+      for (let index = 0; index < 12; index++) {
+        for (const ring of ["major", "minor"] as const) {
+          const d = wedgePath(index, ring);
+          expect(d.startsWith("M")).toBe(true);
+          expect(d.endsWith("Z")).toBe(true);
+          const arcCount = (d.match(/A/g) || []).length;
+          expect(arcCount).toBe(2);
+
+          const numbers = d.match(/-?\d+(\.\d+)?/g) || [];
+          expect(numbers.length).toBeGreaterThan(0);
+          for (const n of numbers) {
+            const value = Number(n);
+            expect(Number.isFinite(value)).toBe(true);
+            expect(value).toBeGreaterThanOrEqual(0);
+            expect(value).toBeLessThanOrEqual(WHEEL_GEOMETRY.size);
+          }
+        }
+      }
+    });
+
+    test("labelPoint sits within the correct band radius", () => {
+      const { cx, cy, outerRadius, ringRadius, innerRadius } = WHEEL_GEOMETRY;
+      for (let index = 0; index < 12; index++) {
+        const majorPoint = labelPoint(index, "major");
+        const majorDist = Math.hypot(majorPoint.x - cx, majorPoint.y - cy);
+        expect(majorDist).toBeGreaterThanOrEqual(ringRadius);
+        expect(majorDist).toBeLessThanOrEqual(outerRadius);
+
+        const minorPoint = labelPoint(index, "minor");
+        const minorDist = Math.hypot(minorPoint.x - cx, minorPoint.y - cy);
+        expect(minorDist).toBeGreaterThanOrEqual(innerRadius);
+        expect(minorDist).toBeLessThanOrEqual(ringRadius);
+      }
+      const cMajorLabel = labelPoint(0, "major");
+      expect(cMajorLabel.y).toBeLessThan(WHEEL_GEOMETRY.cy);
+    });
+
+    test("radii are ordered sensibly", () => {
+      const { innerRadius, ringRadius, outerRadius, size } = WHEEL_GEOMETRY;
+      expect(innerRadius).toBeLessThan(ringRadius);
+      expect(ringRadius).toBeLessThan(outerRadius);
+      expect(outerRadius).toBeLessThan(size / 2);
+    });
+  });
+});
+
+describe("midiAtFret", () => {
+  test("open strings equal STANDARD_TUNING_MIDI", () => {
+    expect(STANDARD_TUNING_MIDI).toEqual([40, 45, 50, 55, 59, 64]);
+    for (let s = 0; s < 6; s++) {
+      expect(midiAtFret(s, 0)).toBe(STANDARD_TUNING_MIDI[s]);
+    }
+  });
+
+  test("strictly ascending low to high open strings", () => {
+    for (let s = 1; s < 6; s++) {
+      expect(STANDARD_TUNING_MIDI[s]).toBeGreaterThan(STANDARD_TUNING_MIDI[s - 1]);
+    }
+  });
+
+  test("consistent with pitch-class math", () => {
+    for (let s = 0; s < 6; s++) {
+      expect(STANDARD_TUNING_MIDI[s] % 12).toBe(STANDARD_TUNING[s]);
+      for (let f = 0; f <= 15; f++) {
+        expect(midiAtFret(s, f) % 12).toBe(pitchAtFret(s, f));
+      }
+    }
+  });
+
+  test("an octave up is +12", () => {
+    for (let s = 0; s < 6; s++) {
+      for (let f = 0; f <= 12; f++) {
+        expect(midiAtFret(s, f + 12)).toBe(midiAtFret(s, f) + 12);
+      }
+    }
+  });
+
+  test("fixtures", () => {
+    expect(midiAtFret(0, 0)).toBe(40);
+    expect(midiAtFret(1, 3)).toBe(48);
+    expect(midiAtFret(5, 0)).toBe(64);
+    expect(midiAtFret(0, 12)).toBe(52);
+  });
+
+  test("throws on out-of-range inputs", () => {
+    expect(() => midiAtFret(6, 0)).toThrow();
+    expect(() => midiAtFret(-1, 0)).toThrow();
+    expect(() => midiAtFret(0, -1)).toThrow();
+    expect(() => midiAtFret(0.5, 0)).toThrow();
+  });
+});
+
+describe("midiToFrequency", () => {
+  test("A4 anchor", () => {
+    expect(A4_MIDI).toBe(69);
+    expect(midiToFrequency(A4_MIDI)).toBe(A4_FREQUENCY);
+  });
+
+  test("octaves", () => {
+    expect(midiToFrequency(57)).toBeCloseTo(220, 6);
+    expect(midiToFrequency(81)).toBeCloseTo(880, 6);
+  });
+
+  test("known value: middle C", () => {
+    expect(midiToFrequency(60)).toBeCloseTo(261.6256, 3);
+  });
+
+  test("low E of the guitar", () => {
+    expect(midiToFrequency(midiAtFret(0, 0))).toBeCloseTo(82.4069, 3);
+  });
+
+  test("strictly increasing with constant semitone ratio", () => {
+    const semitoneRatio = 2 ** (1 / 12);
+    let prev = midiToFrequency(40);
+    for (let m = 41; m <= 80; m++) {
+      const curr = midiToFrequency(m);
+      expect(curr).toBeGreaterThan(prev);
+      expect(curr / prev).toBeCloseTo(semitoneRatio, 6);
+      prev = curr;
+    }
+  });
+
+  test("throws on non-finite input", () => {
+    expect(() => midiToFrequency(NaN)).toThrow();
+    expect(() => midiToFrequency(Infinity)).toThrow();
+  });
+});
+
+describe("notes for a displayed shape", () => {
+  test("muted strings are silent", () => {
+    const voicing = bestVoicing([0, 4, 7], 0)!;
+    expect(voicing).toEqual([null, 3, 2, 0, 1, 0]);
+    const notes = notesForVoicing(voicing);
+    expect(notes.length).toBe(5);
+    expect(notes.map((n) => n.string)).toEqual([1, 2, 3, 4, 5]);
+    expect(notes.map((n) => n.midi)).toEqual([48, 52, 55, 60, 64]);
+    expect(notes.some((n) => n.string === 0)).toBe(false);
+  });
+
+  test("frequencies agree with the pitch math", () => {
+    const voicing = bestVoicing([0, 4, 7], 0)!;
+    for (const note of notesForVoicing(voicing)) {
+      expect(note.frequency).toBe(midiToFrequency(note.midi));
+      expect(note.midi).toBe(midiAtFret(note.string, note.fret));
+    }
+  });
+
+  test("offsets stagger correctly", () => {
+    const voicing = bestVoicing([0, 4, 7], 0)!;
+    const notes = notesForVoicing(voicing);
+    expect(notes[0].offset).toBe(0);
+    for (let i = 1; i < notes.length; i++) {
+      expect(notes[i].offset).toBeGreaterThan(notes[i - 1].offset);
+      expect(notes[i].offset).toBeCloseTo(i * NOTE_STAGGER_SECONDS, 9);
+    }
+
+    const scaled = notesForVoicing(voicing, { stagger: 0.1 });
+    scaled.forEach((n, i) => expect(n.offset).toBeCloseTo(i * 0.1, 9));
+
+    const zero = notesForVoicing(voicing, { stagger: 0 });
+    zero.forEach((n) => expect(n.offset).toBe(0));
+
+    expect(() => notesForVoicing(voicing, { stagger: -0.1 })).toThrow();
+  });
+
+  test("empty cases yield []", () => {
+    expect(notesForVoicing([null, null, null, null, null, null])).toEqual([]);
+    expect(notesForPositions([])).toEqual([]);
+  });
+
+  test("every sounded note belongs to the chord", () => {
+    const cases: [[number, number, number], number][] = [
+      [[0, 4, 7], 0],
+      [[7, 11, 2], 7],
+      [[9, 0, 4], 9],
+    ];
+    for (const [tones, root] of cases) {
+      const voicings = findVoicings(tones, root).slice(0, 3);
+      for (const voicing of voicings) {
+        const notes = notesForVoicing(voicing);
+        const nonNullCount = voicing.filter((f) => f !== null).length;
+        expect(notes.length).toBe(nonNullCount);
+        for (const note of notes) {
+          expect(tones).toContain(note.midi % 12);
+        }
+      }
+    }
+  });
+
+  test("triad layouts produce correct notes", () => {
+    const cases: [number, "major" | "minor"][] = [
+      [0, "major"],
+      [9, "minor"],
+    ];
+    for (const [root, quality] of cases) {
+      for (const stringSet of STRING_SETS) {
+        for (const inversion of ["root", "first", "second"] as Inversion[]) {
+          const layout = layoutTriadOnStringSet(root, quality, inversion, stringSet)!;
+          expect(layout).not.toBeNull();
+          const notes = notesForPositions(layout);
+          expect(notes.length).toBe(3);
+          for (let i = 1; i < notes.length; i++) {
+            expect(notes[i].string).toBeGreaterThan(notes[i - 1].string);
+            expect(notes[i].offset).toBeGreaterThan(notes[i - 1].offset);
+          }
+          const rolePc: Record<string, number> = {
+            root: triadNotes(root, quality)[0],
+            third: triadNotes(root, quality)[1],
+            fifth: triadNotes(root, quality)[2],
+          };
+          const sortedLayout = layout.slice().sort((a, b) => a.string - b.string);
+          notes.forEach((note, i) => {
+            expect(note.midi % 12).toBe(rolePc[sortedLayout[i].role]);
+          });
+        }
+      }
+    }
+  });
+
+  test("notesForPositions does not mutate input and sorts unordered input", () => {
+    const positions = [
+      { string: 4, fret: 1 },
+      { string: 1, fret: 3 },
+      { string: 2, fret: 2 },
+    ];
+    const before = positions.map((p) => ({ ...p }));
+    const notes = notesForPositions(positions);
+    expect(positions).toEqual(before);
+    expect(notes.map((n) => n.string)).toEqual([1, 2, 4]);
+  });
+
+  test("soundedNote", () => {
+    const note = soundedNote(2, 5);
+    expect(note.offset).toBe(0);
+    expect(note.midi).toBe(midiAtFret(2, 5));
+    expect(note.frequency).toBe(midiToFrequency(midiAtFret(2, 5)));
+  });
+});
+
+describe("voice gain", () => {
+  test("single voice gets max gain", () => {
+    expect(gainForVoiceCount(1)).toBe(MAX_TOTAL_GAIN);
+  });
+
+  test("non-increasing as count rises, always in (0, MAX_TOTAL_GAIN]", () => {
+    let prev = gainForVoiceCount(1);
+    for (let n = 2; n <= 6; n++) {
+      const gain = gainForVoiceCount(n);
+      expect(gain).toBeGreaterThan(0);
+      expect(gain).toBeLessThanOrEqual(MAX_TOTAL_GAIN);
+      expect(gain).toBeLessThanOrEqual(prev);
+      prev = gain;
+    }
+  });
+
+  test("total headroom stays within MAX_TOTAL_GAIN", () => {
+    for (let n = 1; n <= 6; n++) {
+      expect(n * gainForVoiceCount(n)).toBeLessThanOrEqual(MAX_TOTAL_GAIN + 1e-9);
+    }
+  });
+
+  test("degenerate counts behave like 1", () => {
+    expect(gainForVoiceCount(0)).toBe(MAX_TOTAL_GAIN);
+    expect(gainForVoiceCount(-3)).toBe(MAX_TOTAL_GAIN);
+    expect(gainForVoiceCount(NaN)).toBe(MAX_TOTAL_GAIN);
+  });
+});
+
+describe("note envelope", () => {
+  test("strictly ordered timeline", () => {
+    const optsList: Partial<typeof ENVELOPE_DEFAULTS>[] = [
+      {},
+      { duration: 0.05, attack: 0.001, decay: 0.001, release: 0.001 },
+      { attack: 0.001 },
+    ];
+    for (const opts of optsList) {
+      const env = noteEnvelope(1, 0.5, opts);
+      expect(env.startAt).toBeLessThan(env.peakAt);
+      expect(env.peakAt).toBeLessThan(env.sustainAt);
+      expect(env.sustainAt).toBeLessThan(env.releaseAt);
+      expect(env.releaseAt).toBeLessThan(env.stopAt);
+    }
+  });
+
+  test("levels", () => {
+    const env = noteEnvelope(0, 0.5);
+    expect(env.peakGain).toBe(0.5);
+    expect(env.sustainGain).toBeGreaterThan(0);
+    expect(env.sustainGain).toBeLessThanOrEqual(env.peakGain);
+  });
+
+  test("translation invariance", () => {
+    const a = noteEnvelope(2, 0.5);
+    const b = noteEnvelope(7, 0.5);
+    expect(b.startAt).toBeCloseTo(a.startAt + 5, 9);
+    expect(b.peakAt).toBeCloseTo(a.peakAt + 5, 9);
+    expect(b.sustainAt).toBeCloseTo(a.sustainAt + 5, 9);
+    expect(b.releaseAt).toBeCloseTo(a.releaseAt + 5, 9);
+    expect(b.stopAt).toBeCloseTo(a.stopAt + 5, 9);
+  });
+
+  test("defaults are respected", () => {
+    const env = noteEnvelope(0, 0.5);
+    expect(env.releaseAt - env.startAt).toBeCloseTo(ENVELOPE_DEFAULTS.duration, 9);
+    expect(env.stopAt - env.releaseAt).toBeCloseTo(ENVELOPE_DEFAULTS.release, 9);
+  });
+
+  test("all fields are finite numbers", () => {
+    const env = noteEnvelope(0, 0.5);
+    for (const value of Object.values(env)) {
+      expect(Number.isFinite(value)).toBe(true);
+    }
+  });
+
+  test("playbackDuration exceeds every offset and is 0 for empty", () => {
+    expect(playbackDuration([])).toBe(0);
+    const voicing = bestVoicing([0, 4, 7], 0)!;
+    const notes = notesForVoicing(voicing);
+    const duration = playbackDuration(notes);
+    const maxOffset = Math.max(...notes.map((n) => n.offset));
+    expect(duration).toBeCloseTo(maxOffset + ENVELOPE_DEFAULTS.duration + ENVELOPE_DEFAULTS.release, 9);
+    expect(duration).toBeGreaterThan(maxOffset);
+  });
+});
+
+describe("persisted UI state", () => {
+  test("round trip preserves a non-default state", () => {
+    const s: PersistedState = {
+      tonicPc: 7,
+      mode: "minor",
+      degreeIndex: 4,
+      view: "triad",
+      voicingIndex: 3,
+      inversion: "second",
+      stringSetIndex: 0,
+    };
+    expect(parseState(serializeState(s))).toEqual(s);
+  });
+
+  test("serialized JSON carries the version, and STORAGE_KEY is non-empty", () => {
+    const parsed = JSON.parse(serializeState(DEFAULT_PERSISTED_STATE));
+    expect(parsed.version).toBe(STORAGE_VERSION);
+    expect(typeof STORAGE_KEY).toBe("string");
+    expect(STORAGE_KEY.length).toBeGreaterThan(0);
+  });
+
+  test("nothing stored falls back to defaults", () => {
+    expect(parseState(null)).toEqual(DEFAULT_PERSISTED_STATE);
+    expect(parseState(undefined)).toEqual(DEFAULT_PERSISTED_STATE);
+    expect(parseState("")).toEqual(DEFAULT_PERSISTED_STATE);
+  });
+
+  test("corrupt input falls back to defaults and never throws", () => {
+    const junk = [
+      "{",
+      "not json",
+      "[]",
+      "42",
+      "null",
+      "true",
+      '"chord"',
+      "[1,2,3]",
+      '{"version":1',
+    ];
+    for (const raw of junk) {
+      expect(() => parseState(raw)).not.toThrow();
+      expect(parseState(raw)).toEqual(DEFAULT_PERSISTED_STATE);
+    }
+  });
+
+  test("wrong or missing version discards the whole record", () => {
+    const validFields = {
+      tonicPc: 7,
+      mode: "minor",
+      degreeIndex: 4,
+      view: "triad",
+      voicingIndex: 3,
+      inversion: "second",
+      stringSetIndex: 0,
+    };
+    expect(parseState(JSON.stringify({ version: 0, ...validFields }))).toEqual(DEFAULT_PERSISTED_STATE);
+    expect(parseState(JSON.stringify({ version: 99, ...validFields }))).toEqual(DEFAULT_PERSISTED_STATE);
+    expect(parseState(JSON.stringify(validFields))).toEqual(DEFAULT_PERSISTED_STATE);
+  });
+
+  test("partial records keep good fields and default the rest", () => {
+    const raw = JSON.stringify({ version: STORAGE_VERSION, tonicPc: 5, view: "triad" });
+    const result = parseState(raw);
+    expect(result.tonicPc).toBe(5);
+    expect(result.view).toBe("triad");
+    expect(result.mode).toBe(DEFAULT_PERSISTED_STATE.mode);
+    expect(result.degreeIndex).toBe(DEFAULT_PERSISTED_STATE.degreeIndex);
+    expect(result.voicingIndex).toBe(DEFAULT_PERSISTED_STATE.voicingIndex);
+    expect(result.inversion).toBe(DEFAULT_PERSISTED_STATE.inversion);
+    expect(result.stringSetIndex).toBe(DEFAULT_PERSISTED_STATE.stringSetIndex);
+  });
+
+  test("out-of-range and wrong-typed fields default individually", () => {
+    const badFields = [
+      { tonicPc: 12 },
+      { tonicPc: -1 },
+      { tonicPc: 1.5 },
+      { tonicPc: "7" },
+      { mode: "dorian" },
+      { degreeIndex: 7 },
+      { degreeIndex: -1 },
+      { inversion: "third" },
+      { stringSetIndex: 4 },
+      { stringSetIndex: -1 },
+      { voicingIndex: -2 },
+      { voicingIndex: NaN },
+      { view: 7 },
+    ];
+    const fieldName: Record<string, keyof PersistedState> = {
+      tonicPc: "tonicPc",
+      mode: "mode",
+      degreeIndex: "degreeIndex",
+      inversion: "inversion",
+      stringSetIndex: "stringSetIndex",
+      voicingIndex: "voicingIndex",
+      view: "view",
+    };
+    for (const bad of badFields) {
+      const raw = JSON.stringify({ version: STORAGE_VERSION, ...bad });
+      const result = parseState(raw);
+      const key = Object.keys(bad)[0] as keyof PersistedState;
+      const name = fieldName[key];
+      expect(result[name]).toEqual(DEFAULT_PERSISTED_STATE[name]);
+    }
+
+    expect(toTonicPc(11)).toBe(11);
+    expect(toStringSetIndex(0)).toBe(0);
+    expect(toDegreeIndex(6)).toBe(6);
+    expect(toTonicPc("7")).toBe(DEFAULT_PERSISTED_STATE.tonicPc);
+    expect(toMode("dorian")).toBe("major");
+    expect(toVoicingIndex(-2)).toBe(0);
+    expect(toInversion("third")).toBe("root");
+  });
+
+  test("a stale voicing index resolves against the real chord", () => {
+    const list = findVoicings([0, 4, 7], 0);
+    const stored = JSON.stringify({ version: STORAGE_VERSION, voicingIndex: 9999 });
+    expect(clampVoicingIndex(parseState(stored).voicingIndex, list.length)).toBe(list.length - 1);
+    expect(clampVoicingIndex(parseState(stored).voicingIndex, 0)).toBe(0);
+  });
+
+  test("a stale degree resolves against the real key", () => {
+    expect(resolveDegreeIndex(6, 7)).toBe(6);
+    expect(resolveDegreeIndex(7, 7)).toBe(6);
+    expect(resolveDegreeIndex(-1, 7)).toBe(0);
+    expect(resolveDegreeIndex(0, 0)).toBe(null);
+    const degreeIndex = resolveDegreeIndex(3, 7)!;
+    expect(diatonicTriads(0, "major")[degreeIndex].degree).toBe("IV");
+  });
+
+  test("defaults match the app's current defaults", () => {
+    expect(DEFAULT_PERSISTED_STATE).toEqual({
+      tonicPc: 0,
+      mode: "major",
+      degreeIndex: 0,
+      view: DEFAULT_VIEW,
+      voicingIndex: 0,
+      inversion: "root",
+      stringSetIndex: 2,
+    });
+    expect(DEFAULT_PERSISTED_STATE.stringSetIndex).toBeGreaterThanOrEqual(0);
+    expect(DEFAULT_PERSISTED_STATE.stringSetIndex).toBeLessThan(STRING_SETS.length);
   });
 });

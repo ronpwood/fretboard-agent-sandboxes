@@ -24,6 +24,19 @@ export const CIRCLE_OF_FIFTHS_MAJORS: string[] = [
   "C", "G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "F",
 ];
 
+/** Semitones from a major tonic up to its relative minor tonic (C -> A). */
+export const RELATIVE_MINOR_OFFSET = 9;
+
+/** Pitch class of the relative minor of a major key (C -> A). */
+export function relativeMinorPc(majorPc: number): number {
+  return ((majorPc + RELATIVE_MINOR_OFFSET) % 12 + 12) % 12;
+}
+
+/** Pitch class of the relative major of a minor key (A -> C). */
+export function relativeMajorPc(minorPc: number): number {
+  return ((minorPc - RELATIVE_MINOR_OFFSET) % 12 + 12) % 12;
+}
+
 export type Quality = "major" | "minor" | "diminished" | "augmented";
 
 export type Triad = {
