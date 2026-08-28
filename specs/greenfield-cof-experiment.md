@@ -94,3 +94,64 @@ the brief's words, never against another arm's spec.
   acceptable red for v1; note it in the judgment if the suite never got past it.
 - Budget: greenfield is a much bigger spend than the minor-change A/B — that is
   why N=3, one chain, not five rosters.
+
+---
+
+## RESULTS — judge pass (2026-08-28)
+
+Three arms, same pin (`c4d6652`), same roster, same TDD chain, ~$0.81 total.
+Mechanical checks ran against each arm's own theory API in the harvested worktrees;
+judgment items scored in the live apps via Playwright. Screenshots in
+`specs/greenfield-judge/`.
+
+| # | Item | gf-1 | gf-2 | gf-3 |
+|---|---|---|---|---|
+| 1 | Circle order | 2 | 2 | 2 |
+| 2 | Key signatures | 2 | 2 | 2 |
+| 3 | Relative minors | 2 | 2 | 2 |
+| 4 | Diatonic content | 2 | 2 | 2 |
+| 5 | Enharmonics | 1 | 0 | 2 |
+| 6 | Guitar surface | 1 | 0 | 1 |
+| 7 | Teaching surface | 0 | 0 | 2 |
+| 8 | Interaction | 1 | 0 | 2 |
+| 9 | Test quality | 2 | 1 | 2 |
+| 10 | Delivery | 2 | 0 | 2 |
+| | **Total /20** | **13** | **9** | **19** |
+
+Per-arm notes:
+
+- **gf-1 (13)** — engine flawless; UI is a wireframe of its cathedral plan. The "wheel"
+  is a wrapping row of 24 flat circles; chord "diagrams" are raw fret-number strings;
+  key signatures computed but never displayed; the diatonic chord panel does not
+  re-render on key change (verified: wheel and fretboard updated to G, chords stayed C).
+  Mixed C#/A♭ spelling in one circle. No teaching surface at all.
+- **gf-2 (9)** — DEAD ON ARRIVAL. `App failed to launch: TypeError: relativeMinor2 is
+  not a function` at mount, from the bun dev-server client bundle (imports are
+  consistent and extensionless; the function exists — a served-bundle rename quirk the
+  arm never saw because nothing in the chain opens a browser). 370 green asserts, clean
+  `bun build`, zero usable product. Also spells Db major as C#–D#–E#… (item 5).
+- **gf-3 (19)** — the real thing: dual-ring SVG wheel with per-wedge signatures and
+  roman-numeral neighbor highlighting, accessible per-key buttons, working cross-view
+  state (D → "Chords in D major", progression re-roots to D–A–Bm–G), genuine chord-box
+  diagrams, progression builder with correct presets, Theory Trainer tab. Docked only
+  on the fretboard explorer's default view: an unlabeled all-notes rainbow.
+
+### Findings
+
+1. **The reviewer was the differentiator, not the red gate.** gf-3's only process
+   difference was a reviewer that rejected the first build over nine blocking UI
+   requirements and forced a revise pass. Items 6–8 (the product-judgment half) went
+   2/0/1 → 2/2/2 across gf-1/gf-2/gf-3 almost entirely on that rejection.
+2. **Green bar ≠ live app.** gf-2 is the cleanest demonstration yet: every gate green,
+   811-assert sibling out-scored by an arm with a *mount-time crash* nothing could see.
+   The factory has no phase that loads the page. A browser smoke gate (load, zero
+   console errors, one screenshot into the envelope) would have caught it for pennies.
+3. **Theory is free; product judgment is the scarce resource.** Items 1–4: 24/24 across
+   all arms. The models know the circle of fifths cold. All variance lives in items
+   5–10 — spelling discipline, UI composition, delivery verification.
+4. Red gates on greenfield went red via real assertions, not just module-not-found;
+   test_designer suites ranged 165k–242k tokens, ~$0.01–0.02 each.
+
+Spend (OpenRouter key usage): gf-1 $0.23, gf-2 $0.30, gf-3 $0.28. VMs still up,
+teardown pending. Harvested refs live in the greenfield checkout under
+`refs/sandbox/gf-{1,2,3}/`; judge worktrees at `/tmp/judge-gf{1,2,3}`.
