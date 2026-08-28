@@ -653,3 +653,34 @@ What the run actually measured:
    the builder is likely to half-implement: multi-requirement features with edge cases (the
    FTS5-style prompts), where the control's unseen gaps survive to review and the TDD arm's red
    suite catches them mechanically.
+
+## Session (2026-08-28): clean room built for the greenfield Circle-of-Fifths run
+
+The next experiment inverts the 2026-08-27 flaw (fully-specced prompt → every arm nails
+it → no signal): one-sentence brief, no spec, no prior implementation reachable anywhere.
+The question is whether TDD-chain teams can design, build, test, and deliver alone.
+
+What exists now:
+
+- **`github.com/ronpwood/greenfield-sandboxes`** (public) — the SSSF factory verbatim with
+  an EMPTY payload shell at `apps/app/` (entry + page + one sanity test) and fresh git
+  history, so the fretboard app is unreachable even via `git log`. Archiving in-repo would
+  NOT have worked: FILL does a full clone from GitHub, so both the `archive/` dir and the
+  entire history ride into every VM. The clean room is a derived artifact — this repo's
+  main keeps fretboard untouched.
+- Contamination sweep was wider than `apps/`: prompts 09–11, three specs, `just/
+  fretboard.just`, the justfile `mod` line, `.playwright-mcp/` snapshots, and untracked
+  `adws/adw_data/sessions/*` (which contain compiled fretboard bundles) are all absent
+  from the clean tree. `.claude/skills/sssf/` ships because guest observe expects the
+  visualizer at `$HOME/app/.claude/skills/sssf/apps/visualizer`.
+- Gates verified green on the shell pre-push: oxlint, `bun build` the entry, `bun test`
+  the fixed suite, `manifest.py get source.repo`. The manifest is the contract — the
+  brief (`prompts/greenfield.md`, in-repo so every arm runs the same bytes) tells arms
+  to grow the app in place at the manifest paths, or the gates can't see their work.
+- **`specs/greenfield-cof-experiment.md` (HOST-SIDE ONLY — holds the hidden judging
+  rubric, must never reach an arm)** — run procedure (manifest flip, N=3 TDD fan-out,
+  harvest, judge, revert) and a 10-item 0/1/2 rubric where the guitar-surface and
+  pedagogy items are the design-judgment signal.
+
+Next: flip the host manifest, mount gf-1..3, execute `prompts/greenfield.md` through
+`tdd`, harvest, judge against the rubric, revert the flip.
