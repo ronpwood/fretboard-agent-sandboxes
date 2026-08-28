@@ -30,6 +30,7 @@ defaults:
     - adws/adw_modules/
     - adws/adw_sssf_config/
     - adws/adw_*.py
+    - app.manifest.yaml           # the grader reads paths from here — a builder must not repoint its own test file
   data_dir: adws/adw_data          # runtime home: {data_dir}/sessions/{adw_id}/{agent_name}/
 
 observability:

@@ -5,8 +5,9 @@ Oxlint release through Bun; "typecheck" is the strongest zero-config Bun-native
 syntax/import/transpilation check available for the current JS/TS sources.
 Build blocks add minification and keep all outputs inside the ADW session.
 
-APP_DIR/ENTRY/TEST_FILE are the only things that change when `just app swap`
-puts a different app under apps/ — everything else in this file is generic.
+The app's paths come from app.manifest.yaml at the repo root — `just app swap`
+edits that file, not this one. What still changes here on a swap is the
+command blocks themselves (lint/typecheck/build/test are stack-specific).
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from typing import Callable
 
 from .data_types import (EventRecord, QualityCheckResult, QualityCheckSpec, QualityResult,
                          VerifyOutput)
+from .manifest import load as load_manifest
 from .utils import now_iso, operator_env
 
 OXLINT_VERSION = "1.36.0"
@@ -41,12 +43,14 @@ TAIL_CHARS = 4_000
 # exit 127 with the real error text.
 BUN = os.environ.get("BUN_PATH", "").strip() or "bun"
 
-# The fretboard app is a static, no-backend Bun HTML entry: index.html loads
-# main.ts as a module, and every other .ts file is a plain import off that
-# graph — there is no server.ts, so there is no "backend" area to check.
-APP_DIR = "apps/fretboard"
-ENTRY = f"{APP_DIR}/main.ts"
-TEST_FILE = f"{APP_DIR}/fretboard.test.ts"
+# The app is a static, no-backend Bun HTML entry: index.html loads the entry
+# as a module, and every other .ts file is a plain import off that graph —
+# there is no server.ts, so there is no "backend" area to check. The same
+# three names as before, so the command blocks below stay diff-free.
+_MANIFEST = load_manifest()
+APP_DIR = _MANIFEST.app.dir
+ENTRY = _MANIFEST.app.entry
+TEST_FILE = _MANIFEST.app.test_file
 
 
 def _check_dir(run, name: str) -> Path:

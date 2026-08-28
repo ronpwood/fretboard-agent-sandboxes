@@ -32,9 +32,14 @@ observe RUN_ID:
 
     APP_PORT=4501
     OBS_PORT=4600
+    # The app's name and dir come from the HOST checkout's manifest — the VM's
+    # app/ is a clone of this same repo, so the relative dir matches.
+    APP_NAME=$(uv run adws/adw_modules/manifest.py get app.name)
+    APP_REL=$(uv run adws/adw_modules/manifest.py get app.dir)
     # The clone target is `app` relative to the exedev user's home, so this is
-    # /home/exedev/app on a stock exeuntu VM. Expanded on the VM, not here.
-    APP_DIR='$HOME/app/apps/fretboard'
+    # /home/exedev/app/<app.dir> on a stock exeuntu VM. $HOME stays literal
+    # here and expands on the VM, not on the host.
+    APP_DIR='$HOME/app/'"$APP_REL"
     OBS_DIR='$HOME/app/.claude/skills/sssf/apps/visualizer'
     OBS_DB='$HOME/app/adws/adw_data/sssf.db'
 
@@ -74,8 +79,11 @@ observe RUN_ID:
     # Idempotent: observe is safe to re-run, and `just sbx mount` ends here, so a
     # second call must not stack a second bun on the same port.
     #
-    # fretboard is a static Bun HTML entry, not a server.ts — PORT must be
-    # passed explicitly, since Bun's HTML dev server defaults to :3000.
+    # PER-APP boot command: the current app is a static Bun HTML entry, not a
+    # server.ts — PORT must be passed explicitly, since Bun's HTML dev server
+    # defaults to :3000. An app swap that isn't a static HTML entry rewrites
+    # `bun index.html` here (same rationale as quality.py's command blocks:
+    # paths are data, commands are stack-specific judgement).
     echo "[2/6] app  :$APP_PORT"
     if listening "$APP_PORT"; then
         echo "       already listening — leaving it alone"
@@ -83,11 +91,11 @@ observe RUN_ID:
         # All three detachment pieces are REQUIRED or ssh never returns: nohup
         # (survive session end), the redirect (release stdout/stderr), and
         # < /dev/null (release stdin). Dropping any one hangs this recipe.
-        ssh "$HOST" "cd $APP_DIR && ( nohup env PORT=$APP_PORT bun index.html > \$HOME/fretboard-app.log 2>&1 < /dev/null & echo \$! )" \
+        ssh "$HOST" "cd $APP_DIR && ( nohup env PORT=$APP_PORT bun index.html > \$HOME/${APP_NAME}-app.log 2>&1 < /dev/null & echo \$! )" \
             | sed 's/^/       started pid /'
         if ! wait_listen "$APP_PORT"; then
-            echo "observe: fretboard never bound :$APP_PORT — tail of ~/fretboard-app.log:" >&2
-            ssh "$HOST" 'tail -n 40 $HOME/fretboard-app.log' >&2 || true
+            echo "observe: $APP_NAME never bound :$APP_PORT — tail of ~/${APP_NAME}-app.log:" >&2
+            ssh "$HOST" "tail -n 40 \$HOME/${APP_NAME}-app.log" >&2 || true
             exit 1
         fi
         echo "       up"

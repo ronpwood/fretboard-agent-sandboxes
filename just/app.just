@@ -4,12 +4,14 @@
 # Loaded from the root justfile:
 #     mod app 'just/app.just'
 #
-# This only moves files. It deliberately does NOT touch
-# adws/adw_modules/quality.py, the app's just/<name>.just module, or
-# sssf.config.yaml — those encode per-app commands (lint/typecheck/build/test)
-# that differ by tech stack and can't be templated safely. `swap` ends by
-# printing exactly what still needs rewiring; do that in a normal conversation
-# with Claude, not by scripting it here.
+# This only moves files. The app's paths and clone URL live in
+# app.manifest.yaml at the repo root — editing that is step 2 of the printed
+# checklist. What swap deliberately does NOT touch: the manifest itself, the
+# per-app command blocks in adws/adw_modules/quality.py, the app's
+# just/<name>.just module, and sssf.config.yaml — commands differ by tech
+# stack and can't be templated safely. `swap` ends by printing exactly what
+# still needs rewiring; do that in a normal conversation with Claude, not by
+# scripting it here.
 #
 # A module inherits NOTHING from its parent — cwd defaults to this file's
 # directory, hence `set working-directory`.
@@ -65,16 +67,17 @@ swap SOURCE NAME:
     echo "nothing below runs until this is fixed:"
     echo ""
     echo "  1. Inspect apps/{{NAME}}'s real lint / typecheck / build / test commands"
-    echo "  2. Edit adws/adw_modules/quality.py's APP_DIR / ENTRY / TEST_FILE"
-    echo "     constants and its lint/typecheck/build/test blocks to match — the"
-    echo "     run_tests()/run_quality() entry points and their callers in adws/*.py"
-    echo "     are already generic, so no renames should be needed there"
-    echo "  3. Rewrite the just/<old-name>.just module for {{NAME}}, and its"
+    echo "  2. Edit app.manifest.yaml (app.name / dir / entry / test_file /"
+    echo "     generated_tests_dir, and source.repo if the sandbox clone target"
+    echo "     changes) — quality.py, fill.just, and observe.just all read it"
+    echo "  3. Edit adws/adw_modules/quality.py's lint/typecheck/build/test blocks"
+    echo "     to match the stack — the paths now come from the manifest, but the"
+    echo "     commands are per-stack judgement and stay code"
+    echo "  4. Rewrite the just/<old-name>.just module for {{NAME}}, and its"
     echo "     'mod <name>' line in the root justfile"
-    echo "  4. Update sssf.config.yaml protected_files / writes if paths moved"
-    echo "  5. If this app runs on a sandbox VM, check just/sandbox/lifecycle/observe.just"
-    echo "     (APP_DIR + the boot command) and sandbox_mount/guest/provision.sh"
-    echo "     (the bun-install loop) — both still name the old app's path"
+    echo "  5. Update sssf.config.yaml protected_files / writes if paths moved, and"
+    echo "     the boot command in just/sandbox/lifecycle/observe.just if the app"
+    echo "     isn't a static Bun HTML entry"
     echo "  6. Run one ADW end-to-end to confirm the quality gates pass"
     echo ""
     echo "Ask Claude to do steps 1-6 in a fresh conversation — this command only moved files."

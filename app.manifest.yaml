@@ -1,0 +1,10 @@
+# app.manifest.yaml — the single place the factory learns the payload app's identity.
+# `just app swap` edits this file; quality.py, fill.just, and observe.just read it.
+app:
+  name: fretboard
+  dir: apps/fretboard
+  entry: apps/fretboard/main.ts                        # bun build target for typecheck/build
+  test_file: apps/fretboard/fretboard.test.ts          # the fixed suite
+  generated_tests_dir: apps/fretboard/tests/generated  # reserved — consumed by the TDD phase plan
+source:
+  repo: https://github.com/ronpwood/fretboard-agent-sandboxes.git   # what FILL clones into the VM

@@ -17,7 +17,10 @@ fill RUN_ID *SHA:
     RR="sandbox_mount/host/run_record.py"
 
     # Public repo: no auth, no GitHub integration, no exe.dev git integration.
-    REPO="https://github.com/ronpwood/fretboard-agent-sandboxes.git"
+    # The URL comes from the HOST checkout's app.manifest.yaml (source.repo) —
+    # the clone target's own manifest is irrelevant at fill time. A failed
+    # lookup exits non-zero and `set -e` kills the recipe here, before any ssh.
+    REPO=$(uv run adws/adw_modules/manifest.py get source.repo)
 
     # *SHA is variadic: it interpolates to "" when unpinned, space-joined otherwise.
     # Only the first token is meaningful; extra words are a caller mistake we ignore.

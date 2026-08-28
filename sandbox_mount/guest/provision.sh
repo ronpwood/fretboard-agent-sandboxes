@@ -153,8 +153,11 @@ if bad:
 say "wrote $HOME/.pi/agent/models.json ($(grep -c '"id"' "$HOME/.pi/agent/models.json" || true) models)"
 
 # ── 5. bun install ───────────────────────────────────────────────────────────
+# apps/*/ instead of naming the app: `apps/` holds exactly one payload by
+# convention (`just app swap` archives first), and a glob costs nothing here
+# where a guest-side manifest read would cost a pyyaml fetch.
 step "5/9 bun install"
-for dir in apps/fretboard .claude/skills/sssf/apps/visualizer; do
+for dir in apps/*/ .claude/skills/sssf/apps/visualizer; do
   if [[ -f "$dir/package.json" ]]; then
     ( cd "$dir" && bun install )
     say "installed ${dir}"
