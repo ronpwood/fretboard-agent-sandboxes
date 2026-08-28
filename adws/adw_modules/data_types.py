@@ -95,6 +95,26 @@ class BuildOutput(EnvelopeBase):
     commit_message: str = ""        # consumed by the git commit phase
 
 
+class TestCase(BaseModel):
+    """One generated test and the plan requirement it exists to prove.
+
+    `requirement` is not decoration: it is the traceability thread the reviewer
+    follows (plan requirement -> named test), and later a best-of-N judge's
+    scoring axis.
+    """
+
+    name: str                       # the bun test name, verbatim
+    requirement: str                # the plan requirement it proves, in the plan's words
+
+
+class TestDesignOutput(EnvelopeBase):
+    """The spec-derived suite a test-designer wrote BEFORE the build exists."""
+
+    test_file: str = ""             # the one generated file, under app.generated_tests_dir
+    cases: list[TestCase] = Field(default_factory=list)
+    commit_message: str = ""        # consumed by the commit_tests git phase
+
+
 class ScoutFinding(BaseModel):
     file: str
     note: str = ""

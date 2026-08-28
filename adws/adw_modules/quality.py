@@ -160,25 +160,30 @@ def build(run) -> QualityCheckResult:
     ), run)
 
 
-def tests(run) -> QualityCheckResult:
+def tests(run, extra_files: list[str] | None = None) -> QualityCheckResult:
     """Run the app's suite. A known command — code, not an agent.
 
     The command is written down once here because it is not a judgement call.
     An agent rediscovering `bun test` on every run cost ~1M tokens and 85s; this
     costs nothing and takes milliseconds.
+
+    `extra_files` appends more test files to the same command — the TDD chain
+    passes its generated suite here so the green bar always means fixed +
+    generated together, reported through the one envelope shape every ADW
+    already consumes. Zero-arg behavior is byte-identical to before.
     """
     return _run(QualityCheckSpec(
         name="tests",
         area="frontend",
         operation="build",           # the enum has no "test"; the name carries it
-        argv=[BUN, "test", TEST_FILE],
+        argv=[BUN, "test", TEST_FILE, *(extra_files or [])],
         timeout_seconds=600,
     ), run)
 
 
-def run_tests(run) -> QualityResult:
+def run_tests(run, extra_files: list[str] | None = None) -> QualityResult:
     """The test suite as a QualityResult, so it reports like every other block."""
-    check = tests(run)
+    check = tests(run, extra_files)
     failures = ([] if check.passed else
                 [f"{check.name}: `{check.command}` exited {check.returncode}\n"
                  f"{check.output_tail}".rstrip()])

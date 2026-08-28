@@ -12,7 +12,7 @@ sessions:
 back_refs:
   - specs/payload-app-manifest.md — consumes `app.test_file` and `app.generated_tests_dir`; build that plan first
 forward_refs: []
-status: ready
+status: building
 ---
 
 # Plan: Spec-to-Test Phase with a Red Gate
@@ -142,77 +142,77 @@ smoke under the detector — before any agent depends on it.
 
 #### 1. Data types
 
-- [ ] Add `TestCase` and `TestDesignOutput` to `data_types.py`, matching the file's existing comment style and field-per-line layout
+- [x] Add `TestCase` and `TestDesignOutput` to `data_types.py`, matching the file's existing comment style and field-per-line layout
 
 #### 2. The gate
 
-- [ ] Add `tests_red(envelope, run) -> GateReport` to `gates.py` with the four checks from Solution; reuse `TAIL_CHARS` evidence truncation; read `generated_tests_dir` and the fixed `test_file` via `manifest.load()` (back_ref: payload-app-manifest)
-- [ ] Design it like `tests_pass`: no hidden state, every check recorded with evidence whether green or red
+- [x] Add `tests_red(envelope, run) -> GateReport` to `gates.py` with the four checks from Solution; reuse `TAIL_CHARS` evidence truncation; read `generated_tests_dir` and the fixed `test_file` via `manifest.load()` (back_ref: payload-app-manifest)
+- [x] Design it like `tests_pass`: no hidden state, every check recorded with evidence whether green or red
 
 #### 3. Self-test the gate in both directions
 
-- [ ] Sanity-check the RED primitive both ways at the shell (see validation below) — a passing dummy must exit 0, a failing dummy non-zero, so the gate's exit-code reading stands on measured ground
-- [ ] Exercise `tests_red` itself against three fixtures in `apps/fretboard/tests/generated/`: an already-passing file (gate must FAIL — vacuous), a properly failing file (gate must PASS), a syntax-broken file (gate must FAIL on `parses`); run via a short `uv run` driver with a stub envelope, then delete the fixtures
+- [x] Sanity-check the RED primitive both ways at the shell (see validation below) — a passing dummy must exit 0, a failing dummy non-zero, so the gate's exit-code reading stands on measured ground
+- [x] Exercise `tests_red` itself against three fixtures in `apps/fretboard/tests/generated/`: an already-passing file (gate must FAIL — vacuous), a properly failing file (gate must PASS), a syntax-broken file (gate must FAIL on `parses`); run via a short `uv run` driver with a stub envelope, then delete the fixtures
 
 #### Validation — Phase 1
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `printf 'import {test,expect} from "bun:test";\ntest("t",()=>expect(1).toBe(1));\n' > /tmp/green.test.ts && bun test /tmp/green.test.ts; echo "exit=$?"` — prints `exit=0` (the vacuous case is detectable)
-- [ ] `printf 'import {test,expect} from "bun:test";\ntest("t",()=>expect(1).toBe(2));\n' > /tmp/red.test.ts && bun test /tmp/red.test.ts; echo "exit=$?"` — prints a non-zero exit (the red case is detectable)
-- [ ] Gate fixture run — `tests_red` returns FAIL / PASS / FAIL for the passing / failing / syntax-broken fixtures respectively, with the reason readable in each check's note
-- [ ] `git status --porcelain apps/fretboard/tests/` — fixtures cleaned up, nothing left behind
+- [x] `printf 'import {test,expect} from "bun:test";\ntest("t",()=>expect(1).toBe(1));\n' > /tmp/green.test.ts && bun test /tmp/green.test.ts; echo "exit=$?"` — prints `exit=0` (the vacuous case is detectable)
+- [x] `printf 'import {test,expect} from "bun:test";\ntest("t",()=>expect(1).toBe(2));\n' > /tmp/red.test.ts && bun test /tmp/red.test.ts; echo "exit=$?"` — prints a non-zero exit (exit=1 measured; the red case is detectable)
+- [x] Gate fixture run — `tests_red` returns FAIL / PASS / FAIL for the passing / failing / syntax-broken fixtures respectively, with the reason readable in each check's note
+- [x] `git status --porcelain apps/fretboard/tests/` — fixtures cleaned up, nothing left behind
 
 ### Phase 2: Quality plumbing
 
 #### 1. `extra_files` through the test blocks
 
-- [ ] `quality.tests(run, extra_files=[])` appends the extra paths to the `bun test` argv; `run_tests(run, extra_files=[])` passes through; zero-arg behavior byte-identical to today (existing callers in `adw_simple_sdlc.py` etc. unchanged)
+- [x] `quality.tests(run, extra_files=[])` appends the extra paths to the `bun test` argv; `run_tests(run, extra_files=[])` passes through; zero-arg behavior byte-identical to today (existing callers in `adw_simple_sdlc.py` etc. unchanged) — implemented as `extra_files: list[str] | None = None` to avoid a mutable default; same call contract
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `uv run adws/adw_quality.py "tdd plumbing regression check"` — the existing deterministic chain is still green with no callers passing `extra_files`
-- [ ] `grep -n "extra_files" adws/adw_modules/quality.py` — the parameter exists on both `tests` and `run_tests`
+- [x] `uv run adws/adw_quality.py "tdd plumbing regression check"` — the existing deterministic chain is still green with no callers passing `extra_files` (adw 578bda2d, 2/2 phases)
+- [x] `grep -n "extra_files" adws/adw_modules/quality.py` — the parameter exists on both `tests` and `run_tests`
 
 ### Phase 3: Roster entry and prompts
 
 #### 1. `test_designer` in the roster
 
-- [ ] Add the agent to `sssf.config.yaml`: purpose "Turn the plan's requirements into an executable test file that fails until the build satisfies it; touch nothing else"; `writes: [apps/*/tests/generated/]` (confirm glob semantics against `permissions.py` before committing to the pattern); tools `read, grep, find, ls, bash, write`; start on the roster default model with `thinking: high`; pick an unused lane color
-- [ ] Verify `permissions.py` enforces the `writes` containment for a path that doesn't exist yet (the dir is created by the first write — confirm the check is prefix-based, not existence-based)
+- [x] Add the agent to `sssf.config.yaml`: purpose "Turn the plan's requirements into an executable test file that fails until the build satisfies it; touch nothing else"; `writes: [apps/*/tests/generated/]` (confirm glob semantics against `permissions.py` before committing to the pattern); tools `read, grep, find, ls, bash, write`; start on the roster default model with `thinking: high`; pick an unused lane color (`#34d399`) — glob confirmed: the plan's trailing-`/` pattern would hit `_matches`'s prefix branch first and literal-match the `*`; shipped as `apps/*/tests/generated/**`
+- [x] Verify `permissions.py` enforces the `writes` containment for a path that doesn't exist yet (the dir is created by the first write — confirm the check is prefix-based, not existence-based) — `permitted()` is pure string/pattern matching; driver confirmed a nonexistent `tests/generated/x.test.ts` is allowed and `main.ts`/fixed suite/manifest/gates.py are rejected
 
 #### 2. Prompt engineering
 
-- [ ] `system.md` — follow the planner/reviewer file structure (Purpose / Instructions). Contract: read `plan.md` from the previous envelope; write exactly ONE file, `<generated_tests_dir>/<adw_id>.test.ts`; one test per plan requirement, named so a human can match test to requirement; imports MAY reference modules the plan says will be created — that is what TDD red looks like; the suite MUST fail on the current tree and the failures must be assertion- or import-shaped, never syntax errors; report `TestDesignOutput` with every case's `requirement` in the plan's own words; include the file's standing conventions (bare tool names, exit-status judging, scratch to /tmp)
-- [ ] `user.md` — the `{{prompt}}` / `{{previous_envelope}}` / `{{context_handoff_dir}}` variable template, mirroring `planner/user.md`
+- [x] `system.md` — follow the planner/reviewer file structure (Purpose / Instructions). Contract: read `plan.md` from the previous envelope; write exactly ONE file, `<generated_tests_dir>/<adw_id>.test.ts`; one test per plan requirement, named so a human can match test to requirement; imports MAY reference modules the plan says will be created — that is what TDD red looks like; the suite MUST fail on the current tree and the failures must be assertion- or import-shaped, never syntax errors; report `TestDesignOutput` with every case's `requirement` in the plan's own words; include the file's standing conventions (bare tool names, exit-status judging, scratch to /tmp)
+- [x] `user.md` — the `{{prompt}}` / `{{previous_envelope}}` / `{{context_handoff_dir}}` variable template, mirroring `planner/user.md`
 
 #### Validation — Phase 3
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `uv run python -c "import yaml,sys; yaml.safe_load(open('adws/adw_sssf_config/sssf.config.yaml'))"` (or the repo's equivalent load path) — config still parses
-- [ ] `ls adws/adw_data/prompt_engineering/test_designer/` — `system.md` and `user.md` exist
-- [ ] `permissions.py` containment check — a simulated write to `apps/fretboard/main.ts` by `test_designer` is rejected; a write to `apps/fretboard/tests/generated/x.test.ts` is allowed
+- [x] `uv run python -c "import yaml,sys; yaml.safe_load(open('adws/adw_sssf_config/sssf.config.yaml'))"` (or the repo's equivalent load path) — config still parses
+- [x] `ls adws/adw_data/prompt_engineering/test_designer/` — `system.md` and `user.md` exist
+- [x] `permissions.py` containment check — a simulated write to `apps/fretboard/main.ts` by `test_designer` is rejected; a write to `apps/fretboard/tests/generated/x.test.ts` is allowed (driver ran `permitted()` against the real loaded config, 6/6 cases correct)
 
 ### Phase 4: The chain
 
 #### 1. `adw_tdd_sdlc.py`
 
-- [ ] Clone `adw_simple_sdlc.py`; insert the `test_design` agent phase (gates: `artifacts_exist`, `tests_red`) and `commit_tests` git phase between `commit_plan` and `build`; `REQUIRED_AGENTS = ["planner", "test_designer", "builder", "reviewer", "documenter"]`
-- [ ] Builder's `previous` is the `TestDesignOutput` envelope; the test-design phase's `notes_for_next_agent` must carry the plan path and the red-run failure tail
-- [ ] Every `test_N` / `retest` phase passes `extra_files=[test_design.test_file]` — the green bar is fixed + generated, always together
-- [ ] Rewrite the module docstring in the file's own voice: four commits, four work products, four authors; the smoke-detector rationale for the red gate
-- [ ] Add the `tdd` recipe to `just/adws.just` beside `sdlc`, so `just sbx lifecycle execute <run-id> <prompt> tdd …` reaches it unchanged
+- [x] Clone `adw_simple_sdlc.py`; insert the `test_design` agent phase (gates: `artifacts_exist`, `tests_red`) and `commit_tests` git phase between `commit_plan` and `build`; `REQUIRED_AGENTS = ["planner", "test_designer", "builder", "reviewer", "documenter"]`
+- [x] Builder's `previous` is the `TestDesignOutput` envelope; the test-design phase's `notes_for_next_agent` must carry the plan path and the red-run failure tail (instructed in `user.md`'s Task step 5 and Report contract)
+- [x] Every `test_N` / `retest` phase passes `extra_files=[test_design.test_file]` — the green bar is fixed + generated, always together
+- [x] Rewrite the module docstring in the file's own voice: four commits, four work products, four authors; the smoke-detector rationale for the red gate
+- [x] Add the `tdd` recipe to `just/adws.just` beside `sdlc`, so `just sbx lifecycle execute <run-id> <prompt> tdd …` reaches it unchanged
 
 #### Validation — Phase 4
 
 > **Loop gate.** Do not start Phase 5 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `uv run python -m py_compile adws/adw_tdd_sdlc.py` (via the same uv script env the ADWs use) — the script parses
-- [ ] `uv run adws/adw_tdd_sdlc.py --help` — argparse contract matches the sibling scripts (`prompt`, `--config`, `--adw-id`)
-- [ ] `just adw` — the `tdd` recipe is listed
+- [x] `uv run python -m py_compile adws/adw_tdd_sdlc.py` (via the same uv script env the ADWs use) — the script parses
+- [x] `uv run adws/adw_tdd_sdlc.py --help` — argparse contract matches the sibling scripts (`prompt`, `--config`, `--adw-id`)
+- [x] `just adw` — the `tdd` recipe is listed
 
 ### Phase 5: Smoke test — the whole detector, with smoke
 

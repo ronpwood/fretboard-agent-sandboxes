@@ -62,6 +62,28 @@ agents:
       - subagent_list
       - subagent_remove
 
+  - name: test_designer
+    thinking: high                 # roster-default model on purpose: whether test design
+                                   # needs a frontier model is a question the five-roster
+                                   # fan-out answers empirically, not config
+    color: "#34d399"
+    purpose: Turn the plan's requirements into an executable test file that fails until the build satisfies it; touch nothing else.
+    prompt_engineering:
+      system: adws/adw_data/prompt_engineering/test_designer/system.md
+      user: adws/adw_data/prompt_engineering/test_designer/user.md
+    writes:                        # exactly one lane. NOT "tests/generated/" with a bare
+                                   # trailing slash: permissions._matches checks the "/"
+                                   # prefix branch BEFORE the glob branch, so a pattern with
+                                   # both "*" and a trailing "/" would literal-match nothing.
+      - apps/*/tests/generated/**
+    tools:                         # reads the plan and the code; writes only its suite —
+      - read                       # no edit, so it cannot "help" the fixed suite
+      - grep
+      - find
+      - ls
+      - bash
+      - write
+
   - name: builder
     color: "#22d3ee"
     purpose: Implement the plan exactly; report every changed file in the envelope.

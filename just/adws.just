@@ -68,6 +68,10 @@ document *ARGS:
 sdlc *ARGS:
     uv run adws/adw_plan_build_test.py --config {{config}} "$@"
 
+# simple-sdlc plus a red-gated test-design phase: the suite must FAIL pre-build
+tdd *ARGS:
+    uv run adws/adw_tdd_sdlc.py --config {{config}} "$@"
+
 # sdlc plus a deterministic quality block at the end
 plan-build-test-quality *ARGS:
     uv run adws/adw_plan_build_test_quality.py --config {{config}} "$@"
