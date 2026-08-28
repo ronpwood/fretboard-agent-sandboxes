@@ -684,3 +684,39 @@ What exists now:
 
 Next: flip the host manifest, mount gf-1..3, execute `prompts/greenfield.md` through
 `tdd`, harvest, judge against the rubric, revert the flip.
+
+## Session (2026-08-28b): greenfield fan-out ran, judged, and torn down — the reviewer is the product
+
+Full results and scorecard live in `specs/greenfield-cof-experiment.md`; screenshots in
+`specs/greenfield-judge/`. Three arms, one-sentence brief, same roster, same pin, TDD
+chain, ~$0.81 total inference. Scores: gf-3 **19/20**, gf-1 **15/20**, gf-2 **9/20**.
+
+What the run taught, beyond the scorecard:
+
+1. **Same team, three draws, one winner — so the winner was sampled, not selected.**
+   All three arms ran the identical roster. gf-3 won because its reviewer happened to
+   reject the first build over nine blocking UI requirements; gf-1's and gf-2's
+   reviewers waved theirs through. A capability that shows up one run in three isn't a
+   capability, it's a dice roll — if strict review is the differentiator, it has to be
+   made structural (stronger reviewer model, or review criteria that force a browser
+   check) rather than hoped for.
+2. **The agents are blind to their own design.** No phase loads the page. That's why
+   gf-2 shipped a mount-time crash under 370 green asserts, and it retroactively
+   explains the earlier detailed-spec runs converging visually: the spec was doing the
+   seeing. Candidate fix (deferred, deliberately): Playwright inside the VM as a build/
+   review tool, or a deterministic browser smoke gate (load, zero console errors,
+   screenshot into the envelope).
+3. **Spend allocation hypothesis (Ron's, and the evidence supports it): pay for design
+   and review, economize on build.** The flash builder was good enough to satisfy any
+   suite put in front of it — including the winner's. The plan documents were
+   structurally fine but their UI intent wasn't *enforced* anywhere checkable. The two
+   places a human engineer still instinctively hovers — "is the spec solid?" and "does
+   the output look right?" — are exactly the two phases that failed silently. Natural
+   next experiment: asymmetric roster (frontier planner + frontier reviewer, flash
+   builder) on the same brief, N=3, versus this run as the control.
+4. Operational notes: stock `harvest` can't fetch bundles into this repo when the
+   sandbox cloned a different-history repo (clean-room case) — fetch the kept bundle
+   into the other checkout instead; recipe could take a target-repo arg. Teardown hit
+   a real OpenRouter incident: `DELETE /api/v1/keys/<hash>` returning 408 for every
+   key while GET returned 200 — the recipe correctly refused to destroy VMs with
+   possibly-live keys, and a retry loop finished the job later.
