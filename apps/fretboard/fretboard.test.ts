@@ -33,7 +33,7 @@ import {
   ringLabel,
   type WheelRing,
 } from "./circle-wheel.ts";
-import { pitchAtFret, midiAtFret, STANDARD_TUNING, STANDARD_TUNING_MIDI } from "./fretboard.ts";
+import { pitchAtFret, midiAtFret, STANDARD_TUNING, STANDARD_TUNING_MIDI, getAllFretboardNotes, filterFretboardNotes, noteRoleInTriad } from "./fretboard.ts";
 import { findVoicings, bestVoicing } from "./voicing.ts";
 import {
   A4_MIDI,
@@ -384,15 +384,21 @@ describe("view mode", () => {
 
   test("the default view is the chord diagram", () => {
     expect(DEFAULT_VIEW).toBe("chord");
-    expect(panelVisibility(DEFAULT_VIEW)).toEqual({ chord: true, triad: false });
+    expect(panelVisibility(DEFAULT_VIEW)).toEqual({ chord: true, triad: false, explorer: false });
     expect(VIEW_MODES[0]).toBe(DEFAULT_VIEW);
   });
 
-  test("toggling lands on the other view and back", () => {
-    expect(otherView("chord")).toBe("triad");
-    expect(otherView("triad")).toBe("chord");
+  test("toggling cycles through all the views", () => {
+    expect(VIEW_MODES.length).toBe(3);
+    let current: ViewMode = "chord";
+    const seen: ViewMode[] = [];
+    for (let i = 0; i < 3; i++) {
+      current = otherView(current);
+      seen.push(current);
+    }
+    expect(seen).toEqual(["triad", "explorer", "chord"]);
     for (const v of VIEW_MODES) {
-      expect(otherView(otherView(v))).toBe(v);
+      expect(panelVisibility(otherView(v))).not.toEqual(panelVisibility(v));
     }
   });
 
@@ -412,7 +418,19 @@ describe("view mode", () => {
     }
     expect(viewLabel("chord")).toBe("Chord diagram");
     expect(viewLabel("triad")).toBe("Triad layout");
+    expect(viewLabel("explorer")).toBe("Fretboard explorer");
     expect(viewLabel("chord")).not.toBe(viewLabel("triad"));
+  });
+
+  test("explorer view is recognized and exposed by every helper", () => {
+    expect(toViewMode("explorer")).toBe("explorer");
+    expect(VIEW_MODES).toContain("explorer");
+    expect(panelVisibility("explorer")).toEqual({ chord: false, triad: false, explorer: true });
+  });
+
+  test("unknown values still fall back to the default", () => {
+    expect(toViewMode("explorer")).toBe("explorer");
+    expect(toViewMode("nosuchview")).toBe(DEFAULT_VIEW);
   });
 });
 
@@ -662,6 +680,87 @@ describe("midiAtFret", () => {
     expect(() => midiAtFret(-1, 0)).toThrow();
     expect(() => midiAtFret(0, -1)).toThrow();
     expect(() => midiAtFret(0.5, 0)).toThrow();
+  });
+});
+
+describe("getAllFretboardNotes", () => {
+  test("returns all 78 positions across 6 strings and frets 0..12", () => {
+    const notes = getAllFretboardNotes();
+    expect(notes.length).toBe(6 * 13);
+    expect(notes.length).toBe(78);
+  });
+
+  test("low E open string is MIDI 40 (pitch class 4)", () => {
+    const lowE = getAllFretboardNotes().find((n) => n.stringIndex === 0 && n.fret === 0)!;
+    expect(lowE).toBeDefined();
+    expect(lowE.midi).toBe(40);
+    expect(lowE.pitchClass).toBe(4);
+  });
+
+  test("high E 12th fret is MIDI 76 (pitch class 4)", () => {
+    const highE = getAllFretboardNotes().find((n) => n.stringIndex === 5 && n.fret === 12)!;
+    expect(highE).toBeDefined();
+    expect(highE.midi).toBe(64 + 12);
+    expect(highE.midi).toBe(76);
+    expect(highE.pitchClass).toBe(4);
+  });
+
+  test("midi and pitchClass are consistent with the pure helpers", () => {
+    for (const note of getAllFretboardNotes()) {
+      expect(note.midi).toBe(midiAtFret(note.stringIndex, note.fret));
+      expect(note.pitchClass).toBe(pitchAtFret(note.stringIndex, note.fret));
+    }
+  });
+
+  test("honors a custom max fret", () => {
+    expect(getAllFretboardNotes(5).length).toBe(6 * 6);
+    expect(getAllFretboardNotes(0).length).toBe(6);
+  });
+});
+
+describe("filterFretboardNotes", () => {
+  test("keeps only the target pitch classes (C major triad)", () => {
+    const filtered = filterFretboardNotes(getAllFretboardNotes(), [0, 4, 7]);
+    expect(filtered.length).toBeGreaterThan(0);
+    for (const note of filtered) {
+      expect([0, 4, 7]).toContain(note.pitchClass);
+    }
+  });
+
+  test("an empty target list yields no matches", () => {
+    expect(filterFretboardNotes(getAllFretboardNotes(), [])).toEqual([]);
+  });
+});
+
+describe("noteRoleInTriad", () => {
+  test("C major: 0 is root, 4 is third, 7 is fifth, anything else is other", () => {
+    expect(noteRoleInTriad(0, 0, "major")).toBe("root");
+    expect(noteRoleInTriad(4, 0, "major")).toBe("third");
+    expect(noteRoleInTriad(7, 0, "major")).toBe("fifth");
+    expect(noteRoleInTriad(3, 0, "major")).toBe("other");
+  });
+
+  test("maps correctly across all qualities", () => {
+    const cases: [Quality, { root: number; third: number; fifth: number }][] = [
+      ["major", { root: 0, third: 4, fifth: 7 }],
+      ["minor", { root: 0, third: 3, fifth: 7 }],
+      ["diminished", { root: 0, third: 3, fifth: 6 }],
+      ["augmented", { root: 0, third: 4, fifth: 8 }],
+    ];
+    for (const [quality, expected] of cases) {
+      expect(noteRoleInTriad(expected.root, 0, quality)).toBe("root");
+      expect(noteRoleInTriad(expected.third, 0, quality)).toBe("third");
+      expect(noteRoleInTriad(expected.fifth, 0, quality)).toBe("fifth");
+      expect(noteRoleInTriad(expected.root + 1, 0, quality)).toBe("other");
+      expect(triadNotes(0, quality)).toEqual([expected.root, expected.third, expected.fifth]);
+    }
+  });
+
+  test("normalizes pitch classes outside 0..11", () => {
+    expect(noteRoleInTriad(12, 0, "major")).toBe("root");
+    expect(noteRoleInTriad(16, 0, "major")).toBe("third");
+    expect(noteRoleInTriad(-8, 0, "major")).toBe("third");
+    expect(noteRoleInTriad(-5, 0, "major")).toBe("fifth");
   });
 });
 
@@ -917,6 +1016,20 @@ describe("persisted UI state", () => {
     expect(parsed.version).toBe(STORAGE_VERSION);
     expect(typeof STORAGE_KEY).toBe("string");
     expect(STORAGE_KEY.length).toBeGreaterThan(0);
+  });
+
+  test("round trips the explorer view without loss", () => {
+    const s: PersistedState = {
+      tonicPc: 2,
+      mode: "minor",
+      degreeIndex: 3,
+      view: "explorer",
+      voicingIndex: 1,
+      inversion: "first",
+      stringSetIndex: 1,
+    };
+    expect(parseState(serializeState(s))).toEqual(s);
+    expect(parseState(serializeState(s)).view).toBe("explorer");
   });
 
   test("nothing stored falls back to defaults", () => {

@@ -230,12 +230,53 @@
     flex: 1 1 160px;
   }
 
+  .explorer-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .explorer-controls > div {
+    flex: 1 1 160px;
+  }
+
+  .explorer-controls > .triad-play-controls {
+    flex: 0 0 auto;
+    margin-top: 0.5rem;
+  }
+
+  .fret-line { stroke: #4a4e69; }
+  .fret-line.nut { stroke: #edf0f7; stroke-width: 4; }
+  .string-line { stroke: #9aa1b5; }
+  .fret-inlay { fill: #2b2e3d; }
+
+  .explorer-marker {
+    cursor: pointer;
+  }
+
+  .explorer-marker:focus-visible {
+    outline: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+
+  .explorer-marker .explorer-label {
+    pointer-events: none;
+    user-select: none;
+  }
+
   .legend {
     display: flex;
     gap: 1rem;
     margin-top: 0.5rem;
     font-size: 0.85rem;
     color: var(--muted-text);
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
   }
 
   .legend span.swatch {
@@ -245,6 +286,7 @@
     border-radius: 50%;
     margin-right: 0.3rem;
     vertical-align: middle;
+    flex: 0 0 auto;
   }
 
   .wheel-heading { margin: 0 0 .5rem; font-size: 1rem; font-weight: 600; }
@@ -266,6 +308,7 @@
   <div id="view-toggle" role="radiogroup" aria-label="Main view">
     <button id="view-chord" type="button" role="radio" aria-pressed="true" data-view="chord">Chord diagram</button>
     <button id="view-triad" type="button" role="radio" aria-pressed="false" data-view="triad">Triad layout</button>
+    <button id="view-explorer" type="button" role="radio" aria-pressed="false" data-view="explorer">Fretboard explorer</button>
   </div>
 </header>
 <main>
@@ -331,6 +374,38 @@
         <span><span class="swatch" style="background: var(--fifth-color);"></span>Fifth</span>
       </div>
       <p id="triad-caption" aria-live="polite"></p>
+    </div>
+
+    <div class="stage-panel" id="explorer-panel" hidden>
+      <h2>Fretboard explorer</h2>
+      <div class="explorer-controls">
+        <div>
+          <label for="explorer-filter">Filter notes</label>
+          <select id="explorer-filter" aria-label="Filter notes">
+            <option value="chord" selected>Selected chord notes</option>
+            <option value="key">Key / scale notes</option>
+          </select>
+        </div>
+        <div>
+          <label for="explorer-label-mode">Marker labels</label>
+          <select id="explorer-label-mode" aria-label="Marker labels">
+            <option value="name" selected>Note name (e.g. C, E, G)</option>
+            <option value="role">Role / degree (e.g. R, 3rd, 5th)</option>
+            <option value="pc">Pitch class (0–11)</option>
+          </select>
+        </div>
+        <div class="triad-play-controls">
+          <button id="explorer-play" type="button" class="play-button" aria-label="Play all neck notes">&#9654; Play all</button>
+        </div>
+      </div>
+      <svg id="explorer-diagram" viewBox="0 0 740 180" role="img" aria-label="12-fret guitar fretboard diagram"></svg>
+      <div class="legend">
+        <span><span class="swatch" style="background: var(--root-color);"></span>Root</span>
+        <span><span class="swatch" style="background: var(--third-color);"></span>Third</span>
+        <span><span class="swatch" style="background: var(--fifth-color);"></span>Fifth</span>
+        <span><span class="swatch" style="background: var(--accent);"></span>Scale / Other</span>
+      </div>
+      <p id="explorer-caption" class="wheel-caption" aria-live="polite"></p>
     </div>
   </section>
 </main>

@@ -5,9 +5,17 @@ import {
   diatonicTriads,
   noteName,
   pitchClass,
+  triadNotes,
   type Triad,
 } from "./theory.ts";
-import { pitchAtFret, type Fingering } from "./fretboard.ts";
+import {
+  pitchAtFret,
+  getAllFretboardNotes,
+  filterFretboardNotes,
+  noteRoleInTriad,
+  type Fingering,
+  type FretboardNotePosition,
+} from "./fretboard.ts";
 import { findVoicings } from "./voicing.ts";
 import {
   layoutTriadOnStringSet,
@@ -72,6 +80,11 @@ const state: State = {
   stringSetIndex: DEFAULT_PERSISTED_STATE.stringSetIndex,
   view: DEFAULT_PERSISTED_STATE.view,
 };
+
+// --- Explorer view state ---------------------------------------------------
+
+let explorerFilter: "chord" | "key" = "chord";
+let explorerLabelMode: "name" | "role" | "pc" = "name";
 
 // --- Persistence -----------------------------------------------------------
 
@@ -151,6 +164,13 @@ const wheelSvg = document.getElementById("circle-wheel") as unknown as SVGSVGEle
 const wheelCaptionEl = document.getElementById("wheel-caption") as HTMLParagraphElement;
 const chordPlayBtn = document.getElementById("chord-play") as HTMLButtonElement;
 const triadPlayBtn = document.getElementById("triad-play") as HTMLButtonElement;
+const viewExplorerBtn = document.getElementById("view-explorer") as HTMLButtonElement;
+const explorerPanel = document.getElementById("explorer-panel") as HTMLDivElement;
+const explorerFilterSelect = document.getElementById("explorer-filter") as HTMLSelectElement;
+const explorerLabelModeSelect = document.getElementById("explorer-label-mode") as HTMLSelectElement;
+const explorerPlayBtn = document.getElementById("explorer-play") as HTMLButtonElement;
+const explorerDiagramSvg = document.getElementById("explorer-diagram") as unknown as SVGSVGElement;
+const explorerCaption = document.getElementById("explorer-caption") as HTMLParagraphElement;
 
 // --- Web Audio ------------------------------------------------------------
 // Created lazily on the first user gesture so autoplay policy never blocks us.
@@ -558,12 +578,232 @@ function renderTriadDiagram() {
   triadCaptionEl.textContent = `${STRING_SET_LABELS[state.stringSetIndex]} strings, ${state.inversion} inversion`;
 }
 
+const EXPLORER_FRET_START_X = 50;   // x of fret 0 (nut)
+const EXPLORER_FRET_SPACING = 55;   // px per fret
+const EXPLORER_FRET_END_X = 710;    // x of fret 12 line
+const EXPLORER_OPEN_X = 25;         // open-string marker x
+const EXPLORER_TOP_STRING_Y = 30;   // y of string 5 (high E)
+const EXPLORER_STRING_SPACING = 24; // px between strings
+const EXPLORER_STRING_NAMES = ["E2", "A2", "D3", "G3", "B3", "E4"];
+
+const EXPLORER_ROLE_COLOR: Record<string, string> = {
+  root: "var(--root-color)",
+  third: "var(--third-color)",
+  fifth: "var(--fifth-color)",
+  other: "var(--accent)",
+};
+
+function explorerStringY(stringIndex: number): number {
+  return EXPLORER_TOP_STRING_Y + (5 - stringIndex) * EXPLORER_STRING_SPACING;
+}
+
+function explorerFretX(fret: number): number {
+  return EXPLORER_FRET_START_X + fret * EXPLORER_FRET_SPACING;
+}
+
+function explorerMarkerX(fret: number): number {
+  return fret === 0
+    ? EXPLORER_OPEN_X
+    : EXPLORER_FRET_START_X + (fret - 0.5) * EXPLORER_FRET_SPACING;
+}
+
+function explorerTargetPcs(filter: "chord" | "key"): number[] {
+  if (filter === "chord") {
+    if (!state.selected) return [];
+    const { root, quality } = state.selected;
+    return triadNotes(root, quality);
+  }
+  return diatonicTriads(state.tonicPc, state.mode).map((t) => t.root);
+}
+
+function explorerRoleLabel(pc: number): string {
+  if (!state.selected) return "other";
+  const role = noteRoleInTriad(pc, state.selected.root, state.selected.quality);
+  if (role !== "other") {
+    return role === "root" ? "R" : role === "third" ? "3rd" : "5th";
+  }
+  const degree = diatonicTriads(state.tonicPc, state.mode).find((t) => t.root === pc);
+  return degree ? degree.degree : "·";
+}
+
+function explorerMarkerLabel(pc: number): string {
+  switch (explorerLabelMode) {
+    case "name": return noteName(pc);
+    case "role": return explorerRoleLabel(pc);
+    case "pc": return String(pc);
+  }
+}
+
+function explorerMarkerColor(pc: number): string {
+  if (!state.selected) return "var(--accent)";
+  return EXPLORER_ROLE_COLOR[noteRoleInTriad(pc, state.selected.root, state.selected.quality)];
+}
+
+function explorerRoleName(pc: number): string {
+  if (!state.selected) return "scale";
+  switch (noteRoleInTriad(pc, state.selected.root, state.selected.quality)) {
+    case "root": return "Root";
+    case "third": return "Third";
+    case "fifth": return "Fifth";
+    case "other": return "Scale";
+  }
+}
+
+function renderExplorerDiagram() {
+  explorerDiagramSvg.replaceChildren();
+
+  const targetPcs = explorerTargetPcs(explorerFilter);
+  if (targetPcs.length === 0) {
+    explorerDiagramSvg.appendChild(
+      textNode(150, 90, "Select a chord to explore.", { fill: "#9aa1b5", "font-size": 13 })
+    );
+    explorerCaption.textContent = "";
+    explorerPlayBtn.disabled = true;
+    return;
+  }
+
+  // Neck outline.
+  explorerDiagramSvg.appendChild(el("line", {
+    x1: EXPLORER_OPEN_X,
+    y1: EXPLORER_TOP_STRING_Y - 6,
+    x2: EXPLORER_FRET_END_X,
+    y2: EXPLORER_TOP_STRING_Y - 6,
+    stroke: "#2b2e3d",
+    "stroke-width": 1,
+  }));
+  explorerDiagramSvg.appendChild(el("line", {
+    x1: EXPLORER_OPEN_X,
+    y1: EXPLORER_TOP_STRING_Y - 6,
+    x2: EXPLORER_OPEN_X,
+    y2: explorerStringY(5) + 6,
+    stroke: "#2b2e3d",
+    "stroke-width": 1,
+  }));
+  explorerDiagramSvg.appendChild(el("line", {
+    x1: EXPLORER_OPEN_X,
+    y1: explorerStringY(5) + 6,
+    x2: EXPLORER_FRET_END_X,
+    y2: explorerStringY(5) + 6,
+    stroke: "#2b2e3d",
+    "stroke-width": 1,
+  }));
+
+  // Fret lines (fret 0 is the nut).
+  for (let f = 0; f <= 12; f++) {
+    const x = explorerFretX(f);
+    const isNut = f === 0;
+    explorerDiagramSvg.appendChild(el("line", {
+      x1: x,
+      y1: EXPLORER_TOP_STRING_Y - 6,
+      x2: x,
+      y2: explorerStringY(5) + 6,
+      class: isNut ? "fret-line nut" : "fret-line",
+      stroke: isNut ? "#edf0f7" : "#4a4e69",
+      "stroke-width": isNut ? 4 : 1.5,
+    }));
+  }
+
+  // Fret inlays.
+  for (const f of [3, 5, 7, 9]) {
+    const x = explorerFretX(f);
+    explorerDiagramSvg.appendChild(el("circle", {
+      cx: x,
+      cy: 90,
+      r: 3.5,
+      class: "fret-inlay",
+    }));
+  }
+  for (const y of [66, 114]) {
+    explorerDiagramSvg.appendChild(el("circle", {
+      cx: explorerFretX(12),
+      cy: y,
+      r: 3.5,
+      class: "fret-inlay",
+    }));
+  }
+
+  // String lines.
+  for (let s = 6 - 1; s >= 0; s--) {
+    const stringIndex = s;
+    const y = explorerStringY(stringIndex);
+    const width = 1.8 - stringIndex * 0.2;
+    explorerDiagramSvg.appendChild(el("line", {
+      x1: EXPLORER_OPEN_X,
+      y1: y,
+      x2: EXPLORER_FRET_END_X,
+      y2: y,
+      class: "string-line",
+      stroke: "#9aa1b5",
+      "stroke-width": width > 0.8 ? width : 0.8,
+    }));
+  }
+
+  // Note markers.
+  const notes = filterFretboardNotes(getAllFretboardNotes(12), targetPcs);
+  for (const pos of notes) {
+    const { stringIndex, fret, pitchClass: pc } = pos;
+    const x = explorerMarkerX(fret);
+    const y = explorerStringY(stringIndex);
+    const label = explorerMarkerLabel(pc);
+
+    const circle = el("circle", {
+      cx: x,
+      cy: y,
+      r: 10,
+      fill: explorerMarkerColor(pc),
+      stroke: "#12131a",
+      "stroke-width": 1,
+    });
+    const text = textNode(x, y + 3.5, label, {
+      class: "explorer-label",
+      fill: "#12131a",
+      "font-size": 10,
+      "text-anchor": "middle",
+      "font-weight": "600",
+    });
+
+    const group = el("g", { class: "explorer-marker" });
+    group.setAttribute("role", "button");
+    group.setAttribute("tabindex", "0");
+    group.setAttribute(
+      "aria-label",
+      `Play ${noteName(pc)} (${explorerRoleName(pc)}), string ${6 - stringIndex} (${EXPLORER_STRING_NAMES[stringIndex]}), fret ${fret}`
+    );
+    group.appendChild(circle);
+    group.appendChild(text);
+
+    const play = () => {
+      playNotes([soundedNote(stringIndex, fret)]);
+      explorerCaption.textContent =
+        `Playing ${noteName(pc)} (${explorerRoleName(pc)} of ${noteName(state.selected ? state.selected.root : state.tonicPc)} ${state.selected ? qualityLabel(state.selected.quality) : ""}) on String ${6 - stringIndex} (${EXPLORER_STRING_NAMES[stringIndex]}), Fret ${fret}`;
+    };
+    group.addEventListener("click", play);
+    group.addEventListener("keydown", (event) => {
+      const e = event as KeyboardEvent;
+      if (e.key === "Enter" || e.key === " ") {
+        if (e.key === " ") e.preventDefault();
+        play();
+      }
+    });
+
+    explorerDiagramSvg.appendChild(group);
+  }
+
+  explorerPlayBtn.disabled = false;
+  const filterLabel = explorerFilter === "chord" && state.selected
+    ? `${noteName(state.selected.root)} ${qualityLabel(state.selected.quality)}`
+    : `${noteName(state.tonicPc)} ${state.mode} key`;
+  explorerCaption.textContent = `Showing ${notes.length} of ${getAllFretboardNotes(12).length} fretboard notes — ${filterLabel} (${targetPcs.map((p) => noteName(p)).join(", ")})`;
+}
+
 function renderView() {
   const visible = panelVisibility(state.view);
   chordPanel.hidden = !visible.chord;
   triadPanel.hidden = !visible.triad;
+  explorerPanel.hidden = !visible.explorer;
   viewChordBtn.setAttribute("aria-pressed", String(visible.chord));
   viewTriadBtn.setAttribute("aria-pressed", String(visible.triad));
+  viewExplorerBtn.setAttribute("aria-pressed", String(visible.explorer));
 }
 
 function syncKeyControls() {
@@ -646,6 +886,7 @@ function render() {
   renderChordList();
   renderChordDiagram();
   renderTriadDiagram();
+  renderExplorerDiagram();
   saveState();
 }
 
@@ -666,6 +907,7 @@ function setView(view: ViewMode) {
 function attachListeners() {
   viewChordBtn.addEventListener("click", () => setView("chord"));
   viewTriadBtn.addEventListener("click", () => setView("triad"));
+  viewExplorerBtn.addEventListener("click", () => setView("explorer"));
 
   keySelect.addEventListener("change", () => {
     applyKey(Number(keySelect.value), state.mode);
@@ -700,6 +942,27 @@ function attachListeners() {
   triadPlayBtn.addEventListener("click", () => {
     const layout = currentTriadLayout();
     if (layout) playNotes(notesForPositions(layout));
+  });
+
+  explorerFilterSelect.addEventListener("change", () => {
+    explorerFilter = explorerFilterSelect.value as "chord" | "key";
+    renderExplorerDiagram();
+  });
+
+  explorerLabelModeSelect.addEventListener("change", () => {
+    explorerLabelMode = explorerLabelModeSelect.value as "name" | "role" | "pc";
+    renderExplorerDiagram();
+  });
+
+  explorerPlayBtn.addEventListener("click", () => {
+    const notes = filterFretboardNotes(
+      getAllFretboardNotes(12),
+      explorerTargetPcs(explorerFilter)
+    )
+      .slice()
+      .sort((a: FretboardNotePosition, b: FretboardNotePosition) => a.midi - b.midi)
+      .map((pos) => soundedNote(pos.stringIndex, pos.fret));
+    playNotes(notes);
   });
 }
 
