@@ -1,0 +1,1 @@
+Fretboard Explorer — an SVG six-string neck with fret wires, inlays through fret 24, note markers, selectable tuning, CAGED root shape, color mode (interval, note name, or scale degree), fret-range control, and click-to-play notes.
