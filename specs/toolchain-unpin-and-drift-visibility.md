@@ -4,6 +4,7 @@ created: 2026-08-30T10:06:08-07:00
 modified:
   - 2026-08-30T10:06:08-07:00
   - 2026-08-30T11:00:49-07:00
+  - 2026-08-30T11:06:38-07:00
 commits:
   - 0f90d24
   - e9fc9c4
@@ -11,6 +12,8 @@ commits:
   - acee38b
   - 0a417e1
   - ebf63c2
+  - 02f5fe7
+  - 49545a7
 agents:
   - claude-fable-5
 sessions:
@@ -221,7 +224,7 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 #### 2. Merge
 
-- [ ] `fail` PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]` — PR #1 opened (https://github.com/ronpwood/fretboard-agent-sandboxes/pull/1); `gh pr merge` was blocked by the permission classifier — merging is the user's call
+- [x] PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]` — PR #1 opened (https://github.com/ronpwood/fretboard-agent-sandboxes/pull/1); `gh pr merge` was blocked by the permission classifier — merging is the user's call
 - [x] Update this plan's `status` and `commits`
 
 #### Validation — Phase 4
@@ -230,7 +233,7 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 - [x] `grep -n 'Toolchain baseline' PLAYBOOK.md` — the section exists
 - [x] `grep -n 'toolchain-unpin-and-drift-visibility' NEXTSTEPS.md` — the thread points here
-- [ ] `fail` `git log --oneline main | head -5` shows the merge; `git branch --merged main | grep toolchain-unpin` — depends on the merge above
+- [x] `git log --oneline main | head -5` shows the merge; `git branch --merged main | grep toolchain-unpin` — depends on the merge above
 
 ## Global Validation
 
@@ -455,4 +458,12 @@ Deviations:
 - Guest `just` floated to 1.58.0 against the host's 1.46.0 — the deferred host/guest skew is now
   visible in the lock. `runs_table.py` reads stdin and hangs when run bare; not a plan matter, noted
   so the next session does not lose five minutes to it.
+</details>
+
+<details>
+<summary>2026-08-30T11:06:38-07:00 — PR #1 merged to main (49545a7) by the user</summary>
+
+The two Phase 4 merge boxes are now `[x]`. Remaining open work is the plan's global close only:
+a second-day mount passing `[6/6]` with gate F, and the five-roster fan-out re-run. `status`
+stays `building` until those land.
 </details>
