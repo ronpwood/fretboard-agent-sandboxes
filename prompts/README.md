@@ -15,13 +15,26 @@ lands somewhere a deterministic test can check.
 | `07-redesign-editorial.md` | redesign — typography-first editorial instrument |
 | `08-redesign-progressive-focus.md` | redesign — progressive disclosure, full power in layers |
 | `09-triad-playback.md` | feature, frontend-only — Web Audio playback of the triad panel's current inversion |
+| `13-enharmonic-respelling.md` | correctness fix — key-aware note naming, flat keys stop showing sharp spellings |
+| `14-progression-playback.md` | feature, frontend-only — Web Audio playback of the I–IV–V–vi diatonic progression |
+| `15-seventh-chords.md` | feature — diatonic 7th chords (Imaj7...viim7b5) as a parallel mode of the chord-diagram panel |
+| `16-alternate-tunings.md` | feature, narrow scope — Drop D / DADGAD / Open G in the fretboard-explorer panel only |
 
 06–08 are one product goal (writing-first redesign, all features kept but folded into menus) in
 three creative directions — built for best-of-N: fire each at its own sandbox and compare.
 
-09 targets `apps/fretboard`, the current payload app — 01–08 target `apps/inkwell`, archived at
-`archive/inkwell-20260815-053427/` after `just app swap`. A prompt written against one app's file
-paths will not resolve against another; check which app is live before firing an old one.
+13–16 are four independent features ranked by pedagogical value per unit of implementation risk
+(13 highest, 16 lowest — see each file's "Why it matters" for the reasoning): 13 is a correctness
+fix and the cheapest change of the four; 14 is small and ships well alongside it; 15 budgets for a
+multi-module change but stays scoped to one panel; 16 is deliberately the narrowest possible slice
+of a much larger, lower-priority feature. Fire independently or as a fan-out to compare — they
+touch disjoint files (theory.ts+main.ts render sites / playback.ts+main.ts / theory.ts+voicing.ts /
+fretboard.ts+main.ts) and can run in parallel sandboxes without colliding, but 13's key-aware
+`noteName` signature change is worth landing first since 14/15/16 don't depend on it.
+
+09 and 13–16 target `apps/fretboard`, the current payload app — 01–08 target `apps/inkwell`,
+archived at `archive/inkwell-20260815-053427/` after `just app swap`. A prompt written against one
+app's file paths will not resolve against another; check which app is live before firing an old one.
 
 The five differ in shape on purpose: fire the same one at several models and the spread is worth
 reading. Fire five different ones at one target and they collide — one detached SDLC at a time.
