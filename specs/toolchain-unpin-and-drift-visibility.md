@@ -135,39 +135,39 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 #### 3. Prove it on a box, pinned
 
-- [ ] `wip` `just sbx mount proxy-check` (still bun 1.3.14) — must end at observe `[6/6]` with `app 200 anonymous`
-- [ ] `ssh <vm> 'ss -ltn'` shows `:4502` on a loopback address and `*:4501`
-- [ ] Open `https://<vm>.exe.xyz/` in a browser; the fretboard renders (bundle chunks served through the proxy, not just the HTML)
-- [ ] `just sbx lifecycle observe <id>` a second time reports "already listening" for both ports
-- [ ] `just sbx lifecycle teardown <id>`
+- [x] `just sbx mount proxy-check` (still bun 1.3.14) — must end at observe `[6/6]` with `app 200 anonymous`
+- [x] `ssh <vm> 'ss -ltn'` shows `:4502` on a loopback address and `*:4501`
+- [x] Open `https://<vm>.exe.xyz/` in a browser; the fretboard renders (bundle chunks served through the proxy, not just the HTML)
+- [x] `just sbx lifecycle observe <id>` a second time reports "already listening" for both ports
+- [x] `just sbx lifecycle teardown <id>`
 
 #### Validation — Phase 1
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `bash sandbox_mount/guest/app_proxy_selftest.sh "$(command -v bun)" apps/fretboard` — proxy passes a foreign Host on the host's bun
-- [ ] `BUN_INSTALL=$TMPDIR/bun140 bash -c 'curl -fsSL https://bun.sh/install | bash -s bun-v1.4.0' >/dev/null && bash sandbox_mount/guest/app_proxy_selftest.sh $TMPDIR/bun140/bin/bun apps/fretboard` — proxy passes on the exact version that broke the fan-out
-- [ ] `just sbx mount proxy-check 2>&1 | grep -E '\[6/6\]|app +200 anonymous'` — a real box on the pinned bun serves publicly through the proxy
-- [ ] `git diff main -- apps/` is empty — nothing in the payload app changed; serving is the sandbox's concern
+- [x] `bash sandbox_mount/guest/app_proxy_selftest.sh "$(command -v bun)" apps/fretboard` — proxy passes a foreign Host on the host's bun
+- [x] `BUN_INSTALL=$TMPDIR/bun140 bash -c 'curl -fsSL https://bun.sh/install | bash -s bun-v1.4.0' >/dev/null && bash sandbox_mount/guest/app_proxy_selftest.sh $TMPDIR/bun140/bin/bun apps/fretboard` — proxy passes on the exact version that broke the fan-out
+- [x] `just sbx mount proxy-check 2>&1 | grep -E '\[6/6\]|app +200 anonymous'` — a real box on the pinned bun serves publicly through the proxy
+- [x] `git diff main -- apps/` is empty — nothing in the payload app changed; serving is the sandbox's concern
 
 ### Phase 2: Unpin bun behind a declared baseline
 
 #### 1. The lock file and the reader
 
-- [ ] Create `sandbox_mount/guest/toolchain.lock` per Notes, seeded `bun 1.3.14 float`, `just 1.46.0 float`, and `image` rows for `uv`, `pi`, `claude`, `python` with version `unknown` (gate F treats `unknown` as record-only until the first mount fills it in)
-- [ ] In `provision.sh`, replace `BUN_VERSION="1.3.14"` with a read of the lock: `want=$(awk '$1=="bun"{print $2}' …)`, `mode=$(awk '$1=="bun"{print $3}' …)`; `${BUN_VERSION:-}` from the environment overrides both (forces `pin` at that version)
-- [ ] `pin` mode keeps today's behaviour byte-for-byte (version-aware replace + post-install assertion). `float` mode: install latest only if bun is absent; never downgrade or upgrade an existing binary (a golden-copied VM keeps its bun and gate F reports it); assert only that *something* runnable landed
-- [ ] Apply the same reader to step 3 (`just`): the installer supports `--tag <version>` for `pin`; `float` is the current behaviour
-- [ ] Shrink the 1.4.0 comment block to ~6 lines: what happened, that the serving layer no longer depends on it, and `see specs/toolchain-unpin-and-drift-visibility.md`. Delete the sentence claiming `--host` is not a flag — it is false
+- [x] Create `sandbox_mount/guest/toolchain.lock` per Notes, seeded `bun 1.3.14 float`, `just 1.46.0 float`, and `image` rows for `uv`, `pi`, `claude`, `python` with version `unknown` (gate F treats `unknown` as record-only until the first mount fills it in)
+- [x] In `provision.sh`, replace `BUN_VERSION="1.3.14"` with a read of the lock: `want=$(awk '$1=="bun"{print $2}' …)`, `mode=$(awk '$1=="bun"{print $3}' …)`; `${BUN_VERSION:-}` from the environment overrides both (forces `pin` at that version)
+- [x] `pin` mode keeps today's behaviour byte-for-byte (version-aware replace + post-install assertion). `float` mode: install latest only if bun is absent; never downgrade or upgrade an existing binary (a golden-copied VM keeps its bun and gate F reports it); assert only that *something* runnable landed
+- [x] Apply the same reader to step 3 (`just`): the installer supports `--tag <version>` for `pin`; `float` is the current behaviour
+- [x] Shrink the 1.4.0 comment block to ~6 lines: what happened, that the serving layer no longer depends on it, and `see specs/toolchain-unpin-and-drift-visibility.md`. Delete the sentence claiming `--host` is not a flag — it is false
 
 #### 2. The escape hatch
 
-- [ ] `setup.just`: `"${SSH[@]}" "BUN_VERSION='${BUN_VERSION:-}' bash app/sandbox_mount/guest/provision.sh"` — an empty value must be a no-op, a set value must reach the guest
-- [ ] Document the invocation in the recipe's header comment: `BUN_VERSION=1.3.14 just sbx mount <id>` pins one mount without a commit
+- [x] `setup.just`: `"${SSH[@]}" "BUN_VERSION='${BUN_VERSION:-}' bash app/sandbox_mount/guest/provision.sh"` — an empty value must be a no-op, a set value must reach the guest
+- [x] Document the invocation in the recipe's header comment: `BUN_VERSION=1.3.14 just sbx mount <id>` pins one mount without a commit
 
 #### 3. Prove float on a box
 
-- [ ] `just sbx mount unpin-check` — provision prints `bun 1.4.x (float, baseline 1.3.14)`; observe `[6/6]` `app 200 anonymous`
+- [ ] `wip` `just sbx mount unpin-check` — provision prints `bun 1.4.x (float, baseline 1.3.14)`; observe `[6/6]` `app 200 anonymous`
 - [ ] On the same box: `BUN_VERSION=1.3.14 just sbx lifecycle setup <id>` replaces bun with 1.3.14 (the version-aware replace path), then `just sbx lifecycle observe <id>` still passes — the escape hatch and the pin path both work
 - [ ] Teardown
 

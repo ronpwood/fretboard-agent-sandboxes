@@ -22,6 +22,14 @@
 # a different roster, every arm was gated against models it would never call —
 # the gate passed and told you nothing. Pass the same path here that you pass to
 # `just sbx lifecycle execute`.
+#
+# BUN_VERSION is the one-mount escape hatch for the toolchain baseline
+# (sandbox_mount/guest/toolchain.lock). Normally unset: provision installs bun
+# per the lock (float = latest on a fresh box) and gate F reports what landed.
+#   BUN_VERSION=1.3.14 just sbx mount <id>          # pin ONE mount, no commit
+#   BUN_VERSION=1.3.14 just sbx lifecycle setup <id> # re-pin a box already up
+# It forces `pin` at that version for this provision run only; the version-aware
+# replace path swaps whatever bun is on the box. Empty means "obey the lock".
 
 # phase 3: provision the sandbox, then gate it (never destroys the VM). CONFIG picks the roster C pings
 setup RUN_ID CONFIG="":
@@ -64,7 +72,10 @@ setup RUN_ID CONFIG="":
     "${SSH[@]}" 'rm -f /tmp/PROVISION_READY' < /dev/null \
       || gate_fail "cannot reach ${HOST} over ssh"
     # < /dev/null so ssh does not swallow this script's stdin; output streams live.
-    "${SSH[@]}" 'bash app/sandbox_mount/guest/provision.sh' < /dev/null \
+    # BUN_VERSION rides along as a remote assignment, not an env var: `ssh host
+    # cmd` carries no environment. Empty on the host -> empty on the box ->
+    # provision reads toolchain.lock as usual. See the header for when to set it.
+    "${SSH[@]}" "BUN_VERSION='${BUN_VERSION:-}' bash app/sandbox_mount/guest/provision.sh" < /dev/null \
       || gate_fail "provision.sh exited non-zero (its last '── step ──' line names the stage)"
 
     # ── 2. sentinel ──────────────────────────────────────────────────────────
