@@ -2,10 +2,17 @@
 
 > Research only. Nothing here is built. Sources are the **live exe.dev CLI** (`ssh exe.dev help <cmd>`),
 > the **official docs served over SSH** (`ssh exe.dev doc <slug>`), and the **open-source exeuntu
-> Dockerfile** (`github.com/boldsoftware/exeuntu`). The web docs at `exe.dev/docs` render client-side
-> and return nothing to a fetcher — `ssh exe.dev doc` is the fetchable form of the same pages.
+> Dockerfile** (`github.com/boldsoftware/exeuntu`).
 >
-> Date verified: 2026-08-04.
+> **Correction (2026-08-29):** this header used to say the web docs "render client-side and return
+> nothing to a fetcher" and that `ssh exe.dev doc` was the only fetchable form. That is no longer
+> true — appending `.md` to any docs URL returns clean markdown over plain `curl`
+> (`https://exe.dev/docs/<slug>.md`), and `https://exe.dev/llms.txt` indexes every page while
+> `https://exe.dev/llms-full.txt` inlines all 122 of them in one file. The HTML pages still render
+> client-side, so a scraper pointed at them still gets nothing; the `.md` suffix is the fix. A local
+> archive now lives in `ai_docs/exedev/` — see its README.
+>
+> Date verified: 2026-08-04 (§11 measurements); docs-access note corrected 2026-08-29.
 >
 > **Everything in §11 was measured on real VMs on 2026-08-04**, not inferred. Where a measurement
 > contradicted an inference, the inference has been corrected in place.

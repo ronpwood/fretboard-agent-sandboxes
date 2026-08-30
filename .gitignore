@@ -145,6 +145,7 @@ temp/
 .vercel/
 .netlify/
 *.tsbuildinfo
+ai_docs/exedev
 
 # sssf runtime
 adws/adw_data/sessions/
