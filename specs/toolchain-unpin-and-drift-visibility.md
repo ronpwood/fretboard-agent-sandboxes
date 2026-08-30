@@ -167,33 +167,33 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 #### 3. Prove float on a box
 
-- [ ] `wip` `just sbx mount unpin-check` — provision prints `bun 1.4.x (float, baseline 1.3.14)`; observe `[6/6]` `app 200 anonymous`
-- [ ] On the same box: `BUN_VERSION=1.3.14 just sbx lifecycle setup <id>` replaces bun with 1.3.14 (the version-aware replace path), then `just sbx lifecycle observe <id>` still passes — the escape hatch and the pin path both work
-- [ ] Teardown
+- [x] `just sbx mount unpin-check` — provision prints `bun 1.4.x (float, baseline 1.3.14)`; observe `[6/6]` `app 200 anonymous`
+- [x] On the same box: `BUN_VERSION=1.3.14 just sbx lifecycle setup <id>` replaces bun with 1.3.14 (the version-aware replace path), then `just sbx lifecycle observe <id>` still passes — the escape hatch and the pin path both work
+- [x] Teardown
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `! grep -q 'BUN_VERSION="1' sandbox_mount/guest/provision.sh` — the hardcoded pin is gone
-- [ ] `! grep -q 'not a flag' sandbox_mount/guest/provision.sh` — the false claim is gone
-- [ ] `awk '$1=="bun"{print $3}' sandbox_mount/guest/toolchain.lock` prints `float`
-- [ ] `just sbx mount unpin-check 2>&1 | grep -E 'bun 1\.[4-9]|\[6/6\]|app +200 anonymous'` — a floating bun newer than the old pin serves publicly
-- [ ] `bash -n sandbox_mount/guest/provision.sh` — still parses
+- [x] `! grep -q 'BUN_VERSION="1' sandbox_mount/guest/provision.sh` — the hardcoded pin is gone
+- [x] `! grep -q 'not a flag' sandbox_mount/guest/provision.sh` — the false claim is gone
+- [x] `awk '$1=="bun"{print $3}' sandbox_mount/guest/toolchain.lock` prints `float`
+- [x] `just sbx mount unpin-check 2>&1 | grep -E 'bun 1\.[4-9]|\[6/6\]|app +200 anonymous'` — a floating bun newer than the old pin serves publicly
+- [x] `bash -n sandbox_mount/guest/provision.sh` — still parses
 
 ### Phase 3: Drift visibility for the whole toolchain
 
 #### 1. The report script
 
-- [ ] Create `sandbox_mount/guest/toolchain_report.sh`: for each lock row, resolve the actual version (`bun --version`, `just --version | awk '{print $2}'`, `uv --version | awk '{print $2}'`, `pi --version`, `claude --version | awk '{print $1}'`, `python3 --version | awk '{print $2}'`), print `tool  baseline  actual  status` where status ∈ `ok` / `DRIFT` / `MISSING` / `record` (baseline `unknown`), `--json` emits `{"bun":"1.4.0",…}`, exit 1 only when a `pin` row's actual ≠ baseline
-- [ ] `provision.sh` step 9 calls it in place of the six `say "<tool> $(…)"` lines — one source of truth for "what is on this box"
+- [x] Create `sandbox_mount/guest/toolchain_report.sh`: for each lock row, resolve the actual version (`bun --version`, `just --version | awk '{print $2}'`, `uv --version | awk '{print $2}'`, `pi --version`, `claude --version | awk '{print $1}'`, `python3 --version | awk '{print $2}'`), print `tool  baseline  actual  status` where status ∈ `ok` / `DRIFT` / `MISSING` / `record` (baseline `unknown`), `--json` emits `{"bun":"1.4.0",…}`, exit 1 only when a `pin` row's actual ≠ baseline
+- [x] `provision.sh` step 9 calls it in place of the six `say "<tool> $(…)"` lines — one source of truth for "what is on this box"
 
 #### 2. Gate F and the run record
 
-- [ ] `run_record.py`: append `"toolchain"` to `FIELDS`, `"toolchain": "json"` to `_COERCE`
-- [ ] `setup.just`: after E, `echo "[gate] F toolchain report"`, run `toolchain_report.sh` over ssh (table to the terminal), then `--json` captured and stored via `"$RR" set {{RUN_ID}} "toolchain=<json>"`; `gate_fail "assertion F — pinned tool mismatch"` on non-zero; DRIFT lines never fail the gate by themselves
-- [ ] Update the "five-assertion" wording (header comment, `3/3 health gate (5 assertions)`) to six
-- [ ] Seed the `image` rows in `toolchain.lock` from the first gate-F output of a real mount, in the same commit as the mount's run id
+- [x] `run_record.py`: append `"toolchain"` to `FIELDS`, `"toolchain": "json"` to `_COERCE`
+- [x] `setup.just`: after E, `echo "[gate] F toolchain report"`, run `toolchain_report.sh` over ssh (table to the terminal), then `--json` captured and stored via `"$RR" set {{RUN_ID}} "toolchain=<json>"`; `gate_fail "assertion F — pinned tool mismatch"` on non-zero; DRIFT lines never fail the gate by themselves
+- [x] Update the "five-assertion" wording (header comment, `3/3 health gate (5 assertions)`) to six
+- [ ] `wip` Seed the `image` rows in `toolchain.lock` from the first gate-F output of a real mount, in the same commit as the mount's run id
 
 #### Validation — Phase 3
 

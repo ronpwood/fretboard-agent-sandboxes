@@ -304,12 +304,10 @@ fi
 # ── summary ──────────────────────────────────────────────────────────────────
 step "9/9 summary"
 say "repo    $REPO_ROOT @ $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
-say "bun     $(bun --version)"
-say "just    $(just --version)"
-say "uv      $(uv --version)"
-say "pi      $(pi --version 2>/dev/null || echo 'not installed')"
-say "claude  $(claude --version 2>/dev/null || echo 'not installed')"
-say "python  $(python3 --version)"
+# One source of truth for "what is on this box": the same script gate F runs.
+# Informational here (a pin mismatch on bun/just already failed above, and the
+# gate is the enforcer for the rest), hence the `|| true`.
+bash "${SCRIPT_DIR}/toolchain_report.sh" | sed 's/^/   /' || true
 # `|| true` inside the pipeline, not after it: pipefail would otherwise hand the
 # failure of an absent/unhappy pi to the ERR trap and skip the sentinel below.
 say "models  $( { pi --list-models 2>/dev/null || true; } | grep -c . || true ) lines from pi --list-models"
