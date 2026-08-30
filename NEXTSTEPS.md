@@ -720,3 +720,28 @@ What the run taught, beyond the scorecard:
    a real OpenRouter incident: `DELETE /api/v1/keys/<hash>` returning 408 for every
    key while GET returned 200 — the recipe correctly refused to destroy VMs with
    possibly-live keys, and a retry loop finished the job later.
+
+## Session (2026-08-30): the bun pin, re-diagnosed — plan to unpin
+
+Planning session only; no framework code changed. Re-tested the 2026-08-21b diagnosis against
+real 1.4.0 and 1.3.14 binaries (scratchpad installs) with the actual fretboard app. Two of the
+four August claims were wrong, and the wrong ones are what made unpinning look impossible:
+
+- `--host=<STR>` **exists** in 1.4.0's `bun index.html` — equals-form only. `--host 0.0.0.0`
+  (space) is parsed as a second HTML file, which is the "reads it as a filename" symptom.
+  `--host=0.0.0.0` binds `*:PORT`. It does not help: the bind was never the wall.
+- The 403 is a DNS-rebinding guard in bun's `DevServer.rs` (`is_allowed_host_header`): allows
+  `localhost`, `*.localhost`, IP literals, and the configured hostname. No config knob in 1.4.0
+  or on `main`. Applies to **every** dev-mode path, including `Bun.serve({routes})` — so the
+  reverted `serve_app.ts` (2a66038) would have 403'd on 1.4.0 as well. Only
+  `development: false` escapes it, at the cost of a bundle frozen at boot.
+- What works on both 1.3.14 and 1.4.0, verified: a ~25-line `Bun.serve` on `0.0.0.0:4501` that
+  forwards to the dev server on loopback with `Host: localhost`. 200 with `Host: vm-abc.exe.xyz`,
+  chunks served, edits visible on the next request. It depends only on the guard's own invariant.
+
+Plan: `specs/toolchain-unpin-and-drift-visibility.md` — (1) loopback proxy in observe, proven on
+the pinned bun first; (2) `toolchain.lock` with pin/float/image modes replaces the hardcoded
+`BUN_VERSION`, bun floats, `BUN_VERSION=` env is the one-mount escape hatch; (3) gate assertion F
+prints a `tool · baseline · actual` table and stores it in the run record, covering golden VMs;
+(4) bump ritual in PLAYBOOK. Global close is re-running the five-arm fan-out that 2026-08-21b
+could not launch.
