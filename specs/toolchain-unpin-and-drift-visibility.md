@@ -12,7 +12,7 @@ sessions:
 back_refs:
   - specs/payload-app-manifest.md — observe's per-app boot command reads `app.dir`/`app.name` from the manifest; the proxy's upstream contract is what `just app swap` must preserve
 forward_refs: []
-status: draft
+status: ready
 ---
 
 # Plan: Unpin bun, and make toolchain drift visible instead of frozen
