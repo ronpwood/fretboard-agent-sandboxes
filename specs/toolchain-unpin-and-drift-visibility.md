@@ -193,16 +193,16 @@ proving that on the known-good bun isolates the proxy from the unpin.
 - [x] `run_record.py`: append `"toolchain"` to `FIELDS`, `"toolchain": "json"` to `_COERCE`
 - [x] `setup.just`: after E, `echo "[gate] F toolchain report"`, run `toolchain_report.sh` over ssh (table to the terminal), then `--json` captured and stored via `"$RR" set {{RUN_ID}} "toolchain=<json>"`; `gate_fail "assertion F — pinned tool mismatch"` on non-zero; DRIFT lines never fail the gate by themselves
 - [x] Update the "five-assertion" wording (header comment, `3/3 health gate (5 assertions)`) to six
-- [ ] `wip` Seed the `image` rows in `toolchain.lock` from the first gate-F output of a real mount, in the same commit as the mount's run id
+- [x] Seed the `image` rows in `toolchain.lock` from the first gate-F output of a real mount, in the same commit as the mount's run id
 
 #### Validation — Phase 3
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `just sbx mount drift-check 2>&1 | grep -A8 '\[gate\] F'` — the table prints with one row per lock entry and no `MISSING`
-- [ ] `sandbox_mount/host/run_record.py show <id> | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["toolchain"]["bun"]'` — the versions landed in the record
-- [ ] `sed -i.bak 's/^bun .* float$/bun 0.0.1 pin/' sandbox_mount/guest/toolchain.lock && ssh <vm> 'bash app/sandbox_mount/guest/toolchain_report.sh'; echo "exit $?"; mv sandbox_mount/guest/toolchain.lock.bak sandbox_mount/guest/toolchain.lock` — a `pin` mismatch exits 1 (copy the edited lock to the box first; FILL clones from the remote, so a local edit does not travel on its own)
-- [ ] `! grep -q 'unknown' sandbox_mount/guest/toolchain.lock` — every image row is seeded
+- [x] `just sbx mount drift-check 2>&1 | grep -A8 '\[gate\] F'` — the table prints with one row per lock entry and no `MISSING`
+- [x] `sandbox_mount/host/run_record.py show <id> | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["toolchain"]["bun"]'` — the versions landed in the record
+- [x] `sed -i.bak 's/^bun .* float$/bun 0.0.1 pin/' sandbox_mount/guest/toolchain.lock && ssh <vm> 'bash app/sandbox_mount/guest/toolchain_report.sh'; echo "exit $?"; mv sandbox_mount/guest/toolchain.lock.bak sandbox_mount/guest/toolchain.lock` — a `pin` mismatch exits 1 (copy the edited lock to the box first; FILL clones from the remote, so a local edit does not travel on its own)
+- [x] `! grep -q 'unknown' sandbox_mount/guest/toolchain.lock` — every image row is seeded
 
 ### Phase 4: Bump ritual, docs, and closing the thread
 

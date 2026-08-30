@@ -6,9 +6,9 @@
 # `unknown` is record-only: gate F prints what it found and never judges it.
 # Bump ritual: gate F says DRIFT, observe passes [6/6], edit the row, commit with the run id.
 # The baseline is the newest version that has PROVEN itself on a mount, not the newest that exists.
-bun     1.3.14   float
-just    1.46.0   float
-uv      unknown  image
-pi      unknown  image
-claude  unknown  image
-python  unknown  image
+bun     1.4.0    float
+just    1.58.0   float
+uv      0.12.7   image
+pi      0.84.4   image
+claude  2.1.251  image
+python  3.12.3   image
