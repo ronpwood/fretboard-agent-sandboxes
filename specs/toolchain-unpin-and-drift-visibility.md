@@ -12,7 +12,7 @@ sessions:
 back_refs:
   - specs/payload-app-manifest.md — observe's per-app boot command reads `app.dir`/`app.name` from the manifest; the proxy's upstream contract is what `just app swap` must preserve
 forward_refs: []
-status: ready
+status: building
 ---
 
 # Plan: Unpin bun, and make toolchain drift visible instead of frozen
@@ -120,22 +120,22 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 #### 1. Write the proxy and its self-test
 
-- [ ] `git switch -c toolchain-unpin`
-- [ ] Create `sandbox_mount/guest/app_proxy.ts` per the code in Notes — upstream host is `localhost`, **not** `127.0.0.1` (the dev server binds `localhost`, which is `[::1]` on some stacks; the prototype's first run failed exactly here)
-- [ ] Create `sandbox_mount/guest/app_proxy_selftest.sh <bun-binary> <app-dir>` per Notes; make it executable
-- [ ] Run the self-test against the host's bun and against a 1.4.0 installed into `$TMPDIR` via `BUN_INSTALL=$TMPDIR/bun140 bash -s bun-v1.4.0` — both must pass before touching observe
+- [x] `git switch -c toolchain-unpin`
+- [x] Create `sandbox_mount/guest/app_proxy.ts` per the code in Notes — upstream host is `localhost`, **not** `127.0.0.1` (the dev server binds `localhost`, which is `[::1]` on some stacks; the prototype's first run failed exactly here)
+- [x] Create `sandbox_mount/guest/app_proxy_selftest.sh <bun-binary> <app-dir>` per Notes; make it executable
+- [x] Run the self-test against the host's bun and against a 1.4.0 installed into `$TMPDIR` via `BUN_INSTALL=$TMPDIR/bun140 bash -s bun-v1.4.0` — both must pass before touching observe
 
 #### 2. Wire observe
 
-- [ ] In `observe.just`, add `APP_UPSTREAM_PORT=4502` beside `APP_PORT`; `[2/6]` becomes: start `bun index.html` with `PORT=$APP_UPSTREAM_PORT` (unchanged command otherwise), `wait_listen $APP_UPSTREAM_PORT`, then start `PORT=$APP_PORT UPSTREAM=$APP_UPSTREAM_PORT bun $HOME/app/sandbox_mount/guest/app_proxy.ts` with the same nohup/redirect/`< /dev/null` triple, `wait_listen $APP_PORT`
-- [ ] Both starts stay guarded by `listening()` so a re-run reports "already listening" per port and never stacks a second process
-- [ ] Log files: keep `~/${APP_NAME}-app.log` for the dev server; add `~/${APP_NAME}-proxy.log`; the failure branch tails whichever port failed
-- [ ] Replace the `listening()` comment ("bun binds 0.0.0.0 by default…") with the truth: the dev server is loopback-only *by design* now, the proxy is the wildcard bind, and the `:PORT$` suffix match works for both
-- [ ] Extend the per-app boot comment: an app swap that ships its own server sets `APP_UPSTREAM_PORT` to wherever that server listens and leaves the proxy alone
+- [x] In `observe.just`, add `APP_UPSTREAM_PORT=4502` beside `APP_PORT`; `[2/6]` becomes: start `bun index.html` with `PORT=$APP_UPSTREAM_PORT` (unchanged command otherwise), `wait_listen $APP_UPSTREAM_PORT`, then start `PORT=$APP_PORT UPSTREAM=$APP_UPSTREAM_PORT bun $HOME/app/sandbox_mount/guest/app_proxy.ts` with the same nohup/redirect/`< /dev/null` triple, `wait_listen $APP_PORT`
+- [x] Both starts stay guarded by `listening()` so a re-run reports "already listening" per port and never stacks a second process
+- [x] Log files: keep `~/${APP_NAME}-app.log` for the dev server; add `~/${APP_NAME}-proxy.log`; the failure branch tails whichever port failed
+- [x] Replace the `listening()` comment ("bun binds 0.0.0.0 by default…") with the truth: the dev server is loopback-only *by design* now, the proxy is the wildcard bind, and the `:PORT$` suffix match works for both
+- [x] Extend the per-app boot comment: an app swap that ships its own server sets `APP_UPSTREAM_PORT` to wherever that server listens and leaves the proxy alone
 
 #### 3. Prove it on a box, pinned
 
-- [ ] `just sbx mount proxy-check` (still bun 1.3.14) — must end at observe `[6/6]` with `app 200 anonymous`
+- [ ] `wip` `just sbx mount proxy-check` (still bun 1.3.14) — must end at observe `[6/6]` with `app 200 anonymous`
 - [ ] `ssh <vm> 'ss -ltn'` shows `:4502` on a loopback address and `*:4501`
 - [ ] Open `https://<vm>.exe.xyz/` in a browser; the fretboard renders (bundle chunks served through the proxy, not just the HTML)
 - [ ] `just sbx lifecycle observe <id>` a second time reports "already listening" for both ports
