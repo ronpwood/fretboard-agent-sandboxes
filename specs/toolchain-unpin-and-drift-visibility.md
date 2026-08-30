@@ -3,12 +3,19 @@ plan: toolchain-unpin-and-drift-visibility
 created: 2026-08-30T10:06:08-07:00
 modified:
   - 2026-08-30T10:06:08-07:00
+  - 2026-08-30T11:00:49-07:00
 commits:
   - 0f90d24
+  - e9fc9c4
+  - 7b36d8e
+  - acee38b
+  - 0a417e1
+  - ebf63c2
 agents:
   - claude-fable-5
 sessions:
   - cc-interactive-20260830
+  - session_013Mrv7gT432mvszNfDNatoE
 back_refs:
   - specs/payload-app-manifest.md — observe's per-app boot command reads `app.dir`/`app.name` from the manifest; the proxy's upstream contract is what `just app swap` must preserve
 forward_refs: []
@@ -214,8 +221,8 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 #### 2. Merge
 
-- [ ] `wip` PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]`
-- [ ] Update this plan's `status` and `commits`
+- [ ] `fail` PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]` — PR #1 opened (https://github.com/ronpwood/fretboard-agent-sandboxes/pull/1); `gh pr merge` was blocked by the permission classifier — merging is the user's call
+- [x] Update this plan's `status` and `commits`
 
 #### Validation — Phase 4
 
@@ -223,12 +230,12 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 - [x] `grep -n 'Toolchain baseline' PLAYBOOK.md` — the section exists
 - [x] `grep -n 'toolchain-unpin-and-drift-visibility' NEXTSTEPS.md` — the thread points here
-- [ ] `git log --oneline main | head -5` shows the merge; `git branch --merged main | grep toolchain-unpin`
+- [ ] `fail` `git log --oneline main | head -5` shows the merge; `git branch --merged main | grep toolchain-unpin` — depends on the merge above
 
 ## Global Validation
 
 - [ ] Two consecutive `just sbx mount` runs on different days both pass `[6/6]` with a floating bun and print gate F — the system runs unpinned and says what it ran on
-- [ ] `git log -S'BUN_VERSION="1.3.14"' --oneline -- sandbox_mount/guest/provision.sh | head -1` names only the historical pin commit (`5d0de55`) and its removal — no re-pin crept back
+- [x] `git log -S'BUN_VERSION="1.3.14"' --oneline -- sandbox_mount/guest/provision.sh | head -1` names only the historical pin commit (`5d0de55`) and its removal — no re-pin crept back
 - [ ] Re-run the blocked experiment: the five-roster fan-out on `prompts/10-circle-of-fifths-wheel.md`. Every arm reaches an ADW launch. (This is the item the 2026-08-21b session was trying to do; it is the real close.)
 
 ## Notes
@@ -417,4 +424,35 @@ is merged.
 <summary>— no amendments yet</summary>
 
 Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+</details>
+
+<details>
+<summary>2026-08-30T11:00:49-07:00 — build complete through Phase 4 docs; merge blocked; deviations from the written plan</summary>
+
+Built on `toolchain-unpin` (e9fc9c4 → ebf63c2), each phase proven on a real box before the next:
+`proxy-check-20260830-94f7de` (bun 1.3.14 pinned), `unpin-check-20260830-9f5a6f` (bun 1.4.0 floated,
+then re-pinned to 1.3.14 via `BUN_VERSION=`), `drift-check-20260830-729c65` (gate F). All torn down.
+
+Deviations:
+
+- **`observe.just` uses a `start_bg <port> <log> <cwd> <cmd>` helper** for the two starts rather than
+  two copies of the nohup/listening/wait block. Same semantics per port; one place to fix.
+- **The first ratchet moved the float rows too, not only the image rows.** Task 3.2.4 said "seed the
+  `image` rows"; the same run had gate F reporting `DRIFT bun 1.3.14 → 1.4.0`, `just 1.46.0 → 1.58.0`
+  and observe `[6/6]`, which is exactly the bump ritual, so 0a417e1 ratcheted all six rows.
+- **provision step 9's report is non-fatal (`|| true`).** A bun/just pin mismatch already fails at
+  the install step; image-row pins are gate F's to enforce. The *script's* exit code is unchanged —
+  it still exits 1 on a pin mismatch, which is what gate F reads.
+- **Phase 3 validation 3 (on-box pin mismatch)** was run by piping an edited lock to `/tmp/lock.pin`
+  on the box and passing it as the script's optional path argument, not by overwriting the box's
+  lock. The row printed `DRIFT` on a pin; the captured exit was 141 (SIGPIPE from my `| head -2`),
+  and exit 1 was verified locally with the identical script and lock. Marked `[x]` on that basis.
+- **Phase 4 merge did not happen.** PR #1 is open at
+  https://github.com/ronpwood/fretboard-agent-sandboxes/pull/1; `gh pr merge` was denied by the
+  permission classifier, and a local merge + push to `main` would be the same action, so it was not
+  attempted. The two merge boxes are `fail`-marked for that reason; `status` stays `building`.
+- **Global validation 1 and 3 not attempted** (a second-day mount; the five-roster fan-out). Left idle.
+- Guest `just` floated to 1.58.0 against the host's 1.46.0 — the deferred host/guest skew is now
+  visible in the lock. `runs_table.py` reads stdin and hangs when run bare; not a plan matter, noted
+  so the next session does not lose five minutes to it.
 </details>
