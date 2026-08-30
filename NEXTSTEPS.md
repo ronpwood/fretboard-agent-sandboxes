@@ -306,6 +306,10 @@ with zero console output is its signature.
 
 ## Session (2026-08-21b): five-arm fan-out blocked by an unpinned bun
 
+> **Closed 2026-08-30b** — two of the four claims below were wrong; the corrected diagnosis, the
+> fix (loopback proxy + `toolchain.lock` + gate F) and the unpin are in the 2026-08-30 entries
+> at the bottom of this file and in `specs/toolchain-unpin-and-drift-visibility.md`.
+
 Attempted the five-roster fan-out (default / frontier / deepestseek / open-weights /
 top-speed) on `prompts/10-circle-of-fifths-wheel.md`. **No ADW ever launched.** All five
 arms mounted and passed the full A–E health gate, then failed identically at `observe`'s
@@ -745,3 +749,49 @@ the pinned bun first; (2) `toolchain.lock` with pin/float/image modes replaces t
 prints a `tool · baseline · actual` table and stores it in the run record, covering golden VMs;
 (4) bump ritual in PLAYBOOK. Global close is re-running the five-arm fan-out that 2026-08-21b
 could not launch.
+
+## Session (2026-08-30b): unpinned — the proxy, the lock, and gate F shipped
+
+Built `specs/toolchain-unpin-and-drift-visibility.md` on branch `toolchain-unpin`, proving each
+phase on a real box before the next (three mounts, all torn down: `proxy-check-20260830-94f7de`,
+`unpin-check-20260830-9f5a6f`, `drift-check-20260830-729c65`). The 2026-08-21b thread is closed.
+
+### The corrected diagnosis, for the record
+
+| August belief | Measured |
+|---|---|
+| "`--host` is not a flag (bun reads the value as a filename)" | `--host=<STR>` exists in 1.4.0 — equals-form only; the space form is parsed as a second HTML file |
+| "Neither behaviour is configurable" | The **bind** is (`--host=0.0.0.0` → `*:PORT`). The **Host check** is not: `is_allowed_host_header` in `DevServer.rs` allows `localhost`, `*.localhost`, IP literals, the configured hostname. No knob in 1.4.0 or on `main` |
+| "A `Bun.serve` wrapper is version-independent" (the reverted `serve_app.ts`) | Only with `development: false`; the reverted file ran in dev mode and would have 403'd on 1.4.0 too |
+| "1.3.14 binds 0.0.0.0" | 1.3.14 binds `localhost` as well. The Host check was always the only wall |
+
+### What shipped
+
+- **`sandbox_mount/guest/app_proxy.ts`** — `Bun.serve` on `0.0.0.0:4501` forwarding to the dev
+  server on `localhost:4502` with `Host` rewritten. `observe.just` `[2/6]` now starts both,
+  each idempotent per port. Verified 200/200 (page + bundle chunk) with `Host: vm-abc.exe.xyz`
+  on bun 1.3.0, 1.3.14 and 1.4.0; direct to the dev server on 1.4.0 is 403. The fretboard
+  renders through the public URL; only the HMR WebSocket does not cross the proxy (documented).
+  `app_proxy_selftest.sh <bun> <app-dir>` is how a bun release is vetted without a VM.
+- **`sandbox_mount/guest/toolchain.lock`** — `<tool> <version> <mode>` with `pin` / `float` /
+  `image`. `provision.sh` reads it; the hardcoded `BUN_VERSION="1.3.14"` and the false
+  "`--host` is not a flag" comment are gone. `float` installs latest only when absent and never
+  touches an existing binary. `BUN_VERSION=x.y.z` forwarded by `setup.just` is the one-mount pin
+  — exercised: `found 1.4.0, replacing with pinned 1.3.14`, gate passed, observe served.
+- **Gate F** — `toolchain_report.sh` prints `tool · baseline · actual · status` and its `--json`
+  lands in the run record (`toolchain`, new `run_record.py` field). Exit 1 only on a `pin`
+  mismatch; float/image drift is information. Provision step 9 uses the same script.
+- **The first ratchet**: `drift-check` floated in bun 1.4.0 and just 1.58.0, gate F said
+  `DRIFT`, observe passed `[6/6]`, so the lock now reads `bun 1.4.0`, `just 1.58.0`, and the
+  image rows are seeded (`uv 0.12.7`, `pi 0.84.4`, `claude 2.1.251`, `python 3.12.3`) — commit
+  0a417e1 names the run id. Ritual in PLAYBOOK "Toolchain baseline".
+
+Guest just is 1.58.0 against the host's 1.46.0 — the host/guest skew the plan deferred is now
+visible in the lock instead of unknown.
+
+### Unblocked
+
+The five-roster fan-out on `prompts/10-circle-of-fifths-wheel.md` that 2026-08-21b could not
+launch is no longer blocked by the toolchain. It has not been re-run in this session; that is the
+plan's global close and the next experiment (mind the 2-vCPU shared pool — serialize or bump the
+tier before treating wall clock as a metric).

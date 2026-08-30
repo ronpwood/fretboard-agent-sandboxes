@@ -208,21 +208,21 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 #### 1. Documentation
 
-- [ ] `PLAYBOOK.md`: add "Toolchain baseline" — the lock format, the three modes and which tools sit in which, `BUN_VERSION=` for a one-mount pin, and the ritual: *gate F reports DRIFT → observe `[6/6]` passes → edit the lock to the reported version → commit with the run id in the message*. Explicitly: the baseline is the newest version that has passed observe, never the newest that exists
-- [ ] `NEXTSTEPS.md`: a session entry under the existing 2026-08-21b one that records the corrected diagnosis (the four-row table above), what shipped, and that the five-arm fan-out is unblocked
-- [ ] `observe.just` and `provision.sh` no longer contain any statement about bun's bind address that is not true of both 1.3.14 and 1.4.0
+- [x] `PLAYBOOK.md`: add "Toolchain baseline" — the lock format, the three modes and which tools sit in which, `BUN_VERSION=` for a one-mount pin, and the ritual: *gate F reports DRIFT → observe `[6/6]` passes → edit the lock to the reported version → commit with the run id in the message*. Explicitly: the baseline is the newest version that has passed observe, never the newest that exists
+- [x] `NEXTSTEPS.md`: a session entry under the existing 2026-08-21b one that records the corrected diagnosis (the four-row table above), what shipped, and that the five-arm fan-out is unblocked
+- [x] `observe.just` and `provision.sh` no longer contain any statement about bun's bind address that is not true of both 1.3.14 and 1.4.0
 
 #### 2. Merge
 
-- [ ] PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]`
+- [ ] `wip` PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]`
 - [ ] Update this plan's `status` and `commits`
 
 #### Validation — Phase 4
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `grep -n 'Toolchain baseline' PLAYBOOK.md` — the section exists
-- [ ] `grep -n 'toolchain-unpin-and-drift-visibility' NEXTSTEPS.md` — the thread points here
+- [x] `grep -n 'Toolchain baseline' PLAYBOOK.md` — the section exists
+- [x] `grep -n 'toolchain-unpin-and-drift-visibility' NEXTSTEPS.md` — the thread points here
 - [ ] `git log --oneline main | head -5` shows the merge; `git branch --merged main | grep toolchain-unpin`
 
 ## Global Validation

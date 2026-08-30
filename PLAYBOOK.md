@@ -20,8 +20,8 @@ separate, explicit step):
 |---|---|
 | `create` | mints a capped ($50 default) OpenRouter runtime key, boots the VM, waits for SSH |
 | `fill` | clones this repo onto the VM, writes the runtime key to `app/.env` |
-| `setup` | runs `provision.sh`, then a 5-assertion health gate (git integrity, model registry, live roster ping, cost reporting, remaining credit) |
-| `observe` | starts the app (`:4501`) and the observability dashboard (`:4600`), makes the app URL public |
+| `setup` | runs `provision.sh`, then a 6-assertion health gate (git integrity, model registry, live roster ping, cost reporting, remaining credit, toolchain report) |
+| `observe` | starts the app's dev server on loopback (`:4502`) behind a Host-rewriting proxy (`:4501`), plus the observability dashboard (`:4600`), makes the app URL public |
 
 It prints a summary when done:
 
@@ -145,6 +145,61 @@ Order: check spend → pull artifacts → harvest again (idempotent, catches any
 committed after step 5) → refuse if the tree is dirty → revoke the OpenRouter key →
 destroy the VM → close the run record. Verified this session: revoked key confirmed
 absent from `https://openrouter.ai/api/v1/keys` before declaring success.
+
+## Toolchain baseline
+
+The guest toolchain is **not pinned**. It floats, and every mount says what it ran on.
+The baseline lives in `sandbox_mount/guest/toolchain.lock`, one row per tool:
+
+```
+bun     1.4.0    float
+just    1.58.0   float
+uv      0.12.7   image
+pi      0.84.4   image
+claude  2.1.251  image
+python  3.12.3   image
+```
+
+| mode | who installs it | what `provision.sh` does | what gate F does on a mismatch |
+|---|---|---|---|
+| `float` | us, from the tool's CDN (`bun`, `just`) | installs **latest** if absent; never upgrades or downgrades an existing binary (a golden-copied VM keeps its age visible) | prints `DRIFT`, passes |
+| `image` | the exeuntu base image (`uv`, `pi`, `claude`, `python`) | nothing | prints `DRIFT`, passes |
+| `pin` | us, at exactly that version | version-aware replace + assert at install time | **fails the gate** |
+
+Gate F (`[gate] F toolchain report`, the last assertion in `setup`) prints
+`tool · baseline · actual · status` and stores the actuals in the run record as
+`toolchain`, so "which version was that run on" is answered by
+`sandbox_mount/host/run_record.py get <run-id> toolchain` forever after.
+
+**One-mount pin, no commit.** If a fresh release is bad on a fan-out day:
+
+```
+BUN_VERSION=1.3.14 just sbx mount <run-id>            # this mount only
+BUN_VERSION=1.3.14 just sbx lifecycle setup <run-id>   # re-pin a box that is already up
+```
+
+It forces `pin` at that version for that provision run and swaps whatever bun is on
+the box. The lock is untouched.
+
+**The bump ritual** — how a `DRIFT` becomes the new baseline:
+
+1. Gate F reports `DRIFT bun 1.4.0 → 1.4.1` (float rows never fail on their own).
+2. `observe` passes `[6/6]` with `app 200 anonymous` on that box.
+3. Edit the row in `toolchain.lock` to the reported version.
+4. Commit with the run id in the message (`toolchain.lock: ratchet baseline to <run-id>`).
+
+The baseline is the newest version that has **passed observe**, never the newest that
+exists — a ratchet, not a freeze. The serving layer is what makes floating safe: bun's
+HTML dev server 403s any `Host` that is not `localhost`/an IP literal (a DNS-rebinding
+guard added in 1.4.0), so `observe` keeps it on loopback and fronts it with
+`sandbox_mount/guest/app_proxy.ts`, which rewrites `Host` on the way through. To vet a
+bun release before it floats in, without a VM:
+
+```
+bash sandbox_mount/guest/app_proxy_selftest.sh <bun-binary> apps/fretboard
+```
+
+Background and the rejected alternatives: `specs/toolchain-unpin-and-drift-visibility.md`.
 
 ## One end-to-end example, start to finish
 
