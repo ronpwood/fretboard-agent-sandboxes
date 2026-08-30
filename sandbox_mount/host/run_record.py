@@ -50,6 +50,7 @@ FIELDS = (
     "session_id",
     "commit_sha",
     "ports",
+    "toolchain",
     "pid",
     "created_at",
     "closed_at",
@@ -63,7 +64,9 @@ IMMUTABLE = ("run_id", "created_at")
 # because a commit_sha of 5734129 is a string that happens to parse as a number.
 # `spend` is what the key actually cost, read back from OpenRouter at teardown.
 # It is what makes best-of-N comparable: same prompt, N models, cost beside result.
-_COERCE = {"ports": "json", "pid": "int", "limit": "float", "spend": "float"}
+# `toolchain` is gate F's {"bun": "1.4.0", ...} — the versions this run actually
+# ran on, so a post-mortem never has to re-establish which tool moved.
+_COERCE = {"ports": "json", "toolchain": "json", "pid": "int", "limit": "float", "spend": "float"}
 
 
 def _now() -> str:

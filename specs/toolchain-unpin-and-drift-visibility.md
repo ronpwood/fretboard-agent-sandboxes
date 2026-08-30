@@ -3,16 +3,23 @@ plan: toolchain-unpin-and-drift-visibility
 created: 2026-08-30T10:06:08-07:00
 modified:
   - 2026-08-30T10:06:08-07:00
+  - 2026-08-30T11:00:49-07:00
 commits:
   - 0f90d24
+  - e9fc9c4
+  - 7b36d8e
+  - acee38b
+  - 0a417e1
+  - ebf63c2
 agents:
   - claude-fable-5
 sessions:
   - cc-interactive-20260830
+  - session_013Mrv7gT432mvszNfDNatoE
 back_refs:
   - specs/payload-app-manifest.md — observe's per-app boot command reads `app.dir`/`app.name` from the manifest; the proxy's upstream contract is what `just app swap` must preserve
 forward_refs: []
-status: ready
+status: building
 ---
 
 # Plan: Unpin bun, and make toolchain drift visible instead of frozen
@@ -120,115 +127,115 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 #### 1. Write the proxy and its self-test
 
-- [ ] `git switch -c toolchain-unpin`
-- [ ] Create `sandbox_mount/guest/app_proxy.ts` per the code in Notes — upstream host is `localhost`, **not** `127.0.0.1` (the dev server binds `localhost`, which is `[::1]` on some stacks; the prototype's first run failed exactly here)
-- [ ] Create `sandbox_mount/guest/app_proxy_selftest.sh <bun-binary> <app-dir>` per Notes; make it executable
-- [ ] Run the self-test against the host's bun and against a 1.4.0 installed into `$TMPDIR` via `BUN_INSTALL=$TMPDIR/bun140 bash -s bun-v1.4.0` — both must pass before touching observe
+- [x] `git switch -c toolchain-unpin`
+- [x] Create `sandbox_mount/guest/app_proxy.ts` per the code in Notes — upstream host is `localhost`, **not** `127.0.0.1` (the dev server binds `localhost`, which is `[::1]` on some stacks; the prototype's first run failed exactly here)
+- [x] Create `sandbox_mount/guest/app_proxy_selftest.sh <bun-binary> <app-dir>` per Notes; make it executable
+- [x] Run the self-test against the host's bun and against a 1.4.0 installed into `$TMPDIR` via `BUN_INSTALL=$TMPDIR/bun140 bash -s bun-v1.4.0` — both must pass before touching observe
 
 #### 2. Wire observe
 
-- [ ] In `observe.just`, add `APP_UPSTREAM_PORT=4502` beside `APP_PORT`; `[2/6]` becomes: start `bun index.html` with `PORT=$APP_UPSTREAM_PORT` (unchanged command otherwise), `wait_listen $APP_UPSTREAM_PORT`, then start `PORT=$APP_PORT UPSTREAM=$APP_UPSTREAM_PORT bun $HOME/app/sandbox_mount/guest/app_proxy.ts` with the same nohup/redirect/`< /dev/null` triple, `wait_listen $APP_PORT`
-- [ ] Both starts stay guarded by `listening()` so a re-run reports "already listening" per port and never stacks a second process
-- [ ] Log files: keep `~/${APP_NAME}-app.log` for the dev server; add `~/${APP_NAME}-proxy.log`; the failure branch tails whichever port failed
-- [ ] Replace the `listening()` comment ("bun binds 0.0.0.0 by default…") with the truth: the dev server is loopback-only *by design* now, the proxy is the wildcard bind, and the `:PORT$` suffix match works for both
-- [ ] Extend the per-app boot comment: an app swap that ships its own server sets `APP_UPSTREAM_PORT` to wherever that server listens and leaves the proxy alone
+- [x] In `observe.just`, add `APP_UPSTREAM_PORT=4502` beside `APP_PORT`; `[2/6]` becomes: start `bun index.html` with `PORT=$APP_UPSTREAM_PORT` (unchanged command otherwise), `wait_listen $APP_UPSTREAM_PORT`, then start `PORT=$APP_PORT UPSTREAM=$APP_UPSTREAM_PORT bun $HOME/app/sandbox_mount/guest/app_proxy.ts` with the same nohup/redirect/`< /dev/null` triple, `wait_listen $APP_PORT`
+- [x] Both starts stay guarded by `listening()` so a re-run reports "already listening" per port and never stacks a second process
+- [x] Log files: keep `~/${APP_NAME}-app.log` for the dev server; add `~/${APP_NAME}-proxy.log`; the failure branch tails whichever port failed
+- [x] Replace the `listening()` comment ("bun binds 0.0.0.0 by default…") with the truth: the dev server is loopback-only *by design* now, the proxy is the wildcard bind, and the `:PORT$` suffix match works for both
+- [x] Extend the per-app boot comment: an app swap that ships its own server sets `APP_UPSTREAM_PORT` to wherever that server listens and leaves the proxy alone
 
 #### 3. Prove it on a box, pinned
 
-- [ ] `just sbx mount proxy-check` (still bun 1.3.14) — must end at observe `[6/6]` with `app 200 anonymous`
-- [ ] `ssh <vm> 'ss -ltn'` shows `:4502` on a loopback address and `*:4501`
-- [ ] Open `https://<vm>.exe.xyz/` in a browser; the fretboard renders (bundle chunks served through the proxy, not just the HTML)
-- [ ] `just sbx lifecycle observe <id>` a second time reports "already listening" for both ports
-- [ ] `just sbx lifecycle teardown <id>`
+- [x] `just sbx mount proxy-check` (still bun 1.3.14) — must end at observe `[6/6]` with `app 200 anonymous`
+- [x] `ssh <vm> 'ss -ltn'` shows `:4502` on a loopback address and `*:4501`
+- [x] Open `https://<vm>.exe.xyz/` in a browser; the fretboard renders (bundle chunks served through the proxy, not just the HTML)
+- [x] `just sbx lifecycle observe <id>` a second time reports "already listening" for both ports
+- [x] `just sbx lifecycle teardown <id>`
 
 #### Validation — Phase 1
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `bash sandbox_mount/guest/app_proxy_selftest.sh "$(command -v bun)" apps/fretboard` — proxy passes a foreign Host on the host's bun
-- [ ] `BUN_INSTALL=$TMPDIR/bun140 bash -c 'curl -fsSL https://bun.sh/install | bash -s bun-v1.4.0' >/dev/null && bash sandbox_mount/guest/app_proxy_selftest.sh $TMPDIR/bun140/bin/bun apps/fretboard` — proxy passes on the exact version that broke the fan-out
-- [ ] `just sbx mount proxy-check 2>&1 | grep -E '\[6/6\]|app +200 anonymous'` — a real box on the pinned bun serves publicly through the proxy
-- [ ] `git diff main -- apps/` is empty — nothing in the payload app changed; serving is the sandbox's concern
+- [x] `bash sandbox_mount/guest/app_proxy_selftest.sh "$(command -v bun)" apps/fretboard` — proxy passes a foreign Host on the host's bun
+- [x] `BUN_INSTALL=$TMPDIR/bun140 bash -c 'curl -fsSL https://bun.sh/install | bash -s bun-v1.4.0' >/dev/null && bash sandbox_mount/guest/app_proxy_selftest.sh $TMPDIR/bun140/bin/bun apps/fretboard` — proxy passes on the exact version that broke the fan-out
+- [x] `just sbx mount proxy-check 2>&1 | grep -E '\[6/6\]|app +200 anonymous'` — a real box on the pinned bun serves publicly through the proxy
+- [x] `git diff main -- apps/` is empty — nothing in the payload app changed; serving is the sandbox's concern
 
 ### Phase 2: Unpin bun behind a declared baseline
 
 #### 1. The lock file and the reader
 
-- [ ] Create `sandbox_mount/guest/toolchain.lock` per Notes, seeded `bun 1.3.14 float`, `just 1.46.0 float`, and `image` rows for `uv`, `pi`, `claude`, `python` with version `unknown` (gate F treats `unknown` as record-only until the first mount fills it in)
-- [ ] In `provision.sh`, replace `BUN_VERSION="1.3.14"` with a read of the lock: `want=$(awk '$1=="bun"{print $2}' …)`, `mode=$(awk '$1=="bun"{print $3}' …)`; `${BUN_VERSION:-}` from the environment overrides both (forces `pin` at that version)
-- [ ] `pin` mode keeps today's behaviour byte-for-byte (version-aware replace + post-install assertion). `float` mode: install latest only if bun is absent; never downgrade or upgrade an existing binary (a golden-copied VM keeps its bun and gate F reports it); assert only that *something* runnable landed
-- [ ] Apply the same reader to step 3 (`just`): the installer supports `--tag <version>` for `pin`; `float` is the current behaviour
-- [ ] Shrink the 1.4.0 comment block to ~6 lines: what happened, that the serving layer no longer depends on it, and `see specs/toolchain-unpin-and-drift-visibility.md`. Delete the sentence claiming `--host` is not a flag — it is false
+- [x] Create `sandbox_mount/guest/toolchain.lock` per Notes, seeded `bun 1.3.14 float`, `just 1.46.0 float`, and `image` rows for `uv`, `pi`, `claude`, `python` with version `unknown` (gate F treats `unknown` as record-only until the first mount fills it in)
+- [x] In `provision.sh`, replace `BUN_VERSION="1.3.14"` with a read of the lock: `want=$(awk '$1=="bun"{print $2}' …)`, `mode=$(awk '$1=="bun"{print $3}' …)`; `${BUN_VERSION:-}` from the environment overrides both (forces `pin` at that version)
+- [x] `pin` mode keeps today's behaviour byte-for-byte (version-aware replace + post-install assertion). `float` mode: install latest only if bun is absent; never downgrade or upgrade an existing binary (a golden-copied VM keeps its bun and gate F reports it); assert only that *something* runnable landed
+- [x] Apply the same reader to step 3 (`just`): the installer supports `--tag <version>` for `pin`; `float` is the current behaviour
+- [x] Shrink the 1.4.0 comment block to ~6 lines: what happened, that the serving layer no longer depends on it, and `see specs/toolchain-unpin-and-drift-visibility.md`. Delete the sentence claiming `--host` is not a flag — it is false
 
 #### 2. The escape hatch
 
-- [ ] `setup.just`: `"${SSH[@]}" "BUN_VERSION='${BUN_VERSION:-}' bash app/sandbox_mount/guest/provision.sh"` — an empty value must be a no-op, a set value must reach the guest
-- [ ] Document the invocation in the recipe's header comment: `BUN_VERSION=1.3.14 just sbx mount <id>` pins one mount without a commit
+- [x] `setup.just`: `"${SSH[@]}" "BUN_VERSION='${BUN_VERSION:-}' bash app/sandbox_mount/guest/provision.sh"` — an empty value must be a no-op, a set value must reach the guest
+- [x] Document the invocation in the recipe's header comment: `BUN_VERSION=1.3.14 just sbx mount <id>` pins one mount without a commit
 
 #### 3. Prove float on a box
 
-- [ ] `just sbx mount unpin-check` — provision prints `bun 1.4.x (float, baseline 1.3.14)`; observe `[6/6]` `app 200 anonymous`
-- [ ] On the same box: `BUN_VERSION=1.3.14 just sbx lifecycle setup <id>` replaces bun with 1.3.14 (the version-aware replace path), then `just sbx lifecycle observe <id>` still passes — the escape hatch and the pin path both work
-- [ ] Teardown
+- [x] `just sbx mount unpin-check` — provision prints `bun 1.4.x (float, baseline 1.3.14)`; observe `[6/6]` `app 200 anonymous`
+- [x] On the same box: `BUN_VERSION=1.3.14 just sbx lifecycle setup <id>` replaces bun with 1.3.14 (the version-aware replace path), then `just sbx lifecycle observe <id>` still passes — the escape hatch and the pin path both work
+- [x] Teardown
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `! grep -q 'BUN_VERSION="1' sandbox_mount/guest/provision.sh` — the hardcoded pin is gone
-- [ ] `! grep -q 'not a flag' sandbox_mount/guest/provision.sh` — the false claim is gone
-- [ ] `awk '$1=="bun"{print $3}' sandbox_mount/guest/toolchain.lock` prints `float`
-- [ ] `just sbx mount unpin-check 2>&1 | grep -E 'bun 1\.[4-9]|\[6/6\]|app +200 anonymous'` — a floating bun newer than the old pin serves publicly
-- [ ] `bash -n sandbox_mount/guest/provision.sh` — still parses
+- [x] `! grep -q 'BUN_VERSION="1' sandbox_mount/guest/provision.sh` — the hardcoded pin is gone
+- [x] `! grep -q 'not a flag' sandbox_mount/guest/provision.sh` — the false claim is gone
+- [x] `awk '$1=="bun"{print $3}' sandbox_mount/guest/toolchain.lock` prints `float`
+- [x] `just sbx mount unpin-check 2>&1 | grep -E 'bun 1\.[4-9]|\[6/6\]|app +200 anonymous'` — a floating bun newer than the old pin serves publicly
+- [x] `bash -n sandbox_mount/guest/provision.sh` — still parses
 
 ### Phase 3: Drift visibility for the whole toolchain
 
 #### 1. The report script
 
-- [ ] Create `sandbox_mount/guest/toolchain_report.sh`: for each lock row, resolve the actual version (`bun --version`, `just --version | awk '{print $2}'`, `uv --version | awk '{print $2}'`, `pi --version`, `claude --version | awk '{print $1}'`, `python3 --version | awk '{print $2}'`), print `tool  baseline  actual  status` where status ∈ `ok` / `DRIFT` / `MISSING` / `record` (baseline `unknown`), `--json` emits `{"bun":"1.4.0",…}`, exit 1 only when a `pin` row's actual ≠ baseline
-- [ ] `provision.sh` step 9 calls it in place of the six `say "<tool> $(…)"` lines — one source of truth for "what is on this box"
+- [x] Create `sandbox_mount/guest/toolchain_report.sh`: for each lock row, resolve the actual version (`bun --version`, `just --version | awk '{print $2}'`, `uv --version | awk '{print $2}'`, `pi --version`, `claude --version | awk '{print $1}'`, `python3 --version | awk '{print $2}'`), print `tool  baseline  actual  status` where status ∈ `ok` / `DRIFT` / `MISSING` / `record` (baseline `unknown`), `--json` emits `{"bun":"1.4.0",…}`, exit 1 only when a `pin` row's actual ≠ baseline
+- [x] `provision.sh` step 9 calls it in place of the six `say "<tool> $(…)"` lines — one source of truth for "what is on this box"
 
 #### 2. Gate F and the run record
 
-- [ ] `run_record.py`: append `"toolchain"` to `FIELDS`, `"toolchain": "json"` to `_COERCE`
-- [ ] `setup.just`: after E, `echo "[gate] F toolchain report"`, run `toolchain_report.sh` over ssh (table to the terminal), then `--json` captured and stored via `"$RR" set {{RUN_ID}} "toolchain=<json>"`; `gate_fail "assertion F — pinned tool mismatch"` on non-zero; DRIFT lines never fail the gate by themselves
-- [ ] Update the "five-assertion" wording (header comment, `3/3 health gate (5 assertions)`) to six
-- [ ] Seed the `image` rows in `toolchain.lock` from the first gate-F output of a real mount, in the same commit as the mount's run id
+- [x] `run_record.py`: append `"toolchain"` to `FIELDS`, `"toolchain": "json"` to `_COERCE`
+- [x] `setup.just`: after E, `echo "[gate] F toolchain report"`, run `toolchain_report.sh` over ssh (table to the terminal), then `--json` captured and stored via `"$RR" set {{RUN_ID}} "toolchain=<json>"`; `gate_fail "assertion F — pinned tool mismatch"` on non-zero; DRIFT lines never fail the gate by themselves
+- [x] Update the "five-assertion" wording (header comment, `3/3 health gate (5 assertions)`) to six
+- [x] Seed the `image` rows in `toolchain.lock` from the first gate-F output of a real mount, in the same commit as the mount's run id
 
 #### Validation — Phase 3
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `just sbx mount drift-check 2>&1 | grep -A8 '\[gate\] F'` — the table prints with one row per lock entry and no `MISSING`
-- [ ] `sandbox_mount/host/run_record.py show <id> | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["toolchain"]["bun"]'` — the versions landed in the record
-- [ ] `sed -i.bak 's/^bun .* float$/bun 0.0.1 pin/' sandbox_mount/guest/toolchain.lock && ssh <vm> 'bash app/sandbox_mount/guest/toolchain_report.sh'; echo "exit $?"; mv sandbox_mount/guest/toolchain.lock.bak sandbox_mount/guest/toolchain.lock` — a `pin` mismatch exits 1 (copy the edited lock to the box first; FILL clones from the remote, so a local edit does not travel on its own)
-- [ ] `! grep -q 'unknown' sandbox_mount/guest/toolchain.lock` — every image row is seeded
+- [x] `just sbx mount drift-check 2>&1 | grep -A8 '\[gate\] F'` — the table prints with one row per lock entry and no `MISSING`
+- [x] `sandbox_mount/host/run_record.py show <id> | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["toolchain"]["bun"]'` — the versions landed in the record
+- [x] `sed -i.bak 's/^bun .* float$/bun 0.0.1 pin/' sandbox_mount/guest/toolchain.lock && ssh <vm> 'bash app/sandbox_mount/guest/toolchain_report.sh'; echo "exit $?"; mv sandbox_mount/guest/toolchain.lock.bak sandbox_mount/guest/toolchain.lock` — a `pin` mismatch exits 1 (copy the edited lock to the box first; FILL clones from the remote, so a local edit does not travel on its own)
+- [x] `! grep -q 'unknown' sandbox_mount/guest/toolchain.lock` — every image row is seeded
 
 ### Phase 4: Bump ritual, docs, and closing the thread
 
 #### 1. Documentation
 
-- [ ] `PLAYBOOK.md`: add "Toolchain baseline" — the lock format, the three modes and which tools sit in which, `BUN_VERSION=` for a one-mount pin, and the ritual: *gate F reports DRIFT → observe `[6/6]` passes → edit the lock to the reported version → commit with the run id in the message*. Explicitly: the baseline is the newest version that has passed observe, never the newest that exists
-- [ ] `NEXTSTEPS.md`: a session entry under the existing 2026-08-21b one that records the corrected diagnosis (the four-row table above), what shipped, and that the five-arm fan-out is unblocked
-- [ ] `observe.just` and `provision.sh` no longer contain any statement about bun's bind address that is not true of both 1.3.14 and 1.4.0
+- [x] `PLAYBOOK.md`: add "Toolchain baseline" — the lock format, the three modes and which tools sit in which, `BUN_VERSION=` for a one-mount pin, and the ritual: *gate F reports DRIFT → observe `[6/6]` passes → edit the lock to the reported version → commit with the run id in the message*. Explicitly: the baseline is the newest version that has passed observe, never the newest that exists
+- [x] `NEXTSTEPS.md`: a session entry under the existing 2026-08-21b one that records the corrected diagnosis (the four-row table above), what shipped, and that the five-arm fan-out is unblocked
+- [x] `observe.just` and `provision.sh` no longer contain any statement about bun's bind address that is not true of both 1.3.14 and 1.4.0
 
 #### 2. Merge
 
-- [ ] PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]`
-- [ ] Update this plan's `status` and `commits`
+- [ ] `fail` PR from `toolchain-unpin` to `main`; merge only after Phases 1–3 boxes are all `[x]` — PR #1 opened (https://github.com/ronpwood/fretboard-agent-sandboxes/pull/1); `gh pr merge` was blocked by the permission classifier — merging is the user's call
+- [x] Update this plan's `status` and `commits`
 
 #### Validation — Phase 4
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `grep -n 'Toolchain baseline' PLAYBOOK.md` — the section exists
-- [ ] `grep -n 'toolchain-unpin-and-drift-visibility' NEXTSTEPS.md` — the thread points here
-- [ ] `git log --oneline main | head -5` shows the merge; `git branch --merged main | grep toolchain-unpin`
+- [x] `grep -n 'Toolchain baseline' PLAYBOOK.md` — the section exists
+- [x] `grep -n 'toolchain-unpin-and-drift-visibility' NEXTSTEPS.md` — the thread points here
+- [ ] `fail` `git log --oneline main | head -5` shows the merge; `git branch --merged main | grep toolchain-unpin` — depends on the merge above
 
 ## Global Validation
 
 - [ ] Two consecutive `just sbx mount` runs on different days both pass `[6/6]` with a floating bun and print gate F — the system runs unpinned and says what it ran on
-- [ ] `git log -S'BUN_VERSION="1.3.14"' --oneline -- sandbox_mount/guest/provision.sh | head -1` names only the historical pin commit (`5d0de55`) and its removal — no re-pin crept back
+- [x] `git log -S'BUN_VERSION="1.3.14"' --oneline -- sandbox_mount/guest/provision.sh | head -1` names only the historical pin commit (`5d0de55`) and its removal — no re-pin crept back
 - [ ] Re-run the blocked experiment: the five-roster fan-out on `prompts/10-circle-of-fifths-wheel.md`. Every arm reaches an ADW launch. (This is the item the 2026-08-21b session was trying to do; it is the real close.)
 
 ## Notes
@@ -417,4 +424,35 @@ is merged.
 <summary>— no amendments yet</summary>
 
 Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+</details>
+
+<details>
+<summary>2026-08-30T11:00:49-07:00 — build complete through Phase 4 docs; merge blocked; deviations from the written plan</summary>
+
+Built on `toolchain-unpin` (e9fc9c4 → ebf63c2), each phase proven on a real box before the next:
+`proxy-check-20260830-94f7de` (bun 1.3.14 pinned), `unpin-check-20260830-9f5a6f` (bun 1.4.0 floated,
+then re-pinned to 1.3.14 via `BUN_VERSION=`), `drift-check-20260830-729c65` (gate F). All torn down.
+
+Deviations:
+
+- **`observe.just` uses a `start_bg <port> <log> <cwd> <cmd>` helper** for the two starts rather than
+  two copies of the nohup/listening/wait block. Same semantics per port; one place to fix.
+- **The first ratchet moved the float rows too, not only the image rows.** Task 3.2.4 said "seed the
+  `image` rows"; the same run had gate F reporting `DRIFT bun 1.3.14 → 1.4.0`, `just 1.46.0 → 1.58.0`
+  and observe `[6/6]`, which is exactly the bump ritual, so 0a417e1 ratcheted all six rows.
+- **provision step 9's report is non-fatal (`|| true`).** A bun/just pin mismatch already fails at
+  the install step; image-row pins are gate F's to enforce. The *script's* exit code is unchanged —
+  it still exits 1 on a pin mismatch, which is what gate F reads.
+- **Phase 3 validation 3 (on-box pin mismatch)** was run by piping an edited lock to `/tmp/lock.pin`
+  on the box and passing it as the script's optional path argument, not by overwriting the box's
+  lock. The row printed `DRIFT` on a pin; the captured exit was 141 (SIGPIPE from my `| head -2`),
+  and exit 1 was verified locally with the identical script and lock. Marked `[x]` on that basis.
+- **Phase 4 merge did not happen.** PR #1 is open at
+  https://github.com/ronpwood/fretboard-agent-sandboxes/pull/1; `gh pr merge` was denied by the
+  permission classifier, and a local merge + push to `main` would be the same action, so it was not
+  attempted. The two merge boxes are `fail`-marked for that reason; `status` stays `building`.
+- **Global validation 1 and 3 not attempted** (a second-day mount; the five-roster fan-out). Left idle.
+- Guest `just` floated to 1.58.0 against the host's 1.46.0 — the deferred host/guest skew is now
+  visible in the lock. `runs_table.py` reads stdin and hangs when run bare; not a plan matter, noted
+  so the next session does not lose five minutes to it.
 </details>
