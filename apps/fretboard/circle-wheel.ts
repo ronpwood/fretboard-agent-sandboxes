@@ -40,18 +40,20 @@ export const WHEEL_GEOMETRY = {
 
 /** The 12 wedges, in circle-of-fifths order starting at C at 12 o'clock. */
 export const WHEEL_SEGMENTS: readonly WheelSegment[] = Object.freeze(
-  CIRCLE_OF_FIFTHS_MAJORS.map((majorName, index) => {
-    const majorPc = pitchClass(majorName);
+  CIRCLE_OF_FIFTHS_MAJORS.map((rawMajorName, index) => {
+    const majorPc = pitchClass(rawMajorName);
     const minorPc = relativeMinorPc(majorPc);
     const startAngle = index * 30 - 15;
     const endAngle = index * 30 + 15;
     const midAngle = index * 30;
+    const majorName = noteName(majorPc, majorPc);
+    const minorName = noteName(minorPc, majorPc);
     return Object.freeze({
       index,
       majorPc,
       majorName,
       minorPc,
-      minorName: noteName(minorPc),
+      minorName,
       startAngle,
       endAngle,
       midAngle,

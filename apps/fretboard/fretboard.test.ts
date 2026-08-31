@@ -495,7 +495,9 @@ describe("circle of fifths wheel", () => {
       WHEEL_SEGMENTS.forEach((segment, i) => {
         expect(segment.index).toBe(i);
       });
-      expect(WHEEL_SEGMENTS.map((s) => s.majorName)).toEqual(CIRCLE_OF_FIFTHS_MAJORS);
+      expect(WHEEL_SEGMENTS.map((s) => s.majorName)).toEqual([
+        "C", "G", "D", "A", "E", "B", "F#", "Db", "Ab", "Eb", "Bb", "F",
+      ]);
     });
 
     test("major pitch classes ascend by a fifth and cover all 12", () => {
@@ -520,7 +522,8 @@ describe("circle of fifths wheel", () => {
       WHEEL_SEGMENTS.forEach((segment) => {
         expect(segment.minorPc).toBe(relativeMinorPc(segment.majorPc));
         const relativeMajorSegment = segmentAt(segment.index + 3);
-        expect(segment.minorName).toBe(relativeMajorSegment.majorName);
+        expect(relativeMajorSegment.majorPc).toBe(segment.minorPc);
+        expect(segment.minorName).toBe(noteName(segment.minorPc, segment.majorPc));
       });
     });
 
@@ -531,6 +534,14 @@ describe("circle of fifths wheel", () => {
       expect(WHEEL_SEGMENTS[1].minorName).toBe("E");
       expect(WHEEL_SEGMENTS[6].majorName).toBe("F#");
       expect(WHEEL_SEGMENTS[6].minorName).toBe("D#");
+      expect(WHEEL_SEGMENTS[7].majorName).toBe("Db");
+      expect(WHEEL_SEGMENTS[7].minorName).toBe("Bb");
+      expect(WHEEL_SEGMENTS[8].majorName).toBe("Ab");
+      expect(WHEEL_SEGMENTS[8].minorName).toBe("F");
+      expect(WHEEL_SEGMENTS[9].majorName).toBe("Eb");
+      expect(WHEEL_SEGMENTS[9].minorName).toBe("C");
+      expect(WHEEL_SEGMENTS[10].majorName).toBe("Bb");
+      expect(WHEEL_SEGMENTS[10].minorName).toBe("G");
       expect(WHEEL_SEGMENTS[11].majorName).toBe("F");
       expect(WHEEL_SEGMENTS[11].minorName).toBe("D");
     });
