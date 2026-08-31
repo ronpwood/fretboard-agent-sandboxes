@@ -5,6 +5,21 @@ export const NOTE_NAMES: string[] = [
   "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
 ];
 
+/** Pitch classes that are spelled flat when the selected key is on the flat side. */
+export const FLAT_SIDE_PCS: readonly number[] = [1, 3, 6, 8, 10];
+
+/** Flat spellings for the accidental pcs in FLAT_SIDE_PCS, keyed by pc. */
+export const FLAT_SIDE_NAMES: Readonly<Record<number, string>> = {
+  1: "Db",
+  3: "Eb",
+  6: "Gb",
+  8: "Ab",
+  10: "Bb",
+};
+
+/** Major-key tonics whose keys are spelled with flats: Db, Eb, F, Ab, Bb. */
+export const FLAT_SIDE_TONICS: ReadonlySet<number> = new Set([1, 3, 5, 8, 10]);
+
 export function pitchClass(name: string): number {
   const idx = NOTE_NAMES.indexOf(name);
   if (idx === -1) {
@@ -13,9 +28,13 @@ export function pitchClass(name: string): number {
   return idx;
 }
 
-export function noteName(pc: number): string {
+export function noteName(pc: number, keyTonicPc?: number): string {
   if (!Number.isInteger(pc) || pc < 0 || pc > 11) {
     throw new RangeError(`Pitch class out of range: ${pc}`);
+  }
+  if (keyTonicPc !== undefined && FLAT_SIDE_TONICS.has(keyTonicPc)) {
+    const flatName = FLAT_SIDE_NAMES[pc];
+    if (flatName !== undefined) return flatName;
   }
   return NOTE_NAMES[pc];
 }

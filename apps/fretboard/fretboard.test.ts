@@ -16,6 +16,7 @@ import {
   relativeMinorPc,
   relativeMajorPc,
   CIRCLE_OF_FIFTHS_MAJORS,
+  NOTE_NAMES,
   type Quality,
 } from "./theory.ts";
 import {
@@ -113,6 +114,58 @@ describe("triadNotes", () => {
       expect(triadNotes(0, quality)).toEqual(expected);
     });
   }
+});
+
+describe("noteName key-aware spelling", () => {
+  test("flat-side keys spell in-key accidentals flat", () => {
+    const flatCases: [pc: number, keyTonicPc: number, expected: string][] = [
+      [1, 1, "Db"],  // Db major I
+      [6, 1, "Gb"],  // Db major IV (the prompt's Gb-not-F# case)
+      [10, 1, "Bb"], // Db major V
+      [3, 3, "Eb"],  // Eb major I
+      [8, 3, "Ab"],  // Eb major IV
+      [10, 5, "Bb"], // F major IV (the headline fix)
+      [1, 8, "Db"],  // Ab major IV
+      [3, 8, "Eb"],  // Ab major V
+      [3, 10, "Eb"], // Bb major ii
+      [10, 10, "Bb"],// Bb major I
+    ];
+    for (const [pc, keyTonicPc, expected] of flatCases) {
+      expect(noteName(pc, keyTonicPc)).toBe(expected);
+    }
+  });
+
+  test("sharp-side keys keep today's sharp spellings for every pc", () => {
+    for (const keyTonicPc of [0, 2, 4, 6, 7, 9, 11]) {
+      for (let pc = 0; pc < 12; pc++) {
+        expect(noteName(pc, keyTonicPc)).toBe(NOTE_NAMES[pc]);
+      }
+    }
+  });
+
+  test("no keyTonicPc keeps today's spellings for every pc", () => {
+    for (let pc = 0; pc < 12; pc++) {
+      expect(noteName(pc)).toBe(NOTE_NAMES[pc]);
+    }
+  });
+
+  test("natural pcs are never respelled in flat keys", () => {
+    for (const pc of [0, 2, 4, 5, 7, 9, 11]) {
+      expect(noteName(pc, 1)).toBe(NOTE_NAMES[pc]);
+    }
+  });
+
+  test("out-of-range pc still throws exactly as today", () => {
+    expect(() => noteName(12)).toThrow(RangeError);
+    expect(() => noteName(-1)).toThrow(RangeError);
+    expect(() => noteName(1.5)).toThrow(RangeError);
+    expect(() => noteName(12, 5)).toThrow(RangeError);
+  });
+
+  test("headline: F major's IV triad root spells Bb with key context", () => {
+    const iv = diatonicTriads(5, "major").find((t) => t.degree === "IV")!;
+    expect(noteName(iv.root, 5)).toBe("Bb");
+  });
 });
 
 describe("pitchAtFret", () => {

@@ -5,6 +5,7 @@ import {
   diatonicTriads,
   noteName,
   pitchClass,
+  relativeMajorPc,
   triadNotes,
   type Triad,
 } from "./theory.ts";
@@ -296,6 +297,13 @@ function currentTriads(): Triad[] {
   return diatonicTriads(state.tonicPc, state.mode);
 }
 
+/** Major tonic that owns the spelling for notes rendered inside the key.
+ * In minor mode the relative major carries the accidentals (D minor → F major →
+ * flats; A minor → C major → sharps). */
+function keyContextPc(): number {
+  return state.mode === "major" ? state.tonicPc : relativeMajorPc(state.tonicPc);
+}
+
 function renderChordList() {
   chordListEl.replaceChildren();
   const triads = currentTriads();
@@ -305,7 +313,7 @@ function renderChordList() {
     const isSelected = !!state.selected && state.selected.degree === triad.degree
       && state.selected.root === triad.root && state.selected.quality === triad.quality;
     button.setAttribute("aria-pressed", String(isSelected));
-    button.textContent = `${triad.degree} — ${noteName(triad.root)} ${qualityLabel(triad.quality)}`;
+    button.textContent = `${triad.degree} — ${noteName(triad.root, keyContextPc())} ${qualityLabel(triad.quality)}`;
     button.addEventListener("click", () => {
       state.selected = triad;
       state.voicingIndex = 0;
@@ -373,7 +381,7 @@ function renderChordDiagram() {
     chordDiagramSvg.appendChild(
       textNode(15, 130, "No fingering found in this position.", { fill: "#ff8080", "font-size": 12 })
     );
-    chordCaptionEl.textContent = `${noteName(chord.root)} ${qualityLabel(chord.quality)}: no voicing found.`;
+    chordCaptionEl.textContent = `${noteName(chord.root, keyContextPc())} ${qualityLabel(chord.quality)}: no voicing found.`;
     chordPlayBtn.disabled = true;
     return;
   }
@@ -446,7 +454,7 @@ function renderChordDiagram() {
     if (fret === 0) {
       const openText = textNode(x, marginTop - 12, "\u25cb", { fill: "#9aa1b5", "font-size": 12, "text-anchor": "middle" });
       const openPc = pitchAtFret(s, fret);
-      makePlayable(openText, `Play ${noteName(openPc)}, string ${6 - s} fret 0`, [soundedNote(s, fret)]);
+      makePlayable(openText, `Play ${noteName(openPc, keyContextPc())}, string ${6 - s} fret 0`, [soundedNote(s, fret)]);
       chordDiagramSvg.appendChild(openText);
       continue;
     }
@@ -464,7 +472,7 @@ function renderChordDiagram() {
       stroke: isRoot ? "#fff" : "none",
       "stroke-width": isRoot ? 2 : 0,
     });
-    makePlayable(circle, `Play ${noteName(pc)}, string ${6 - s} fret ${fret}`, [soundedNote(s, fret)]);
+    makePlayable(circle, `Play ${noteName(pc, keyContextPc())}, string ${6 - s} fret ${fret}`, [soundedNote(s, fret)]);
     chordDiagramSvg.appendChild(circle);
   }
 
@@ -473,7 +481,7 @@ function renderChordDiagram() {
     ? ` (voicing ${voicingPositionLabel(state.voicingIndex, voicings.length)})`
     : "";
   chordCaptionEl.textContent =
-    `${noteName(chord.root)} ${qualityLabel(chord.quality)}: ${grid}${position}`;
+    `${noteName(chord.root, keyContextPc())} ${qualityLabel(chord.quality)}: ${grid}${position}`;
 }
 
 function renderTriadDiagram() {
@@ -553,7 +561,7 @@ function renderTriadDiagram() {
       r: 12,
       fill: roleColor[pos.role],
     });
-    const nameText = textNode(x, y + 4, `${noteName(pc)}`, {
+    const nameText = textNode(x, y + 4, `${noteName(pc, keyContextPc())}`, {
       fill: "#12131a",
       "font-size": 11,
       "text-anchor": "middle",
@@ -563,7 +571,7 @@ function renderTriadDiagram() {
     const group = el("g");
     group.appendChild(circle);
     group.appendChild(nameText);
-    makePlayable(group, `Play ${noteName(pc)}, ${pos.role}, fret ${pos.fret}`, [soundedNote(pos.string, pos.fret)]);
+    makePlayable(group, `Play ${noteName(pc, keyContextPc())}, ${pos.role}, fret ${pos.fret}`, [soundedNote(pos.string, pos.fret)]);
     triadDiagramSvg.appendChild(group);
 
     triadDiagramSvg.appendChild(
@@ -628,7 +636,7 @@ function explorerRoleLabel(pc: number): string {
 
 function explorerMarkerLabel(pc: number): string {
   switch (explorerLabelMode) {
-    case "name": return noteName(pc);
+    case "name": return noteName(pc, keyContextPc());
     case "role": return explorerRoleLabel(pc);
     case "pc": return String(pc);
   }
@@ -767,7 +775,7 @@ function renderExplorerDiagram() {
     group.setAttribute("tabindex", "0");
     group.setAttribute(
       "aria-label",
-      `Play ${noteName(pc)} (${explorerRoleName(pc)}), string ${6 - stringIndex} (${EXPLORER_STRING_NAMES[stringIndex]}), fret ${fret}`
+      `Play ${noteName(pc, keyContextPc())} (${explorerRoleName(pc)}), string ${6 - stringIndex} (${EXPLORER_STRING_NAMES[stringIndex]}), fret ${fret}`
     );
     group.appendChild(circle);
     group.appendChild(text);
@@ -775,7 +783,7 @@ function renderExplorerDiagram() {
     const play = () => {
       playNotes([soundedNote(stringIndex, fret)]);
       explorerCaption.textContent =
-        `Playing ${noteName(pc)} (${explorerRoleName(pc)} of ${noteName(state.selected ? state.selected.root : state.tonicPc)} ${state.selected ? qualityLabel(state.selected.quality) : ""}) on String ${6 - stringIndex} (${EXPLORER_STRING_NAMES[stringIndex]}), Fret ${fret}`;
+        `Playing ${noteName(pc, keyContextPc())} (${explorerRoleName(pc)} of ${noteName(state.selected ? state.selected.root : state.tonicPc, keyContextPc())} ${state.selected ? qualityLabel(state.selected.quality) : ""}) on String ${6 - stringIndex} (${EXPLORER_STRING_NAMES[stringIndex]}), Fret ${fret}`;
     };
     group.addEventListener("click", play);
     group.addEventListener("keydown", (event) => {
@@ -791,9 +799,9 @@ function renderExplorerDiagram() {
 
   explorerPlayBtn.disabled = false;
   const filterLabel = explorerFilter === "chord" && state.selected
-    ? `${noteName(state.selected.root)} ${qualityLabel(state.selected.quality)}`
-    : `${noteName(state.tonicPc)} ${state.mode} key`;
-  explorerCaption.textContent = `Showing ${notes.length} of ${getAllFretboardNotes(12).length} fretboard notes — ${filterLabel} (${targetPcs.map((p) => noteName(p)).join(", ")})`;
+    ? `${noteName(state.selected.root, keyContextPc())} ${qualityLabel(state.selected.quality)}`
+    : `${noteName(state.tonicPc, keyContextPc())} ${state.mode} key`;
+  explorerCaption.textContent = `Showing ${notes.length} of ${getAllFretboardNotes(12).length} fretboard notes — ${filterLabel} (${targetPcs.map((p) => noteName(p, keyContextPc())).join(", ")})`;
 }
 
 function renderView() {
