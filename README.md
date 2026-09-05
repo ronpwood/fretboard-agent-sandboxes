@@ -256,6 +256,7 @@ justfile
 just sbx mount my-feature                                  # blank VM → running factory, ~10s
 just sbx run cmd <id> 'tail -f run.log'                    # look inside, synchronously
 just sbx manage harvest <id>                               # commits home → refs/sandbox/<id>
+just sbx manage traces <id> [session]                     # agent thinking/tool streams + sssf.db → .sandbox/traces/<id>/
 just sbx lifecycle teardown <id>                           # human decision, always
 ```
 

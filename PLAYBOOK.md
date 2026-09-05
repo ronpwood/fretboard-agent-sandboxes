@@ -114,6 +114,7 @@ just sbx run cmd <run-id> 'git add -A && git commit -m "Fix <one-line summary>"'
 
 ```
 just sbx manage harvest <run-id>
+just sbx manage traces <run-id> [sssf-session-id]   # the thinking, not the commits
 ```
 
 No push credential ever lands on the VM (deliberate — the agent runs
