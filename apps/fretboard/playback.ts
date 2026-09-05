@@ -69,6 +69,44 @@ export function notesForVoicing(
   return notesForPositions(positions, opts);
 }
 
+/** Default step time between chord onsets in a progression sequence. */
+export const PROGRESSION_STEP_SECONDS = 0.9;
+
+/**
+ * Combines multiple chord voicings into a single sounded note timeline.
+ *
+ * Each valid fingering is scheduled at `chordIndex * stepSeconds` plus that
+ * voicing's intra-chord arpeggio stagger. `null` voicings contribute zero
+ * notes and are skipped without shifting subsequent chords' offsets by an extra step.
+ */
+export function progressionNotes(
+  voicings: readonly (Fingering | null)[],
+  opts?: { stepSeconds?: number }
+): SoundedNote[] {
+  const stepSeconds = opts?.stepSeconds ?? PROGRESSION_STEP_SECONDS;
+  if (stepSeconds < 0) {
+    throw new RangeError(`stepSeconds must be >= 0, got ${stepSeconds}`);
+  }
+
+  const result: SoundedNote[] = [];
+  let chordIndex = 0;
+
+  for (const fingering of voicings) {
+    if (!fingering) continue;
+    const chordOffset = chordIndex * stepSeconds;
+    const notes = notesForVoicing(fingering);
+    for (const note of notes) {
+      result.push({
+        ...note,
+        offset: chordOffset + note.offset,
+      });
+    }
+    chordIndex++;
+  }
+
+  return result;
+}
+
 /** Per-voice peak gain, scaled so N simultaneous voices do not clip. */
 export const MAX_TOTAL_GAIN = 0.8;
 

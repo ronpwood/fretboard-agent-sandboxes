@@ -30,6 +30,7 @@ import {
   soundedNote,
   noteEnvelope,
   gainForVoiceCount,
+  progressionNotes,
   type SoundedNote,
 } from "./playback.ts";
 import {
@@ -164,6 +165,7 @@ const triadPanel = document.getElementById("triad-panel") as HTMLDivElement;
 const wheelSvg = document.getElementById("circle-wheel") as unknown as SVGSVGElement;
 const wheelCaptionEl = document.getElementById("wheel-caption") as HTMLParagraphElement;
 const chordPlayBtn = document.getElementById("chord-play") as HTMLButtonElement;
+const progressionPlayBtn = document.getElementById("progression-play") as HTMLButtonElement;
 const triadPlayBtn = document.getElementById("triad-play") as HTMLButtonElement;
 const viewExplorerBtn = document.getElementById("view-explorer") as HTMLButtonElement;
 const explorerPanel = document.getElementById("explorer-panel") as HTMLDivElement;
@@ -945,6 +947,18 @@ function attachListeners() {
   chordPlayBtn.addEventListener("click", () => {
     const voicing = currentVoicing();
     if (voicing) playNotes(notesForVoicing(voicing));
+  });
+
+  const PROGRESSION_DEGREES = [0, 3, 4, 5] as const;
+
+  progressionPlayBtn.addEventListener("click", () => {
+    const triads = diatonicTriads(state.tonicPc, state.mode);
+    const voicings = PROGRESSION_DEGREES.map((degIdx) => {
+      const triad = triads[degIdx];
+      if (!triad) return null;
+      return findVoicings(triad.notes, triad.root)[0] ?? null;
+    });
+    playNotes(progressionNotes(voicings));
   });
 
   triadPlayBtn.addEventListener("click", () => {

@@ -34,18 +34,20 @@ import {
   ringLabel,
   type WheelRing,
 } from "./circle-wheel.ts";
-import { pitchAtFret, midiAtFret, STANDARD_TUNING, STANDARD_TUNING_MIDI, getAllFretboardNotes, filterFretboardNotes, noteRoleInTriad } from "./fretboard.ts";
+import { pitchAtFret, midiAtFret, STANDARD_TUNING, STANDARD_TUNING_MIDI, getAllFretboardNotes, filterFretboardNotes, noteRoleInTriad, type Fingering } from "./fretboard.ts";
 import { findVoicings, bestVoicing } from "./voicing.ts";
 import {
   A4_MIDI,
   A4_FREQUENCY,
   MAX_TOTAL_GAIN,
   NOTE_STAGGER_SECONDS,
+  PROGRESSION_STEP_SECONDS,
   ENVELOPE_DEFAULTS,
   midiToFrequency,
   soundedNote,
   notesForPositions,
   notesForVoicing,
+  progressionNotes,
   gainForVoiceCount,
   noteEnvelope,
   playbackDuration,
@@ -972,6 +974,97 @@ describe("notes for a displayed shape", () => {
     expect(note.offset).toBe(0);
     expect(note.midi).toBe(midiAtFret(2, 5));
     expect(note.frequency).toBe(midiToFrequency(midiAtFret(2, 5)));
+  });
+});
+
+describe("progressionNotes", () => {
+  test("two single-note fingerings produce two notes whose offsets differ by exactly stepSeconds", () => {
+    const f1: Fingering = [null, null, null, null, null, 0];
+    const f2: Fingering = [null, null, null, null, null, 2];
+    const step = 0.8;
+    const notes = progressionNotes([f1, f2], { stepSeconds: step });
+
+    expect(notes.length).toBe(2);
+    expect(notes[0].offset).toBeCloseTo(0, 9);
+    expect(notes[1].offset).toBeCloseTo(step, 9);
+    expect(notes[1].offset - notes[0].offset).toBeCloseTo(step, 9);
+  });
+
+  test("a null entry among the fingerings is skipped and does not shift later chords' offsets by an extra step", () => {
+    const f1: Fingering = [null, null, null, null, null, 0];
+    const f2: Fingering = [null, null, null, null, null, 2];
+    const step = 0.75;
+    const notes = progressionNotes([f1, null, f2], { stepSeconds: step });
+
+    expect(notes.length).toBe(2);
+    expect(notes[0].offset).toBeCloseTo(0, 9);
+    expect(notes[1].offset).toBeCloseTo(step, 9);
+
+    // Leading null is also skipped without delay
+    const notesLeading = progressionNotes([null, f1], { stepSeconds: step });
+    expect(notesLeading.length).toBe(1);
+    expect(notesLeading[0].offset).toBeCloseTo(0, 9);
+
+    // Null array yields empty list
+    expect(progressionNotes([null, null])).toEqual([]);
+    expect(progressionNotes([])).toEqual([]);
+  });
+
+  test("a fingering with multiple sounded strings preserves notesForVoicing's existing intra-chord stagger on top of the chord's step offset", () => {
+    const cVoicing = bestVoicing([0, 4, 7], 0)!;
+    const gVoicing = bestVoicing([7, 11, 2], 7)!;
+    const step = 1.0;
+    const notes = progressionNotes([cVoicing, gVoicing], { stepSeconds: step });
+
+    const cNotes = notesForVoicing(cVoicing);
+    const gNotes = notesForVoicing(gVoicing);
+    expect(notes.length).toBe(cNotes.length + gNotes.length);
+
+    // First chord notes match intra-chord stagger starting at 0
+    for (let i = 0; i < cNotes.length; i++) {
+      expect(notes[i].string).toBe(cNotes[i].string);
+      expect(notes[i].fret).toBe(cNotes[i].fret);
+      expect(notes[i].offset).toBeCloseTo(cNotes[i].offset, 9);
+    }
+
+    // Second chord notes match intra-chord stagger starting at step
+    const offsetBase = cNotes.length;
+    for (let j = 0; j < gNotes.length; j++) {
+      expect(notes[offsetBase + j].string).toBe(gNotes[j].string);
+      expect(notes[offsetBase + j].fret).toBe(gNotes[j].fret);
+      expect(notes[offsetBase + j].offset).toBeCloseTo(step + gNotes[j].offset, 9);
+    }
+  });
+
+  test("defaults stepSeconds to PROGRESSION_STEP_SECONDS when omitted", () => {
+    const f1: Fingering = [null, null, null, null, null, 0];
+    const f2: Fingering = [null, null, null, null, null, 2];
+    const notes = progressionNotes([f1, f2]);
+    expect(notes[1].offset).toBeCloseTo(PROGRESSION_STEP_SECONDS, 9);
+  });
+
+  test("throws RangeError on negative stepSeconds", () => {
+    const f1: Fingering = [null, null, null, null, null, 0];
+    expect(() => progressionNotes([f1], { stepSeconds: -0.1 })).toThrow(RangeError);
+  });
+
+  test("schedules a four-chord progression at consecutive steps", () => {
+    const triads = diatonicTriads(0, "major");
+    const voicings = [0, 3, 4, 5].map((idx) => findVoicings(triads[idx].notes, triads[idx].root)[0] ?? null);
+    const step = 0.9;
+    const notes = progressionNotes(voicings, { stepSeconds: step });
+    expect(notes.length).toBeGreaterThan(12);
+
+    const cNotes = notesForVoicing(voicings[0]!);
+    const fNotes = notesForVoicing(voicings[1]!);
+    const gNotes = notesForVoicing(voicings[2]!);
+    const aNotes = notesForVoicing(voicings[3]!);
+    expect(notes.length).toBe(cNotes.length + fNotes.length + gNotes.length + aNotes.length);
+
+    expect(notes[0].offset).toBeCloseTo(0, 9);
+    expect(notes[cNotes.length].offset).toBeCloseTo(step, 9);
+    expect(notes[cNotes.length + fNotes.length].offset).toBeCloseTo(step * 2, 9);
+    expect(notes[cNotes.length + fNotes.length + gNotes.length].offset).toBeCloseTo(step * 3, 9);
   });
 });
 
