@@ -390,10 +390,12 @@ function renderChordDiagram() {
 
   chordPlayBtn.disabled = false;
 
-  const marginLeft = 30;
-  const marginTop = 30;
-  const stringSpacing = 32;
-  const fretSpacing = 40;
+  // View box is landscape (320×160) to match the triad layout, so the chord
+  // diagram fits on a normal screen without needing to scroll.
+  const marginLeft = 45;
+  const marginTop = 25;
+  const stringSpacing = 44;
+  const fretSpacing = 24;
   const fretCount = 5;
 
   // Determine a fret offset: if any fretted note is beyond the displayed range, shift the window.
