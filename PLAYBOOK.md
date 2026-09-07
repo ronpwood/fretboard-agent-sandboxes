@@ -187,6 +187,33 @@ review URL that lies means you have no gate on `main.ts` at all.
 
 If the error survives a refresh, it is the app, not the bundler.
 
+## Model rates
+
+Same failure class as the toolchain lock, applied to prices: a table that is
+right the day it is written, goes stale in silence, and surfaces as a number
+nobody trusts. `sandbox_mount/guest/models.json.tmpl` carries a `cost` block per
+model (`$` per **million** tokens); pi reads it and every ADW cost line is
+derived from it.
+
+```
+uv run sandbox_mount/host/check_rates.py          # report drift, exit 1 if any
+uv run sandbox_mount/host/check_rates.py --fix    # rewrite from the live catalog
+```
+
+It diffs what we ship against OpenRouter's public catalog and rewrites by
+targeted substitution, so the `{{...}}` placeholders and the file's formatting
+survive. A mounted VM keeps whatever rates it was provisioned with — re-mount to
+pick up a fix.
+
+**Run this before any experiment that ranks arms on cost.** On 2026-09-07 seven
+of eleven rates were wrong in *both* directions — `gemini-3.6-flash` 2.0x high,
+`gpt-5.6-luna` 2.0x low — so ADW cost lines were off by a per-model factor and
+the 2026-08-22 fan-out table built from them is not comparable across arms.
+
+**The run record is the money.** `spend` in the run record is what the
+disposable OpenRouter key actually billed, and it was correct throughout. The
+ADW's `cost` is an estimate off this table. When they disagree, the record wins.
+
 ## Toolchain baseline
 
 The guest toolchain is **not pinned**. It floats, and every mount says what it ran on.

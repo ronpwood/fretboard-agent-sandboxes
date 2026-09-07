@@ -1025,3 +1025,66 @@ Upgraded from the earlier "score on the run record" advice: the ADW's `cost` lin
 estimate, it is **wrong by a consistent factor**, and anything that has ever quoted it (including the
 08-22 fan-out table) is inflated ~2x. Worth fixing at the source — one model's rate reconciled
 against an OpenRouter usage export would confirm the mechanism in minutes.
+
+---
+
+# 2026-09-07d — the cost bug found: the rate table, wrong in both directions
+
+Chased the ~2x from the validation cycle. It is not a factor of two in the math — **I was wrong
+about that** — it is the shipped rate table being wrong per model, and the apparent 2x was an
+artifact of `gemini-3.6-flash` dominating both runs I measured.
+
+### Where it is not
+
+`agent_pi.py` sums `usage.cost.total` per `message_end` and `UsageBreakdown.add_turn` folds in pi's
+own components. No double-count anywhere in the ADW. And pi's arithmetic reproduces our table
+exactly — deepseek's builder turn:
+`108709x0.09 + 17581x0.18 + 962304x0.018 = 0.030270`, matching its reported cost to the digit. So
+the rates are the entire story.
+
+### Where it is
+
+Against OpenRouter's public catalog, **seven of eleven rates were wrong, in both directions**:
+
+| model | ours (in/out/cR/cW) | live | |
+|---|---|---|---|
+| `deepseek-v4-flash-0731` | 0.09/0.18/0.018/0.0 | 0.14/0.28/0.028/0.0 | 0.64x low |
+| `z-ai/glm-5.2` | 0.76/2.42/0.14/0.0 | 0.966/3.036/0.1932/0.0 | 0.79x low |
+| `gemini-3.6-flash` | 1.5/7.5/0.15/0.0833 | 0.75/3.75/0.075/0.041667 | **2.0x high** |
+| `gemini-3.8-flash` | 1.5/7.5/0.15/0.0833 | 0.75/3.75/0.075/0.041667 | **2.0x high** |
+| `gpt-5.6-luna` | 0.1/0.6/0.01/0.125 | 0.2/1.2/0.02/0.25 | 0.5x low |
+| `gpt-5.6-terra` | 1.0/6.0/0.1/1.25 | 2.0/12.0/0.2/2.5 | 0.5x low |
+| `gpt-5.6-sol` | 5.0/30.0/0.5/6.25 | 2.0/10.0/0.2/2.5 | 2.5x high |
+
+Correct: `kimi-k3`, `claude-opus-5`, `claude-sonnet-5`, `grok-4.5`.
+
+Solving the two runs as a two-unknown system independently landed gemini's multiplier at **0.5005**
+before the catalog was consulted — the arithmetic and the source agree.
+
+### Retrodiction (zero cost, both runs)
+
+| run | old rates | corrected | billed | corrected err |
+|---|---|---|---|---|
+| `postmerge-check` | 0.345179 | 0.174160 | 0.173784 | **+0.22%** |
+| `drift-day2` | 0.632387 | 0.348145 | 0.327899 | **+6.17%** |
+
+From +98.6% / +92.9% to +0.22% / +6.17%. The remaining 6% sits in the cache-heavy run (962,304
+deepseek cache-read tokens against 12,288 in the other), so the residual is almost certainly in how
+cache reads are billed versus how pi models them. Worth one probe; not a blocker.
+
+### What shipped
+
+- `models.json.tmpl` corrected — 7 rates, 4 left alone.
+- **`sandbox_mount/host/check_rates.py`** — the gate-F analogue for prices. Reports drift and exits
+  non-zero; `--fix` rewrites by targeted substitution so the `{{...}}` placeholders and formatting
+  survive. Verified in all three states: clean (exit 0), drifted (exit 1, lists 7), `--fix`
+  (reproduces the hand-built correction byte-identically, then re-detects clean). Run it before any
+  experiment that ranks arms on cost.
+- PLAYBOOK "Model rates".
+
+### Consequence to carry forward
+
+Every ADW cost figure this repo has ever printed is wrong by a per-model factor, including the
+2026-08-22 fan-out table — which is now doubly unusable for cross-arm comparison (mis-keyed per-arm
+attribution *and* wrong rates). The run record's `spend` was correct the entire time. A mounted VM
+keeps the rates it was provisioned with, so nothing already-run changes retroactively.
