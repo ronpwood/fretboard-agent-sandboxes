@@ -1222,3 +1222,75 @@ is still alive. Anything that assumes it can reconcile after teardown will find 
 End-to-end capture is unverified until the next sandbox run: it needs a live pi, and host-local pi
 still 401s on the `env:OPENROUTER_API_KEY` placeholder. The next mount will show ids in the
 `agent_end` payload, or it won't.
+
+---
+
+# 2026-09-07g — generation-id capture verified live, and reconciliation settles the deepseek question
+
+Run `genid-check-20260907-536905`, mounted from `9a1fcae`. Closed both open uncertainties and
+answered the question 2026-09-07e had to leave open.
+
+### The corrected rate table survives a real provision
+
+First mount since the rate fix merged, so this is the first time `models.json.tmpl` was rendered
+onto a box. Gate D (`non-zero cost and a loaded rate table`) passed, gate F reported six `ok`, and
+the rates on the VM are the corrected ones:
+
+```
+deepseek/deepseek-v4-flash-0731  {'input': 0.14,  'output': 0.28,  'cacheRead': 0.028}
+google/gemini-3.6-flash          {'input': 0.75,  'output': 3.75,  'cacheRead': 0.075}
+```
+
+### Generation ids arrive
+
+adw `f5d8c379`, 5/5, commit `708c866`. **27 ids captured** — 21 planner, 6 builder — in
+OpenRouter's `gen-<ts>-<rand>` form, sitting in the `agent_end` payload exactly as designed, with no
+change to `agents.py`. The capture is real, not theoretical.
+
+### Reconciliation works — and it is decisive
+
+Queried `GET /api/v1/generation?id=<id>` for all 27 **while the runtime key was still alive**:
+
+| agent | model | gens | our estimate | authoritative | ratio |
+|---|---|---|---|---|---|
+| planner | gemini-3.6-flash | 21 | $0.107459 | $0.107459 | **1.000x** |
+| builder | deepseek-v4-flash | 6 | $0.005995 | $0.003083 | **1.945x** |
+| | | 27 | $0.113454 | $0.110542 | 1.026x |
+
+Two results, both important.
+
+**1. The gemini fix is exact.** Not "close" — 1.000x to six decimals, per generation. The 2x
+correction shipped in PR #3 is confirmed against the provider's own record.
+
+**2. The deepseek question is answered: it is the RATE, not the token count.** 2026-09-07e could not
+separate "OpenRouter bills deepseek cache reads at 1/4 of published" from "pi over-counts deepseek
+cacheRead 4x", because both produce identical arithmetic. This separates them: gemini reconciles
+*exactly* through the identical counting code, so the counting is sound. Therefore
+**OpenRouter's published deepseek price is ~1.945x what they actually bill.**
+
+That also explains 2026-09-07d's puzzle — why the old deepseek value (0.09/0.18/0.018) retrodicted
+better than the catalog value we replaced it with. It was closer to the billed rate by accident.
+Implied billed rate: roughly `0.072 / 0.144 / 0.0144`.
+
+### The open decision
+
+`check_rates.py` enforces agreement with the published catalog, and the published catalog is wrong
+for this model. Correcting deepseek to the measured rate means the checker reports permanent false
+drift unless it learns a documented per-model override. Left as a decision rather than a silent
+edit, because the table was already changed once today on catalog authority and that made deepseek
+*worse*:
+
+- **Keep catalog** — defensible source, checker stays clean, deepseek estimates stay ~1.95x high.
+- **Use measured** — accurate, needs an override mechanism in `check_rates.py` (~20 lines) so the
+  deviation is declared rather than looking like drift.
+
+Either way the estimate gates nothing. The run record's `spend` and now the per-generation record
+are both authoritative.
+
+### What reconciliation should become
+
+This was run by hand over ssh. As a recipe it must sit **before revoke** — teardown kills the key,
+and the endpoint is key-scoped. Natural home: `just sbx manage reconcile <run-id>` while the box is
+alive, or a teardown step between `harvest` and `revoke`. It would also expose the 26.3%
+under-capture directly: sum the captured generations, compare to the key's billed total, and the gap
+is the usage the trace never saw.
