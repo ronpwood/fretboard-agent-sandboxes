@@ -772,6 +772,8 @@ phase on a real box before the next (three mounts, all torn down: `proxy-check-2
   each idempotent per port. Verified 200/200 (page + bundle chunk) with `Host: vm-abc.exe.xyz`
   on bun 1.3.0, 1.3.14 and 1.4.0; direct to the dev server on 1.4.0 is 403. The fretboard
   renders through the public URL; only the HMR WebSocket does not cross the proxy (documented).
+  **Corrected 2026-09-07:** the HMR socket *does* cross the proxy — the browser console on a
+  live VM logs `[Bun] Hot-module-reloading socket connected, waiting for changes...`.
   `app_proxy_selftest.sh <bun> <app-dir>` is how a bun release is vetted without a VM.
 - **`sandbox_mount/guest/toolchain.lock`** — `<tool> <version> <mode>` with `pin` / `float` /
   `image`. `provision.sh` reads it; the hardcoded `BUN_VERSION="1.3.14"` and the false
@@ -872,3 +874,73 @@ keyed to run ids. **Score best-of-N on the run record's `spend`.**
 - **Housekeeping not done this session** (out of the chosen scope): `fret-explorer-20260829-7935db`
   still reads `open` in the run records, and the merged `toolchain-unpin` / `fix/pin-bun-toolchain`
   local branches are still around.
+
+---
+
+# 2026-09-07b — the review URL can lie: bun's incremental rebundle, and `sbx lifecycle refresh`
+
+Opening the app on `drift-day2-20260907-c3da02` after the ADW showed a Bun **Runtime Error**
+overlay — empty wheel, empty chord list:
+
+```
+Failed to load bundled module './main.ts'.
+This is not a dynamic import, and therefore is a bug in Bun's bundler.
+```
+
+The two obvious explanations were both wrong. **Not a stale server**: the dev server had picked up
+the commit unprompted — the chunk hash moved and the new bundle contained `diatonicSevenths`.
+**Not a coding issue**: the builder's code is fine.
+
+### What it actually is
+
+Only the *bundling path* differs. Reproduced three times in each direction by rolling
+`apps/fretboard/` back to `0dad038` and forward to `4a771f6` under the running watcher:
+
+| bundle produced by | chunk size | result |
+|---|---|---|
+| fresh dev-server start | **114,814 B** | renders, console clean |
+| incremental rebundle | **114,799 B** | the runtime error above |
+
+Same commit, same bun 1.4.2, same server, 15 bytes apart. Bun blames its own bundler and on this
+evidence it is right. Hand-edits are fine — HMR reloads them — but a whole ADW commit landing at
+once is the case that breaks.
+
+### Why the setup made it inevitable
+
+`observe.just`'s `start_bg()` is guarded by `listening()` **on purpose**: observe must be re-runnable
+and `just sbx mount` ends with it, so it must never stack a second process on a port. The
+consequence is that the dev server behind the review URL is *always* the one started at mount —
+today 16:30:32, against a commit at 16:35:47. It has to absorb the agent's whole commit
+incrementally, which is exactly the failing path.
+
+This is worse than cosmetic: `main.ts` calls `init()` at module scope, so `bun test` cannot import
+it. **The browser is the only gate on `main.ts`** — a review URL that lies means that gate is not
+real. The suite went 312 → 317 green while the app was unopenable.
+
+### `just sbx lifecycle refresh <run-id>` — new phase 5b
+
+Bounces **only** the app dev server; proxy, visualizer and the exe.dev share are untouched. That
+separation is a dividend of the proxy architecture the unpin plan just landed — before it, the dev
+server *was* the public bind and could not be bounced independently.
+
+It is deliberately paranoid, because doing this by hand fails in a way that looks like success: if a
+new server starts while the old one still holds 4502, **bun does not error — it silently binds 4503**
+and logs it, while the proxy keeps forwarding to the stale process. The chunk hash never changes.
+(Confirmed by walking into it during diagnosis.) So refresh kills *every* dev server, waits for the
+port to actually free, starts exactly one, then proves there is exactly one, that it reported the
+port we asked for, and that the public URL serves a `/_bun/client` chunk — not just the HTML, since
+`index.html` serves fine even when the module graph is broken.
+
+Verified three ways on a live box: clean state (114,814), induced break (114,799 → 114,814), and a
+planted duplicate on 4503 (collapsed to one on 4502).
+
+**Not chained into `execute`** — `execute` is detached and returns a PID minutes before the ADW ends,
+so a refresh there would fire before the agent wrote anything. It prints a pointer instead.
+
+### Corrections
+
+- The HMR WebSocket **does** cross the proxy; the 2026-08-30 note above said it does not. The console
+  on a live VM logs `[Bun] Hot-module-reloading socket connected, waiting for changes...`.
+- Worth filing upstream against oven-sh/bun: incremental rebundle emitting an unresolvable module
+  registry, with the byte-size delta as the reproduction. Not filed — that is a public post and the
+  operator's call.

@@ -94,6 +94,12 @@ observe RUN_ID:
     # That is the one rule the guard can never remove, so this survives bun
     # releases that a flag would not. See specs/toolchain-unpin-and-drift-visibility.md.
     #
+    # The listening() guard below means a re-run NEVER restarts a live server,
+    # so the dev server here is always the one from mount time. After an ADW
+    # commits, bun's incremental rebundle can serve a broken module graph; use
+    # `just sbx lifecycle refresh <id>` to bounce the dev server alone. That
+    # phase exists precisely so this one can stay idempotent.
+    #
     # PER-APP boot command: the current app is a static Bun HTML entry, not a
     # server.ts — PORT must be passed explicitly, since Bun's HTML dev server
     # defaults to :3000. An app swap that isn't a static HTML entry rewrites

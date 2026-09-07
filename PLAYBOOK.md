@@ -22,6 +22,7 @@ separate, explicit step):
 | `fill` | clones this repo onto the VM, writes the runtime key to `app/.env` |
 | `setup` | runs `provision.sh`, then a 6-assertion health gate (git integrity, model registry, live roster ping, cost reporting, remaining credit, toolchain report) |
 | `observe` | starts the app's dev server on loopback (`:4502`) behind a Host-rewriting proxy (`:4501`), plus the observability dashboard (`:4600`), makes the app URL public |
+| `refresh` | (5b, on demand) bounces **only** the dev server so the review URL serves a freshly built bundle — run it after an ADW commits, before you trust what the browser shows |
 
 It prints a summary when done:
 
@@ -147,6 +148,45 @@ committed after step 5) → refuse if the tree is dirty → revoke the OpenRoute
 destroy the VM → close the run record. Verified this session: revoked key confirmed
 absent from `https://openrouter.ai/api/v1/keys` before declaring success.
 
+## Refresh the review URL after an ADW
+
+`observe` starts the dev server once, at mount time, and its `listening()` guard
+deliberately never restarts a live one — that idempotency is what makes `observe`
+safe to re-run. The consequence: the server behind your review URL predates every
+ADW you then run on that box.
+
+bun rebundles on request when files change underneath it, and for hand-edits that
+works. But when an ADW's commit lands — several files rewritten at once under the
+running watcher — bun 1.4.2's **incremental** rebundle can emit a broken module
+registry, and the browser shows:
+
+```
+Failed to load bundled module './main.ts'.
+This is not a dynamic import, and therefore is a bug in Bun's bundler.
+```
+
+A fresh server start on the identical commit produces a working bundle (measured:
+114,814 bytes vs the incremental 114,799). Reloading harder does not help — the
+bytes on the wire are wrong.
+
+```
+just sbx lifecycle refresh <run-id>
+```
+
+This bounces the dev server only; the proxy, the dashboard and the exe.dev share
+are untouched. It refuses to leave you with a silent half-fix: if a new server
+started while the old one still held `:4502`, bun would **not** error — it would
+quietly bind `:4503` while the proxy kept forwarding to the stale process. So
+refresh kills every dev server, waits for the port to free, starts exactly one,
+and then proves there is exactly one, on the right port, serving a real
+`/_bun/client` chunk (the HTML alone serves fine even when the graph is broken).
+
+**Why this matters beyond convenience.** `main.ts` calls `init()` at module scope,
+so `bun test` cannot import it — the browser is the *only* gate on that file. A
+review URL that lies means you have no gate on `main.ts` at all.
+
+If the error survives a refresh, it is the app, not the bundler.
+
 ## Toolchain baseline
 
 The guest toolchain is **not pinned**. It floats, and every mount says what it ran on.
@@ -209,7 +249,9 @@ just sbx mount triad-playback
 # ... open the printed app URL, confirm it looks right ...
 just sbx lifecycle execute triad-playback prompts/09-triad-playback.md
 just sbx run cmd triad-playback 'tail -f run.log'
-# ... "ADW complete" box appears, exit and reload the app URL, try the feature ...
+# ... "ADW complete" box appears, exit ...
+just sbx lifecycle refresh triad-playback   # REQUIRED before you believe the browser
+# ... reload the app URL, try the feature ...
 # found a real bug reading the diff, so:
 just sbx lifecycle execute triad-playback "Fix <exact bug + exact fix>" "" build-test
 just sbx run cmd triad-playback 'git add -A && git commit -m "Fix <summary>"'
