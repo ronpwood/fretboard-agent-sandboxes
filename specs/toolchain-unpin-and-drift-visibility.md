@@ -508,7 +508,9 @@ top-speed $0.587 where the record says $0.3106, and frontier $1.197 where the re
 the table also lists a `default` arm when no `cof-default-*` run exists on 08-22, only `cof-probe`.
 Two instruments (trace-DB token accounting vs. the disposable key's actual burn) that reconcile in
 total and not per row mean the table's per-arm cost attribution is not safely keyed to run ids.
-Score best-of-N on the run record's `spend`, not on that table.
+Score best-of-N on the run record's `spend`, not on that table. **Direction measured 2026-09-07:**
+today's single arm recorded $0.3279 against the key while the ADW reported $0.6324 — the ADW
+over-reports by ~1.9x, so its `cost` line is an estimate off its own rate table, not money spent.
 
 **What is still open, and belongs in its own spec — not this one.** The 08-22 session's real
 finding was that `prompts/10` is a 373-line completed plan, so the run measured *transcription

@@ -863,6 +863,23 @@ $0.3106, frontier $1.197 where the record says $1.6241, and it lists a `default`
 disposable key's actual burn are two different instruments, and the per-arm rows are not safely
 keyed to run ids. **Score best-of-N on the run record's `spend`.**
 
+### Cost instruments disagree, and now we know which way
+
+Teardown recorded **$0.327899242** for `drift-day2-20260907-c3da02`. The ADW's own box reported
+**$0.6324** (planner $0.6021 + builder $0.0303). One arm, one disposable key, both numbers — the
+cleanest controlled comparison available, and the ADW over-reports by ~1.9x.
+
+This is the same split seen across the 08-22 arms, but there the aggregate happened to agree
+(~$2.92 vs $2.8437) so the direction was invisible. It is not a rounding artifact: the run record is
+what OpenRouter actually billed the disposable key, and the key exists for exactly one run. The
+ADW's figure comes from its own rate table over token counts, so suspect the rates in
+`models.json.tmpl` (or full-rate accounting of cached/reasoning tokens) before suspecting the key.
+
+Practical consequence: **the run record's `spend` is the money; the ADW's `cost` is an estimate.**
+Any best-of-N that ranks arms on cost must read the run record. Worth a follow-up: reconcile one
+model's rate table against an OpenRouter usage export and fix the template, since a 1.9x error makes
+the ADW's cost line actively misleading rather than merely imprecise.
+
 ### Still open
 
 - **The loose-brief experiment** — five rosters, a one-line brief, diff the *plan documents*. This
