@@ -772,6 +772,8 @@ phase on a real box before the next (three mounts, all torn down: `proxy-check-2
   each idempotent per port. Verified 200/200 (page + bundle chunk) with `Host: vm-abc.exe.xyz`
   on bun 1.3.0, 1.3.14 and 1.4.0; direct to the dev server on 1.4.0 is 403. The fretboard
   renders through the public URL; only the HMR WebSocket does not cross the proxy (documented).
+  **Corrected 2026-09-07:** the HMR socket *does* cross the proxy — the browser console on a
+  live VM logs `[Bun] Hot-module-reloading socket connected, waiting for changes...`.
   `app_proxy_selftest.sh <bun> <app-dir>` is how a bun release is vetted without a VM.
 - **`sandbox_mount/guest/toolchain.lock`** — `<tool> <version> <mode>` with `pin` / `float` /
   `image`. `provision.sh` reads it; the hardcoded `BUN_VERSION="1.3.14"` and the false
@@ -795,3 +797,167 @@ The five-roster fan-out on `prompts/10-circle-of-fifths-wheel.md` that 2026-08-2
 launch is no longer blocked by the toolchain. It has not been re-run in this session; that is the
 plan's global close and the next experiment (mind the 2-vCPU shared pool — serialize or bump the
 tier before treating wall clock as a metric).
+
+---
+
+# 2026-09-07 — toolchain plan closed: the drift ritual ran itself, and the fan-out item was already done
+
+`specs/toolchain-unpin-and-drift-visibility.md` is `complete`. Both open Global Validation
+boxes are closed, one on new evidence and one on evidence that turned out to predate the plan.
+
+### The second-day mount: the system did exactly what it was built to do
+
+`drift-day2-20260907-c3da02`, eight days after the 2026-08-30 baseline. Gate F:
+
+```
+tool     baseline   actual     status
+bun      1.4.0      1.4.2      DRIFT  (float)
+just     1.58.0     1.58.0     ok
+uv       0.12.7     0.12.10    DRIFT  (image)
+pi       0.84.4     0.85.1     DRIFT  (image)
+claude   2.1.251    2.1.261    DRIFT  (image)
+python   3.12.3     3.12.3     ok
+```
+
+A floating bun pulled **1.4.2** — a release that did not exist when the plan shipped — the gate
+named it, and observe served `app 200 anonymous`. The load-bearing check: the guarded
+`/_bun/client/index-*.js` chunk returned 200 (110,187 bytes) through the Host rewrite. That is the
+exact route `is_allowed_host_header` protects, serving on a bun two patch releases past the
+baseline, with `127.0.0.1:4502` / `0.0.0.0:4501` as designed. The August 403 class is dead, not
+deferred.
+
+Lock ratcheted to the proven set (`bun 1.4.2`, `uv 0.12.10`, `pi 0.85.1`, `claude 2.1.261`);
+PLAYBOOK's example block updated to match so the docs cannot drift from the lock.
+
+**`pi` 0.84.4 → 0.85.1 is worth noting**: the 2026-08-27 TDD session recorded that pi 0.84.3 does
+not resolve `models.json`'s `env:OPENROUTER_API_KEY` placeholder. 0.85.1 drove three agent sessions
+on the VM without trouble. That does not prove the host-local ADW gap is fixed — VMs bake the
+literal key, so this run never exercised the placeholder path — but it is the version to test
+against when someone retries host-local agent ADWs.
+
+### The confirming arm
+
+Sequencing was deliberate: the ratchet was held until *after* an ADW ran, because `pi` is the agent
+runtime and gate F only pings it. `prompts/15-seventh-chords.md`, default roster, adw `0eb03b9e`:
+5/5 phases, $0.6324, 1,934,784 tokens, commit `4a771f6`. Suite 312 → 317 pass, 6,216 expect()
+calls, 450 insertions across five app files plus the spec — checked against the `command.log` and
+the commit stat, because a 5/5 that nobody opened is what 2026-08-15 was. Harvested to
+`refs/sandbox/drift-day2-20260907-c3da02` and **left unmerged** — merging would hand seventh chords
+to every future arm.
+
+### The fan-out item was closed a week before the plan asked for it
+
+The Global Validation line ("five-roster fan-out on `prompts/10`, every arm reaches an ADW launch")
+was written 2026-08-30 carrying the 08-21b framing forward, and missed the 2026-08-22 session
+directly above. Five run records, all pinned to `5d0de55`, four created at `00:18:23Z`, all closed
+within 39 seconds of each other, $2.8437 total. Criterion met, on the pinned toolchain.
+
+`prompts/10` is now **retired by `main` absorbing the feature** — it targets
+`apps/circle-of-fifths-fretboard/` (manifest says `apps/fretboard`), asks arms to create
+`circle-wheel.ts` which is on `main`, and quotes "231 pass" against a 317-test suite.
+
+**Correction to the 2026-08-22 results table above.** It reconciles with the run records in
+aggregate ($2.92 vs $2.8437) but not per arm: it says top-speed $0.587 where the record says
+$0.3106, frontier $1.197 where the record says $1.6241, and it lists a `default` arm when no
+`cof-default-*` run exists on 08-22 — only `cof-probe`. Trace-DB token accounting and the
+disposable key's actual burn are two different instruments, and the per-arm rows are not safely
+keyed to run ids. **Score best-of-N on the run record's `spend`.**
+
+### Cost instruments disagree, and now we know which way
+
+Teardown recorded **$0.327899242** for `drift-day2-20260907-c3da02`. The ADW's own box reported
+**$0.6324** (planner $0.6021 + builder $0.0303). One arm, one disposable key, both numbers — the
+cleanest controlled comparison available, and the ADW over-reports by ~1.9x.
+
+This is the same split seen across the 08-22 arms, but there the aggregate happened to agree
+(~$2.92 vs $2.8437) so the direction was invisible. It is not a rounding artifact: the run record is
+what OpenRouter actually billed the disposable key, and the key exists for exactly one run. The
+ADW's figure comes from its own rate table over token counts, so suspect the rates in
+`models.json.tmpl` (or full-rate accounting of cached/reasoning tokens) before suspecting the key.
+
+Practical consequence: **the run record's `spend` is the money; the ADW's `cost` is an estimate.**
+Any best-of-N that ranks arms on cost must read the run record. Worth a follow-up: reconcile one
+model's rate table against an OpenRouter usage export and fix the template, since a 1.9x error makes
+the ADW's cost line actively misleading rather than merely imprecise.
+
+### Still open
+
+- **The loose-brief experiment** — five rosters, a one-line brief, diff the *plan documents*. This
+  is the 08-22 session's real finding (prompt 10 measured transcription cost, not planning quality;
+  the tell was all four arms landing exactly 16 deletions) and it is a different question from
+  toolchain drift, so it wants its own spec rather than a box on the closed one. It needs a fresh
+  feature: CoF is contaminated on `main` in both directions. `prompts/16-alternate-tunings.md` is
+  the remaining ~72-line brief at the right density; `prompts/15` was consumed today.
+- **Housekeeping not done this session** (out of the chosen scope): `fret-explorer-20260829-7935db`
+  still reads `open` in the run records, and the merged `toolchain-unpin` / `fix/pin-bun-toolchain`
+  local branches are still around.
+
+---
+
+# 2026-09-07b — the review URL can lie: bun's incremental rebundle, and `sbx lifecycle refresh`
+
+Opening the app on `drift-day2-20260907-c3da02` after the ADW showed a Bun **Runtime Error**
+overlay — empty wheel, empty chord list:
+
+```
+Failed to load bundled module './main.ts'.
+This is not a dynamic import, and therefore is a bug in Bun's bundler.
+```
+
+The two obvious explanations were both wrong. **Not a stale server**: the dev server had picked up
+the commit unprompted — the chunk hash moved and the new bundle contained `diatonicSevenths`.
+**Not a coding issue**: the builder's code is fine.
+
+### What it actually is
+
+Only the *bundling path* differs. Reproduced three times in each direction by rolling
+`apps/fretboard/` back to `0dad038` and forward to `4a771f6` under the running watcher:
+
+| bundle produced by | chunk size | result |
+|---|---|---|
+| fresh dev-server start | **114,814 B** | renders, console clean |
+| incremental rebundle | **114,799 B** | the runtime error above |
+
+Same commit, same bun 1.4.2, same server, 15 bytes apart. Bun blames its own bundler and on this
+evidence it is right. Hand-edits are fine — HMR reloads them — but a whole ADW commit landing at
+once is the case that breaks.
+
+### Why the setup made it inevitable
+
+`observe.just`'s `start_bg()` is guarded by `listening()` **on purpose**: observe must be re-runnable
+and `just sbx mount` ends with it, so it must never stack a second process on a port. The
+consequence is that the dev server behind the review URL is *always* the one started at mount —
+today 16:30:32, against a commit at 16:35:47. It has to absorb the agent's whole commit
+incrementally, which is exactly the failing path.
+
+This is worse than cosmetic: `main.ts` calls `init()` at module scope, so `bun test` cannot import
+it. **The browser is the only gate on `main.ts`** — a review URL that lies means that gate is not
+real. The suite went 312 → 317 green while the app was unopenable.
+
+### `just sbx lifecycle refresh <run-id>` — new phase 5b
+
+Bounces **only** the app dev server; proxy, visualizer and the exe.dev share are untouched. That
+separation is a dividend of the proxy architecture the unpin plan just landed — before it, the dev
+server *was* the public bind and could not be bounced independently.
+
+It is deliberately paranoid, because doing this by hand fails in a way that looks like success: if a
+new server starts while the old one still holds 4502, **bun does not error — it silently binds 4503**
+and logs it, while the proxy keeps forwarding to the stale process. The chunk hash never changes.
+(Confirmed by walking into it during diagnosis.) So refresh kills *every* dev server, waits for the
+port to actually free, starts exactly one, then proves there is exactly one, that it reported the
+port we asked for, and that the public URL serves a `/_bun/client` chunk — not just the HTML, since
+`index.html` serves fine even when the module graph is broken.
+
+Verified three ways on a live box: clean state (114,814), induced break (114,799 → 114,814), and a
+planted duplicate on 4503 (collapsed to one on 4502).
+
+**Not chained into `execute`** — `execute` is detached and returns a PID minutes before the ADW ends,
+so a refresh there would fire before the agent wrote anything. It prints a pointer instead.
+
+### Corrections
+
+- The HMR WebSocket **does** cross the proxy; the 2026-08-30 note above said it does not. The console
+  on a live VM logs `[Bun] Hot-module-reloading socket connected, waiting for changes...`.
+- Worth filing upstream against oven-sh/bun: incremental rebundle emitting an unresolvable module
+  registry, with the byte-size delta as the reproduction. Not filed — that is a public post and the
+  operator's call.

@@ -5,6 +5,7 @@ modified:
   - 2026-08-30T10:06:08-07:00
   - 2026-08-30T11:00:49-07:00
   - 2026-08-30T11:06:38-07:00
+  - 2026-09-07T00:00:00-07:00
 commits:
   - 0f90d24
   - e9fc9c4
@@ -14,15 +15,17 @@ commits:
   - ebf63c2
   - 02f5fe7
   - 49545a7
+  - acbdff1
 agents:
   - claude-fable-5
 sessions:
   - cc-interactive-20260830
   - session_013Mrv7gT432mvszNfDNatoE
+  - session_01UA3a355LPeSTt73vPHWJyi
 back_refs:
   - specs/payload-app-manifest.md — observe's per-app boot command reads `app.dir`/`app.name` from the manifest; the proxy's upstream contract is what `just app swap` must preserve
 forward_refs: []
-status: building
+status: complete
 ---
 
 # Plan: Unpin bun, and make toolchain drift visible instead of frozen
@@ -237,9 +240,9 @@ proving that on the known-good bun isolates the proxy from the unpin.
 
 ## Global Validation
 
-- [ ] Two consecutive `just sbx mount` runs on different days both pass `[6/6]` with a floating bun and print gate F — the system runs unpinned and says what it ran on
+- [x] Two consecutive `just sbx mount` runs on different days both pass `[6/6]` with a floating bun and print gate F — the system runs unpinned and says what it ran on. **2026-08-30** (`drift-check-20260830-729c65`, bun 1.4.0) and **2026-09-07** (`drift-day2-20260907-c3da02`, bun **1.4.2** — a release that did not exist when this plan shipped). Gate F on the second reported `bun 1.4.0→1.4.2`, `uv 0.12.7→0.12.10`, `pi 0.84.4→0.85.1`, `claude 2.1.251→2.1.261` as `DRIFT`, `just`/`python` `ok`, gate PASS. Observe `[6/6]`, `app 200 anonymous`; the guarded `/_bun/client/*.js` chunk served 200 (110,187 bytes) through the Host rewrite, with `127.0.0.1:4502` / `0.0.0.0:4501` exactly as designed. Lock ratcheted to the proven set in this commit.
 - [x] `git log -S'BUN_VERSION="1.3.14"' --oneline -- sandbox_mount/guest/provision.sh | head -1` names only the historical pin commit (`5d0de55`) and its removal — no re-pin crept back
-- [ ] Re-run the blocked experiment: the five-roster fan-out on `prompts/10-circle-of-fifths-wheel.md`. Every arm reaches an ADW launch. (This is the item the 2026-08-21b session was trying to do; it is the real close.)
+- [x] Re-run the blocked experiment: the five-roster fan-out on `prompts/10-circle-of-fifths-wheel.md`. Every arm reaches an ADW launch. — **Closed on evidence that predates this plan, plus one confirming arm.** See "Amendment 2026-09-07" below: the fan-out already ran on 2026-08-22, and `prompts/10` is no longer runnable as written. Today's confirming arm (`drift-day2-20260907-c3da02`, adw `0eb03b9e`) launched and completed 5/5 on the drifted toolchain — `prompts/15-seventh-chords.md`, default roster, $0.6324, 1,934,784 tokens, commit `4a771f6`, suite 312→317 green, harvested to `refs/sandbox/drift-day2-20260907-c3da02` and left unmerged.
 
 ## Notes
 
@@ -467,3 +470,53 @@ The two Phase 4 merge boxes are now `[x]`. Remaining open work is the plan's glo
 a second-day mount passing `[6/6]` with gate F, and the five-roster fan-out re-run. `status`
 stays `building` until those land.
 </details>
+
+### Amendment 2026-09-07 — how the fan-out item was actually closed
+
+The fan-out line in Global Validation was written on 2026-08-30 carrying the 2026-08-21b framing
+forward. It missed that **the fan-out had already run on 2026-08-22**, one week earlier. The run
+records are the primary evidence — five arms, all pinned to `5d0de55`, four created together at
+`00:18:23Z` with the probe arm at `00:06:24Z`, all closed between `00:59:04Z` and `00:59:43Z`:
+
+| run id | spend |
+|---|---|
+| `cof-probe-20260822-577804` | $0.2876 |
+| `cof-frontier-20260822-2da16b` | $1.6241 |
+| `cof-top-speed-20260822-0aaae4` | $0.3106 |
+| `cof-deepestseek-20260822-ae7310` | $0.0670 |
+| `cof-open-weights-20260822-e709ab` | $0.5544 |
+| **total** | **$2.8437** |
+
+Every arm reached an ADW launch; four completed 10/10 and frontier died at `review_1` on a
+`pkill -f` in the shared process tree. That satisfies the criterion as written, on the *pinned*
+toolchain.
+
+**`prompts/10` cannot be re-run as written today.** It targets `apps/circle-of-fifths-fretboard/`
+(the manifest has said `apps/fretboard` since 2026-08-27), it asks arms to create
+`circle-wheel.ts` which has been on `main` for weeks along with follow-on work (`e8026bc`,
+`8c8cf62`), and it quotes "231 pass" against a suite that is now 317. Five arms would be told to
+create an existing file in a directory that does not exist. The prompt is retired by `main`
+absorbing the feature.
+
+So the honest close is: cite 08-22 for the fan-out, and prove separately that the *toolchain* no
+longer blocks an ADW launch — the only claim this plan is entitled to make. Today's arm does that,
+on bun 1.4.2 / pi 0.85.1 / claude 2.1.261 / uv 0.12.10.
+
+**Caution for whoever runs the next best-of-N.** The 08-22 results table in NEXTSTEPS and the run
+records agree in aggregate ($2.92 vs $2.8437) but **disagree materially per arm** — the table says
+top-speed $0.587 where the record says $0.3106, and frontier $1.197 where the record says $1.6241;
+the table also lists a `default` arm when no `cof-default-*` run exists on 08-22, only `cof-probe`.
+Two instruments (trace-DB token accounting vs. the disposable key's actual burn) that reconcile in
+total and not per row mean the table's per-arm cost attribution is not safely keyed to run ids.
+Score best-of-N on the run record's `spend`, not on that table. **Direction measured 2026-09-07:**
+today's single arm recorded $0.3279 against the key while the ADW reported $0.6324 — the ADW
+over-reports by ~1.9x, so its `cost` line is an estimate off its own rate table, not money spent.
+
+**What is still open, and belongs in its own spec — not this one.** The 08-22 session's real
+finding was that `prompts/10` is a 373-line completed plan, so the run measured *transcription
+cost*, not planning quality (the tell: all four arms landed exactly 16 deletions). The loose-brief
+experiment it proposed — hand five rosters a one-line brief and diff the **plan documents** — is a
+different question from toolchain drift and is not this plan's to close. It now needs a fresh
+feature as well: CoF is contaminated on `main` in both directions, prompt and implementation.
+`prompts/16-alternate-tunings.md` is a ~72-line brief and is the right density for it;
+`prompts/15` was consumed by today's confirming arm.
