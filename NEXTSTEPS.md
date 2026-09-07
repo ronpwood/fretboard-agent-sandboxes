@@ -1088,3 +1088,76 @@ Every ADW cost figure this repo has ever printed is wrong by a per-model factor,
 2026-08-22 fan-out table — which is now doubly unusable for cross-arm comparison (mis-keyed per-arm
 attribution *and* wrong rates). The run record's `spend` was correct the entire time. A mounted VM
 keeps the rates it was provisioned with, so nothing already-run changes retroactively.
+
+---
+
+# 2026-09-07e — chasing the cache-read residual: two real bugs, one dead hypothesis, one open
+
+Chased the +6.17% left over after the rate fix. The residual is **not** what I said it was, and the
+method I used to find it was partly invalid. Three outcomes.
+
+### Correction: cross-time retrodiction does not work
+
+I built a 20-run regression from every harvested trace and compared each against billed spend using
+*today's* catalog. Errors ran −37.7% to +104.2%, which looked like a modelling failure. It is not:
+**those runs were billed at the prices in force on their own date.** `cof-deepestseek-20260822` is
+the proof — its own trace recorded $0.0879 using the old rates, the key billed $0.0670, and today's
+catalog predicts $0.1367. Today's prices make an August run's prediction *worse*.
+
+So only same-day runs can validate a rate table, the usable dataset collapses from 20 to 2, and the
+"+6.17% cache-read residual" was over-read from a comparison that could not support it. The
+cache-read-share correlation across all 20 runs is **−0.175** — no relationship. Hypothesis dead.
+
+### Real finding 1 — the trace under-records billed usage
+
+`cof-frontier-20260822` isolates this perfectly: it used **only `claude-opus-5` and `kimi-k3`, both
+of which had correct rates** in the old table, so no rate error can be involved.
+
+```
+trace-recorded cost : $1.196916
+key actually billed : $1.624062
+never recorded      : $0.427146   = 26.3% of spend
+```
+
+That run died at `review_1` on a SIGTERM. Phases that burn tokens and then fail still bill, but do
+not emit the captured agent event, so the trace simply never sees them. **The ADW's cost is
+unreliable in both directions** — inflated by bad rates (now fixed) and deflated by uncaptured
+failed turns (not fixed). The run record's `spend` remains the only trustworthy number.
+
+### Real finding 2 — independent confirmation of the rate fix
+
+`gogem-20260905` used `gemini-3.8-flash`, which was 2.0x high. Its trace-recorded cost against
+billed: **1.996**. That run played no part in deriving the fix, so it is a clean out-of-sample
+confirmation of the 2x on that model.
+
+### Open — deepseek cache reads
+
+Among same-day runs only one is informative (`postmerge-check`'s deepseek cache-read is 12,288
+tokens, so the parameter is unidentifiable there — it solves to a nonsense negative). `drift-day2`
+implies **$0.00696/M against catalog $0.028/M, a factor of 4.02**, while gemini's cache-read in the
+same solve lands at $0.0745 against catalog $0.075 — essentially exact. So the divergence is
+deepseek-specific, not a general cache-read modelling error.
+
+**Two explanations produce identical arithmetic and this data cannot separate them:**
+1. OpenRouter bills deepseek cache reads at ~1/4 of its published `input_cache_read`; or
+2. pi over-counts deepseek `cacheRead` tokens ~4x.
+
+Plausibility does not settle it: deepseek's cacheRead/input ratios (3.4x–22.6x) look high next to
+gemini's (0.9x–2.8x), but `claude-opus-5` legitimately shows 8,922x because Anthropic-style caching
+counts only the uncached delta as `input`. High ratios are normal.
+
+**The rate was deliberately NOT changed.** Adjusting it to 0.007 would fit one run while
+contradicting OpenRouter's published figure, and would silently mask a token-count bug if (2) is the
+truth — and would then break the day pi is fixed.
+
+### The decisive fix, when someone wants it
+
+Stop estimating. pi's stream should be carrying a provider generation id per turn; capture it in the
+trace and cost becomes *reconcilable* against OpenRouter's own per-generation record instead of
+recomputed from a rate table. That dissolves this entire class — rate drift, cache-read ambiguity,
+and the under-capture above all become visible as a diff against the authoritative source. Neither
+the harvested artifacts nor the trace carry such an id today (checked), and the raw pi session files
+live on the VM and are not mirrored by teardown, so confirming pi emits one needs a live box.
+
+Cheap interim probe: one controlled deepseek call with a known cached prompt, then read that
+generation's actual charge from OpenRouter. Fractions of a cent, and it settles (1) vs (2) outright.
