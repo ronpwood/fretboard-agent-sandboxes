@@ -961,3 +961,67 @@ so a refresh there would fire before the agent wrote anything. It prints a point
 - Worth filing upstream against oven-sh/bun: incremental rebundle emitting an unresolvable module
   registry, with the byte-size delta as the reproduction. Not filed — that is a public post and the
   operator's call.
+
+---
+
+# 2026-09-07c — post-merge validation cycle: the ratchet is real, and the cost bug has a factor
+
+Ran a full clean loop against the merged `main` (`75088e3`) to check the two things the close left
+genuinely unverified. Run `postmerge-check-20260907-8a4c68`, $0.1738, torn down clean.
+
+### 1. The ratchet transcription is correct — first all-`ok` gate F ever
+
+The lock rows were hand-transcribed from gate F output, and nothing had checked them against a
+fresh box (`FILL` clones `origin/main`, so no provision run had ever read them). It reads clean:
+
+```
+tool     baseline   actual     status
+bun      1.4.2      1.4.2      ok
+just     1.58.0     1.58.0     ok
+uv       0.12.10    0.12.10    ok
+pi       0.85.1     0.85.1     ok
+claude   2.1.261    2.1.261    ok
+python   3.12.3     3.12.3     ok
+```
+
+Six for six. No row stuck reporting DRIFT against itself, which was the specific failure this cycle
+was looking for — a mistyped version would have made the ratchet silently wrong forever, exactly the
+invisible staleness the plan exists to kill. Provision also echoed `just 1.58.0 (float, baseline
+1.58.0)`, confirming it parses the merged lock.
+
+### 2. The bundle bug is narrower than first stated — it needs a change *inside the bundle graph*
+
+The smoke ADW (`prompts/11-tdd-smoke.md`, adw `a5441727`, 5/5, commit `ab3a924`) added only
+`intervals.ts` and `intervals.test.ts` — **new leaf files nothing imports**. The bundle came back
+byte-identical (`110187`, same hash) with zero errors. The rebundle bug did not fire, and should not
+have.
+
+So the trigger is not "a commit landed" but "files already in the bundle graph were rewritten." The
+seventh-chords commit rewrote `main.ts`, `index.html`, `theory.ts` and `voicing.ts`; this one touched
+none of them. Re-inducing a graph-touching change on the same box (roll `apps/fretboard/` back to
+`e8026bc` and forward) reproduced it immediately — `110048` bytes against the healthy `110187`, and
+the browser showed the same `Failed to load bundled module './main.ts'`. `refresh` restored
+`110187` and the app rendered.
+
+Practical read: an ADW that only adds modules is safe to review without refreshing, but you cannot
+tell which kind you got without reading the diff — so refresh unconditionally. `execute`'s new
+pointer line printed as intended.
+
+### 3. The cost gap is a systematic ~2x, not an instrument quirk
+
+Second independent data point, and it pins the shape:
+
+| run | ADW `cost` | key `spend` | ratio |
+|---|---|---|---|
+| `drift-day2` (seventh chords, 1,934,784 tok) | $0.6324 | $0.327899 | **1.929x** |
+| `postmerge-check` (interval helper, 439,199 tok) | $0.3452 | $0.173784 | **1.986x** |
+
+Different prompts, different rosters exercised, 4.4x apart in token volume — both land within 3% of
+**2x**. That is not accounting noise or a cached-token edge case; it is a factor sitting in the rate
+math. Prime suspects, in order: rates in `models.json.tmpl` entered at 2x, or input tokens being
+costed at the output rate, or prompt+completion being summed and then each charged the full rate.
+
+Upgraded from the earlier "score on the run record" advice: the ADW's `cost` line is not merely an
+estimate, it is **wrong by a consistent factor**, and anything that has ever quoted it (including the
+08-22 fan-out table) is inflated ~2x. Worth fixing at the source — one model's rate reconciled
+against an OpenRouter usage export would confirm the mechanism in minutes.
