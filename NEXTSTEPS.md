@@ -1088,3 +1088,64 @@ Every ADW cost figure this repo has ever printed is wrong by a per-model factor,
 2026-08-22 fan-out table — which is now doubly unusable for cross-arm comparison (mis-keyed per-arm
 attribution *and* wrong rates). The run record's `spend` was correct the entire time. A mounted VM
 keeps the rates it was provisioned with, so nothing already-run changes retroactively.
+
+---
+
+# 2026-09-07f — capture the provider generation id, so cost can be reconciled instead of recomputed
+
+First half of the fix proposed in 2026-09-07e. Every cost figure this repo prints is *recomputed*
+from a local rate table, and that has now failed twice in one day in opposite directions: the table
+was wrong for 7 of 11 models, and a separate 26.3% of `cof-frontier`'s spend never reached the trace
+at all. Both are invisible by construction, because nothing is ever compared against the provider's
+own record.
+
+### It turned out to be possible
+
+I had flagged this as unconfirmed — the trace carries no id and teardown does not mirror pi's raw
+session files, so there was no way to check from artifacts. Reading pi 0.84.4's bundle settles it:
+
+```
+output.responseId ||= chunk.id          # OpenAI-compatible stream path
+Object.assign(partial, {stopReason, usage, responseId})
+```
+
+For OpenAI-compatible APIs — which is how we reach OpenRouter — pi sets `responseId` from the
+stream chunk's `id`, and that is OpenRouter's generation id. It reaches us on the assistant message
+at `message_end`, already in the stream we parse. Nothing needed patching.
+
+### What changed
+
+`UsageBreakdown.response_ids: list[str]`, appended by `add_turn(usage, total, response_id=None)`.
+Deliberately parked on the usage type rather than `PiResult`, so it rides plumbing that already
+exists: `merge()` concatenates lists with the same `+` it uses to add ints, so a retried phase
+accumulates ids for free, and `model_dump()` carries them into the `agent_end` trace payload without
+`agents.py` changing at all. Two files, ~20 lines.
+
+Captured for **every** assistant turn including `aborted` and `error` — a turn that burns tokens and
+then fails still bills, and those are exactly the turns the trace has been losing. (Note the
+contrast with the line directly below it: occupancy deliberately ignores failed turns, because
+usage you can't trust shouldn't set the context bar. Cost is the opposite — it must count.)
+
+Mirrored into `.claude/skills/sssf/templates/` so a fresh `/sssf install` gets it. **Pre-existing
+drift noted, not fixed:** those templates already lag `adws/` — they are missing `TestCase` /
+`TestDesignOutput` and `assistant_message_records` from earlier work. Worth a sync pass of its own.
+
+Verified offline, 11/11: order preserved, duplicates not double-recorded (but their cost still
+counted), turns without an id still counted, `merge()` concatenates across retries while still
+summing cost, `model_dump()` carries the field, the realistic `message_end` shape parses, an errored
+turn's id is captured, and the old two-argument call site still works.
+
+### Second half, not built — and one constraint to design around
+
+Reconciliation itself: fetch each id from OpenRouter's per-generation record and compare the sum to
+the run record's `spend`. That makes rate drift, the deepseek cache-read ambiguity, and the
+under-capture gap all visible as a diff against the authoritative source.
+
+**The constraint:** teardown revokes the runtime key before the VM dies, and a revoked key very
+likely cannot read its own generations. So reconciliation has to run *before* revoke — inside
+teardown between `harvest` and `revoke` — or as a `just sbx manage reconcile <run-id>` while the box
+is still alive. Anything that assumes it can reconcile after teardown will find the door closed.
+
+End-to-end capture is unverified until the next sandbox run: it needs a live pi, and host-local pi
+still 401s on the `env:OPENROUTER_API_KEY` placeholder. The next mount will show ids in the
+`agent_end` payload, or it won't.
