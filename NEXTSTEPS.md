@@ -795,3 +795,80 @@ The five-roster fan-out on `prompts/10-circle-of-fifths-wheel.md` that 2026-08-2
 launch is no longer blocked by the toolchain. It has not been re-run in this session; that is the
 plan's global close and the next experiment (mind the 2-vCPU shared pool — serialize or bump the
 tier before treating wall clock as a metric).
+
+---
+
+# 2026-09-07 — toolchain plan closed: the drift ritual ran itself, and the fan-out item was already done
+
+`specs/toolchain-unpin-and-drift-visibility.md` is `complete`. Both open Global Validation
+boxes are closed, one on new evidence and one on evidence that turned out to predate the plan.
+
+### The second-day mount: the system did exactly what it was built to do
+
+`drift-day2-20260907-c3da02`, eight days after the 2026-08-30 baseline. Gate F:
+
+```
+tool     baseline   actual     status
+bun      1.4.0      1.4.2      DRIFT  (float)
+just     1.58.0     1.58.0     ok
+uv       0.12.7     0.12.10    DRIFT  (image)
+pi       0.84.4     0.85.1     DRIFT  (image)
+claude   2.1.251    2.1.261    DRIFT  (image)
+python   3.12.3     3.12.3     ok
+```
+
+A floating bun pulled **1.4.2** — a release that did not exist when the plan shipped — the gate
+named it, and observe served `app 200 anonymous`. The load-bearing check: the guarded
+`/_bun/client/index-*.js` chunk returned 200 (110,187 bytes) through the Host rewrite. That is the
+exact route `is_allowed_host_header` protects, serving on a bun two patch releases past the
+baseline, with `127.0.0.1:4502` / `0.0.0.0:4501` as designed. The August 403 class is dead, not
+deferred.
+
+Lock ratcheted to the proven set (`bun 1.4.2`, `uv 0.12.10`, `pi 0.85.1`, `claude 2.1.261`);
+PLAYBOOK's example block updated to match so the docs cannot drift from the lock.
+
+**`pi` 0.84.4 → 0.85.1 is worth noting**: the 2026-08-27 TDD session recorded that pi 0.84.3 does
+not resolve `models.json`'s `env:OPENROUTER_API_KEY` placeholder. 0.85.1 drove three agent sessions
+on the VM without trouble. That does not prove the host-local ADW gap is fixed — VMs bake the
+literal key, so this run never exercised the placeholder path — but it is the version to test
+against when someone retries host-local agent ADWs.
+
+### The confirming arm
+
+Sequencing was deliberate: the ratchet was held until *after* an ADW ran, because `pi` is the agent
+runtime and gate F only pings it. `prompts/15-seventh-chords.md`, default roster, adw `0eb03b9e`:
+5/5 phases, $0.6324, 1,934,784 tokens, commit `4a771f6`. Suite 312 → 317 pass, 6,216 expect()
+calls, 450 insertions across five app files plus the spec — checked against the `command.log` and
+the commit stat, because a 5/5 that nobody opened is what 2026-08-15 was. Harvested to
+`refs/sandbox/drift-day2-20260907-c3da02` and **left unmerged** — merging would hand seventh chords
+to every future arm.
+
+### The fan-out item was closed a week before the plan asked for it
+
+The Global Validation line ("five-roster fan-out on `prompts/10`, every arm reaches an ADW launch")
+was written 2026-08-30 carrying the 08-21b framing forward, and missed the 2026-08-22 session
+directly above. Five run records, all pinned to `5d0de55`, four created at `00:18:23Z`, all closed
+within 39 seconds of each other, $2.8437 total. Criterion met, on the pinned toolchain.
+
+`prompts/10` is now **retired by `main` absorbing the feature** — it targets
+`apps/circle-of-fifths-fretboard/` (manifest says `apps/fretboard`), asks arms to create
+`circle-wheel.ts` which is on `main`, and quotes "231 pass" against a 317-test suite.
+
+**Correction to the 2026-08-22 results table above.** It reconciles with the run records in
+aggregate ($2.92 vs $2.8437) but not per arm: it says top-speed $0.587 where the record says
+$0.3106, frontier $1.197 where the record says $1.6241, and it lists a `default` arm when no
+`cof-default-*` run exists on 08-22 — only `cof-probe`. Trace-DB token accounting and the
+disposable key's actual burn are two different instruments, and the per-arm rows are not safely
+keyed to run ids. **Score best-of-N on the run record's `spend`.**
+
+### Still open
+
+- **The loose-brief experiment** — five rosters, a one-line brief, diff the *plan documents*. This
+  is the 08-22 session's real finding (prompt 10 measured transcription cost, not planning quality;
+  the tell was all four arms landing exactly 16 deletions) and it is a different question from
+  toolchain drift, so it wants its own spec rather than a box on the closed one. It needs a fresh
+  feature: CoF is contaminated on `main` in both directions. `prompts/16-alternate-tunings.md` is
+  the remaining ~72-line brief at the right density; `prompts/15` was consumed today.
+- **Housekeeping not done this session** (out of the chosen scope): `fret-explorer-20260829-7935db`
+  still reads `open` in the run records, and the merged `toolchain-unpin` / `fix/pin-bun-toolchain`
+  local branches are still around.

@@ -153,11 +153,11 @@ The guest toolchain is **not pinned**. It floats, and every mount says what it r
 The baseline lives in `sandbox_mount/guest/toolchain.lock`, one row per tool:
 
 ```
-bun     1.4.0    float
+bun     1.4.2    float
 just    1.58.0   float
-uv      0.12.7   image
-pi      0.84.4   image
-claude  2.1.251  image
+uv      0.12.10  image
+pi      0.85.1   image
+claude  2.1.261  image
 python  3.12.3   image
 ```
 
