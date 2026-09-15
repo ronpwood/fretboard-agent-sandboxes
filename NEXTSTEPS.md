@@ -1294,3 +1294,42 @@ and the endpoint is key-scoped. Natural home: `just sbx manage reconcile <run-id
 alive, or a teardown step between `harvest` and `revoke`. It would also expose the 26.3%
 under-capture directly: sum the captured generations, compare to the key's billed total, and the gap
 is the usage the trace never saw.
+
+# 2026-09-15 — model refresh: glm-5.3 and gemini-3.8-flash swapped into three rosters
+
+A `/model-refresh` audit against OpenRouter's live catalog found no retired pins. Two approved swaps:
+
+| Roster | Lane | Was | Now |
+| --- | --- | --- | --- |
+| default | planner | `gemini-3.6-flash` | `gemini-3.8-flash` |
+| default | reviewer | `glm-5.2` | `glm-5.3` |
+| open-weights | planner, reviewer | `glm-5.2` | `glm-5.3` |
+| top-speed | planner, reviewer | `gemini-3.6-flash` | `gemini-3.8-flash` |
+
+Both are price-neutral at the published rates: gemini 3.6 and 3.8 are both 0.75/3.75, and glm-5.3 matches
+glm-5.2's current published 1.40/4.40. `glm-5.3` was added to `models.json.tmpl`: 1M context,
+`maxTokens` 128000 (the lowest cap among healthy endpoints), catalog rates 1.4/4.4/0.26/0.0. `gemini-3.8-flash` was already registered.
+`glm-5.2` and `gemini-3.6-flash` stay registered so either swap can be reverted without re-provisioning.
+
+**Verified on the host:** all six configs load and pass `agents.validate`, every roster model is in
+the registry, `check_rates.py` shows glm-5.3 in agreement, `just sbx manage doctor` OK. Both models
+have ZDR endpoints (glm-5.3: 23, gemini-3.8-flash: 3); gemini-3.8-flash already ran live in
+`gogem-20260905`.
+
+**Not verified:** glm-5.3 has never been pinged by pi or through gate C. The first mount of the default or
+open-weights roster is its smoke test. Watch the reviewer lane for its first run.
+
+### Still open from the audit (not applied)
+
+- **Scheduled price change:** Gemini 3.6/3.7/3.8 Flash all double to 1.50/7.50 on 2027-01-01. That hits
+  default, top-speed and gemniflash.
+- **Rate drift, pre-existing:** `check_rates.py` flags deepseek-0731 (published now 0.06/0.12),
+  glm-5.2 and kimi-k3. The deepseek keep-catalog-or-use-measured decision above is still open.
+- **maxTokens floors dropped:** 0731 via Venice caps at 32768 (registry 65536), kimi-k3 via DeepInfra at
+  16384 (registry 65535).
+- **Unregistered fallback:** `adws/adw_data/harness_engineering/subagents.ts` falls back to
+  `gemini-3.5-flash`, which is not in the registry.
+- **Candidates to trial:** try `deepseek-v4.1-flash` (0.15/0.60) as a builder arm, `deepseek-v4-pro-0813` (0.66/1.98) as an
+  open-weights builder, and `grok-4.6` in place of the unused `grok-4.5`. `claude-fable-5.1` is ruled out: it has no ZDR endpoints
+  and costs 2x opus-5.
+- `references/models.md` registry table still carries the 2026-08-04 rates and the "ten models" heading.
