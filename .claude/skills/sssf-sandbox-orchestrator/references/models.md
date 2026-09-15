@@ -23,10 +23,10 @@ model**. Nothing else changes between N runs.
 
 | Agent | Model | Thinking | Rate in/out per M |
 | --- | --- | --- | --- |
-| planner | `openrouter/google/gemini-3.6-flash` | high | $1.50 / $7.50 |
+| planner | `openrouter/google/gemini-3.8-flash` | high | $0.75 / $3.75 (→ $1.50 / $7.50 on 2027-01-01) |
 | builder | *(inherits the default)* `deepseek/deepseek-v4-flash-0731` | medium | $0.09 / $0.18 |
 | scout | *(inherits the default)* `deepseek/deepseek-v4-flash-0731` | medium | $0.09 / $0.18 |
-| reviewer | `openrouter/z-ai/glm-5.2` | high | $0.76 / $2.42 |
+| reviewer | `openrouter/z-ai/glm-5.3` | high | $1.40 / $4.40 |
 | documenter | `openrouter/openai/gpt-5.6-luna` | medium | $0.10 / $0.60 |
 
 ### `adws/adw_sssf_config/sssf.frontier.config.yaml` — the frontier roster
@@ -95,9 +95,11 @@ pricing moves.
 | --- | --- | --- | --- | --- | --- | --- |
 | `deepseek/deepseek-v4-flash-0731` | 0.09 | 0.18 | 0.018 | 0.0 | **Parasail** (US) | default: builder, scout |
 | `openai/gpt-5.6-luna` | 0.1 | 0.6 | 0.01 | 0.125 | **Azure** | default: documenter |
-| `z-ai/glm-5.2` | 0.76 | 2.42 | 0.14 | 0.0 | **CoreWeave** (US) | default: reviewer |
+| `z-ai/glm-5.2` | 0.76 | 2.42 | 0.14 | 0.0 | **CoreWeave** (US) | registered only (was default reviewer until 2026-09-15) |
+| `z-ai/glm-5.3` | 1.4 | 4.4 | 0.26 | 0.0 | 23 ZDR endpoints (2026-09-15) | default: reviewer · open-weights: planner, reviewer |
+| `google/gemini-3.8-flash` | 0.75 | 3.75 | 0.075 | 0.041667 | **Google** | default: planner · top-speed: planner, reviewer · gemniflash: all |
 | `openai/gpt-5.6-terra` | 1.0 | 6.0 | 0.1 | 1.25 | **Azure** | registered only |
-| `google/gemini-3.6-flash` | 1.5 | 7.5 | 0.15 | 0.0833 | **Google** | default: planner |
+| `google/gemini-3.6-flash` | 1.5 | 7.5 | 0.15 | 0.0833 | **Google** | registered only (was default planner until 2026-09-15) |
 | `anthropic/claude-sonnet-5` | 2.0 | 10.0 | 0.2 | 2.5 | **Google Vertex** | registered only |
 | `x-ai/grok-4.5` | 2.0 | 6.0 | 0.3 | 0.0 | **xAI** | registered only |
 | `moonshotai/kimi-k3` | 3.0 | 15.0 | 0.3 | 0.0 | **Moonshot AI** | frontier: builder, documenter |
