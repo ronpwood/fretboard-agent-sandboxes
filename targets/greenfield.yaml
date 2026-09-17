@@ -1,0 +1,36 @@
+# targets/greenfield.yaml — a named target: a clean-room repo a sandbox can mount
+# instead of this one. HOST-ONLY: targets/ is never synced to the target repo.
+#
+#   just target sync greenfield --push      regenerate the clean room's factory from HEAD
+#   just sbx mount <id> --target greenfield mount a VM on it (pinned to the last pushed sync)
+#
+# app: + source: are a manifest, read by adws/adw_modules/manifest.py --target greenfield.
+# target: is read only by sandbox_mount/host/target_sync.py and harvest.
+app:                                  # MUST equal the checkout's own app.manifest.yaml app: section (sync enforces)
+  name: app
+  dir: apps/app
+  entry: apps/app/main.ts                    # bun build target for typecheck/build
+  test_file: apps/app/app.test.ts            # the fixed suite — grows with the app
+  generated_tests_dir: apps/app/tests/generated  # TDD phase writes red suites here
+source:
+  repo: https://github.com/ronpwood/greenfield-sandboxes.git   # what FILL clones into the VM
+target:
+  checkout: ../greenfield-sandboxes   # relative to this repo's root
+  branch: main
+  sync_paths:                         # factory allowlist, exported from HEAD via git archive
+    - adws
+    - just
+    - sandbox_mount
+    - .claude/skills/sssf
+    - justfile
+    - .env.sample
+    - LICENSE
+  owned:                              # target-owned; sync never writes or deletes these
+    - apps/app
+    - app.manifest.yaml
+    - prompts
+    - README.md
+    - .gitignore
+  leak_patterns:                      # extra, target-specific; app names are derived, never listed
+    - circle of fifths
+    - circle-of-fifths

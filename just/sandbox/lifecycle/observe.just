@@ -34,10 +34,12 @@ observe RUN_ID:
     APP_PORT=4501            # public: the proxy's wildcard bind, what exe.dev forwards to
     APP_UPSTREAM_PORT=4502   # internal: the app's dev server, loopback only
     OBS_PORT=4600
-    # The app's name and dir come from the HOST checkout's manifest — the VM's
-    # app/ is a clone of this same repo, so the relative dir matches.
-    APP_NAME=$(uv run adws/adw_modules/manifest.py get app.name)
-    APP_REL=$(uv run adws/adw_modules/manifest.py get app.dir)
+    # The app's name and dir come from the run's TARGET (recorded by CREATE):
+    # the VM's app/ is a clone of that target's source.repo, and the target's
+    # manifest declares its relative app.dir.
+    TARGET=$("$RR" get {{RUN_ID}} target)
+    APP_NAME=$(uv run adws/adw_modules/manifest.py --target "$TARGET" get app.name)
+    APP_REL=$(uv run adws/adw_modules/manifest.py --target "$TARGET" get app.dir)
     # The clone target is `app` relative to the exedev user's home, so this is
     # /home/exedev/app/<app.dir> on a stock exeuntu VM. $HOME stays literal
     # here and expands on the VM, not on the host.

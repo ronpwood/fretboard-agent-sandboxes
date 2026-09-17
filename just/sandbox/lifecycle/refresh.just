@@ -65,8 +65,10 @@ refresh RUN_ID:
     # change it here too — an app swap touches both files.
     APP_PORT=4501
     APP_UPSTREAM_PORT=4502
-    APP_NAME=$(uv run adws/adw_modules/manifest.py get app.name)
-    APP_REL=$(uv run adws/adw_modules/manifest.py get app.dir)
+    # Resolved from the run's recorded target, exactly as observe.just does.
+    TARGET=$("$RR" get {{RUN_ID}} target)
+    APP_NAME=$(uv run adws/adw_modules/manifest.py --target "$TARGET" get app.name)
+    APP_REL=$(uv run adws/adw_modules/manifest.py --target "$TARGET" get app.dir)
     APP_DIR='$HOME/app/'"$APP_REL"
 
     # PER-APP boot command — the same judgement call observe.just documents: the
