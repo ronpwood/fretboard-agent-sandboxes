@@ -1333,3 +1333,69 @@ open-weights roster is its smoke test. Watch the reviewer lane for its first run
   open-weights builder, and `grok-4.6` in place of the unused `grok-4.5`. `claude-fable-5.1` is ruled out: it has no ZDR endpoints
   and costs 2x opus-5.
 - `references/models.md` registry table still carries the 2026-08-04 rates and the "ten models" heading.
+
+# 2026-09-17 — named targets shipped: `--target greenfield` is one flag, and the first e2e arm ran through it
+
+`specs/greenfield-target.md` built on branch `greenfield-target`. The manual manifest flip
+(`cp ../greenfield-sandboxes/app.manifest.yaml app.manifest.yaml`) is gone.
+
+### What shipped
+
+- **`targets/greenfield.yaml`** + `manifest.py --target NAME get …`, `manifest.py list`,
+  `get-target-section`. The root `app.manifest.yaml` is the implicit `default` target.
+- **Run record `target` field.** `create --target NAME` validates and records it; fill, observe,
+  refresh and harvest read it from the record. Old records read as `default`.
+- **`just target list|show|sync`** → `sandbox_mount/host/target_sync.py`: `git archive HEAD` export,
+  derived exclusions (`just/<app>.just`, `mod <app>`), leak scan (host app name + `archive/` app
+  names + `leak_patterns`), Python mirror with an owned-path guard, gates in the checkout (manifest,
+  bun build, bun test, every roster through `agents.validate`), neutral `factory sync <date>`
+  commit, `--push`, provenance in `.sandbox/targets/<name>.json`. Fill pins a named target to the
+  last **pushed** `target_sha`.
+- **Harvest** verifies and fetches named-target bundles into `target.checkout`.
+- `create.just` VM tag `inkwell` → `sssf` (the only leak hit; nothing filtered on the tag).
+- Docs: README, PLAYBOOK § Greenfield runs, TREE, prime, and the orchestrator skill + 7 cookbooks/references.
+
+### First sync
+
+30 files: 10 added (`refresh.just`, `traces.just`, `app_proxy.ts`, `toolchain.lock`,
+`check_rates.py`, `target_sync.py`, …), 20 changed, 0 deleted; +1614/−139. Greenfield had no
+intentional divergence, only 19 days of drift. Self-tests: a committed app-name comment under
+`adws/` → exit 2 with `path:line`; `apps/app` in `sync_paths` → exit 1 (overlap).
+
+### The e2e arm: `gf-e2e-20260917-cbb166`
+
+The plumbing worked end to end: create recorded `target: greenfield`; fill printed
+`pin from last sync: 66a7432…` and gate A matched it; the VM had only `apps/app`, neutral history,
+zero `fretboard|inkwell` hits; `execute … prompts/greenfield.md "" tdd` ran `adw_tdd_sdlc.py`;
+harvest landed 3 commits in `../greenfield-sandboxes` (none in this repo); teardown clean.
+Billed spend **$1.17** (trace estimate $1.42), ~50 min wall.
+
+The ADW itself ended **✗ fail**. All 10 phases passed, but review_2 still had 3 blocking items
+(20/23 plan requirements met). Chain: plan (gemini-3.8-flash) → red suite, 24 failing tests
+(committed `b4786e4` **before** the build) → build 1,100s → review_1 rejects (6 blocking, incl. a
+real `ReferenceError: idx` in `ui/circle-wheel.ts` that 42 green tests never reached) → revise_1
+918s → review_2 rejects. **The TDD chain does not commit an unapproved build**, so the work sat
+dirty on the VM. Harvest skips uncommitted edits and teardown refuses a dirty tree, so it was
+committed by hand on the run branch as
+`Unapproved build from ADW 474f412f … preserved for inspection`. Traces are at
+`.sandbox/traces/gf-e2e-20260917-cbb166/`.
+
+### Findings worth acting on
+
+1. **The builder spends its time fighting `edit`.** deepseek-v4-flash-0731 made 49 edit calls and
+   20 failed; 18 were schema failures (`path` omitted). It misread that as "large edits fail",
+   split edits, and fell back to 32 whole-file writes: 4.5M tokens on build, 7.5M on revise.
+   Cheap ($0.40 combined) but slow. Try a harness hint that `edit` requires `path`, or a builder
+   with cleaner tool calls, and compare with these traces.
+2. **The tests can't see the browser code.** The `idx` crash was caught by the reviewer's DOM shim
+   and `tsc --noEmit`, not by any gate. A `tsc --noEmit` gate over `app.entry`'s graph would catch
+   that class of bug deterministically.
+3. **An unapproved build is uncommitted work, and harvest can't see it.** Consider having the TDD
+   chain commit a failed-review build to the run branch with a marked subject, so the evidence
+   survives without a manual step.
+
+### Open
+
+- Pre-existing doc staleness surfaced by the fresh-agent check: TREE/prime still describe
+  Inkwell/four namespaces in places, `mount_one.md` hard-codes the old `disler/...` clone URL.
+- Doctor drift warning when a target's `host_sha` lags HEAD (deferred in the plan).
