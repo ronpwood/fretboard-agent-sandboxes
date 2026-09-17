@@ -4,6 +4,7 @@ created: 2026-09-15T08:11:29-07:00
 modified:
   - 2026-09-15T08:11:29-07:00
   - 2026-09-17T05:30:04-07:00
+  - 2026-09-17T05:41:53-07:00
 commits:
   - a32190b
   - 5145d53
@@ -13,15 +14,17 @@ commits:
 agents:
   - claude-opus-5[1m]
   - claude-opus-5[1m]
+  - claude-opus-5[1m]
 sessions:
   - cc-interactive-20260915
+  - 81d4f414-33e2-42a8-86ee-469f12ff2a87
   - 81d4f414-33e2-42a8-86ee-469f12ff2a87
 back_refs:
   - specs/payload-app-manifest.md — the manifest reader (`adws/adw_modules/manifest.py`) this plan extends with named targets
   - specs/greenfield-cof-experiment.md — defines the greenfield-sandboxes clean room and the manual manifest-flip procedure this plan replaces
   - specs/tdd-red-gate-phase.md — `adw_tdd_sdlc.py` / `just adw tdd`, the chain a greenfield team runs end to end
 forward_refs: []
-status: complete
+status: building
 ---
 
 # Plan: Greenfield target — per-run `--target` for sandbox mounts
@@ -381,13 +384,62 @@ and the leak rule. Write it as current-state documentation. Historical specs
 
 #### Validation — Phase 6
 
-> **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
+> **Loop gate.** Do not start Phase 7 until every box below is `[x]`, or is `fail`-marked with a reason.
 
 - [x] `git grep -n -- '--target' README.md PLAYBOOK.md .claude/skills/sssf-sandbox-orchestrator .claude/commands/prime.md` — hits in README, PLAYBOOK, mount_one, fan_out_n, and prime
 - [x] `git grep -n 'just target' README.md PLAYBOOK.md TREE.md .claude/skills/sssf-sandbox-orchestrator` — the namespace is documented in all four places
 - [x] `git grep -nE 'cp .*greenfield-sandboxes/app.manifest.yaml' -- ':!specs/'` — no output: the manual manifest flip is gone from current-state docs
 - [x] Fresh-agent discoverability check: in a new session run `/prime`, then ask "how do I send a team at a blank codebase with the TDD chain?" — the answer names `just target sync greenfield --push`, `just sbx mount <id> --target greenfield`, `execute … tdd`, and where the harvest lands, without reading source code
 - [x] `just --list target` and `just sbx mount --help`-equivalent (`just --show sbx::mount` or the recipe comment) — the recipe comments match the docs
+
+### Phase 7: Pristine-main guard — a target's `main` stays blank
+
+Harvest keeps a team's work in local-only `refs/sandbox/<id>` in the target checkout, so the clean
+room is safe **today**. The one way to break it is ordinary: follow PLAYBOOK §6 ("merge, once you like
+what you see") inside `../greenfield-sandboxes`. The next `just target sync greenfield --push` would
+push `main` with a built app, and the sync would not notice, because it leak-checks only the factory
+export and never reads owned paths. Every later arm would then clone an earlier arm's answer. This
+phase makes the sync refuse that state and documents where a kept result belongs.
+
+Grounding (2026-09-17): `apps/` is unchanged from `c9b98d1` (the shell commit) through `a765e92`.
+`refs/sandbox/gf-e2e-20260917-cbb166` differs from it in 22 files under `apps/` and adds
+`specs/474f412f_circle-of-fifths-guitar.md`, a path outside every sync and owned prefix. So each of
+the two checks below would catch that merge independently.
+
+#### 1. Target file
+
+- [ ] Add `target.pristine: c9b98d1e1dbd06e99cc64c644e8880d885587e71` and `target.pristine_paths: [apps]` to `targets/greenfield.yaml`, commented: the commit whose `pristine_paths` define "blank". Bump it only by a deliberate edit in this repo when the shell itself is meant to change, so that edit shows up in this repo's history
+
+#### 2. `target_sync.py`
+
+- [ ] `load_config`: `pristine_paths` requires `pristine`; each `pristine_paths` entry must sit under an `owned` prefix (a sync path would be overwritten anyway). Missing or malformed → exit 1
+- [ ] `pristine_guard(cfg)` runs in step 1 **after** the fast-forward to `origin/<branch>` (so a polluted remote is caught too) and **before** export, in every mode (`--dry-run`, plain, `--push`). A failure never touches the checkout:
+  - [ ] `git cat-file -e <pristine>^{commit}` in the checkout; a missing sha → exit 1
+  - [ ] **Content check:** `git diff --quiet <pristine> HEAD -- <pristine_paths>`; non-zero → exit 5 and print `git diff --stat <pristine> HEAD -- <pristine_paths>`
+  - [ ] **Stray-path check:** every path in `git ls-tree -r --name-only HEAD` is under a `sync_paths` or `owned` prefix; any other path → exit 5, listing them (catches `specs/`, `app_docs/` a merged run brings)
+  - [ ] Failure message names the fix: "a sandbox run appears merged into <branch>. Keep results in their own repo (PLAYBOOK § Greenfield runs → Keeping a result). To recover, reset <branch> to the last factory sync. If the shell change is intended, bump target.pristine in targets/<name>.yaml"
+- [ ] Add exit code 5 ("target not pristine") to the docstring's exit-code table
+- [ ] `just target show NAME` prints one pristine line: `pristine: ok (apps unchanged since <short sha>)` or `pristine: DIRTY — N files differ / M stray paths`. It reuses the script (add a `--check-pristine` mode that runs only step 1's guard and exits 0/5), not a second implementation in bash
+
+#### 3. Docs
+
+- [ ] `PLAYBOOK.md` § Greenfield runs → new subsection `### Keeping a result (never merge into a target's main)`. Cover: compare and judge from `refs/sandbox/<id>`; keep an app by pushing its ref to a **separate** repo (`git -C ../greenfield-sandboxes push <other-repo-url> refs/sandbox/<id>:refs/heads/main`), or bring it here with `just app swap`; why a branch on the target repo still leaks (`git clone` fetches every branch); that the sync refuses a non-pristine `main` (exit 5); and the deliberate `pristine` bump for intended shell changes
+- [ ] `PLAYBOOK.md` §6 "Merge, once you like what you see": one line saying it applies to `default`-target runs only, with a pointer to the new subsection
+- [ ] `cookbooks/fan_out_n.md` greenfield bullets: "never merge an arm into greenfield `main`; sync refuses with exit 5, so push a keeper to its own repo"
+- [ ] `NEXTSTEPS.md`: dated entry
+
+#### Validation — Phase 7
+
+> **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
+
+- [ ] `just target sync greenfield --dry-run; echo $?` — `0`: the real `main` passes the guard
+- [ ] Merge self-test: `git clone ../greenfield-sandboxes $SCRATCH/gf-merge`, fetch `refs/sandbox/gf-e2e-20260917-cbb166` into it and `git merge --ff-only` it. Point a scratch target file (`targets/zz-pristine.yaml`, a copy of greenfield's with `checkout: $SCRATCH/gf-merge`) at the clone, then run `uv run sandbox_mount/host/target_sync.py zz-pristine --dry-run`. Expect exit `5`, output naming the `apps/` diff stat and `specs/474f412f_circle-of-fifths-guitar.md`, and a clone that is still clean. Remove the scratch file and clone afterwards
+- [ ] Stray-only self-test: in a fresh scratch clone, commit only `specs/x.md` — exit `5` naming it (proves the stray check stands alone)
+- [ ] Owned-edit self-test: in a fresh scratch clone, commit a change to `prompts/greenfield.md` — exit `0` (legitimate owned edits still sync)
+- [ ] Bad-sha self-test: scratch target file with `pristine: 0000000000000000000000000000000000000000` — exit `1`
+- [ ] `just target show greenfield | grep 'pristine: ok'` — status line present
+- [ ] `git grep -n "never merge" PLAYBOOK.md .claude/skills/sssf-sandbox-orchestrator/cookbooks/fan_out_n.md` — hits in both
+- [ ] `git -C ../greenfield-sandboxes status --short` — empty, and `git ls-remote https://github.com/ronpwood/greenfield-sandboxes.git refs/heads/main` still equals `.sandbox/targets/greenfield.json` `target_sha` (no self-test touched the real checkout or the remote)
 
 ## Global Validation
 
@@ -465,6 +517,26 @@ the greenfield README.
   2026-08-28 control bytes for a replication) stay reachable.
 - `commit_sha` in the record keeps meaning "the sha actually checked out", so harvest's baseline
   logic is untouched.
+
+### Pristine guard: design choices (added 2026-09-17)
+
+- **Content, not ancestry.** Checking "is any `refs/sandbox/*` tip an ancestor of `main`" catches a
+  fast-forward merge but misses a cherry-pick, a squash, or a copy-paste of files, and the local refs
+  may be gone. Comparing `apps/` to a pinned shell sha and rejecting stray top-level paths catches
+  all of those.
+- **Two checks because each misses something alone.** A merge that only adds `specs/` and
+  `app_docs/` (a plan-only run) leaves `apps/` identical. A hand-copied app with no spec adds no stray
+  path.
+- **Exit 5, not 1.** Scripts and the self-tests can tell "the clean room is polluted" apart from a
+  config or precondition error.
+- **The escape hatch is a host-side edit.** Changing the shell on purpose (a new sanity test, a
+  different `index.html`) means bumping `target.pristine` in this repo. The decision is then
+  recorded in the one place a VM can never see.
+- **Rejected: a server-side guard** (a GitHub ruleset on `main`). It would stop a push by any route,
+  but it can't tell a factory sync from a merged run without the same content check, and it adds
+  GitHub configuration to a repo whose whole value is being plain.
+- **Rejected: auto-reset `main`.** The sync would destroy commits someone made on purpose. Refusing
+  and naming the fix is enough.
 
 ### Things deliberately deferred
 
@@ -545,4 +617,19 @@ Built by `/build` in one session. All boxes `[x]`; nothing fail-marked. Greenfie
 - `just/sandbox/lifecycle/create.just` tag rename (listed in Phase 3 tasks, not Relevant Files).
 - `NEXTSTEPS.md` entry records findings: builder `edit` schema failures (20/49), no typecheck gate on
   browser code, unapproved builds left uncommitted.
+</details>
+
+<details>
+<summary>2026-09-17T05:41:53-07:00 — added Phase 7: pristine-main guard so a merged sandbox run can never be pushed to a target</summary>
+
+Asked after the build completed: "will greenfield-sandboxes always remain a clean room?" Today it
+does, because harvest writes only local `refs/sandbox/*` and sync pushes only `main`. But PLAYBOOK §6's
+merge step, done in the greenfield checkout, would put a built app on `main`, and the next
+`--push` sync would publish it without a check. `target_sync.py` leak-checks only the factory
+export, by design. Phase 7 adds a content guard (`apps/` must equal a recorded `pristine` sha, and no
+tracked path may fall outside sync/owned prefixes), a `--check-pristine` mode surfaced in
+`just target show`, exit code 5, and PLAYBOOK guidance on where a kept result goes (its own repo,
+or `just app swap` here; never a branch on the target repo, since clones fetch every branch).
+Status moves from `complete` back to `building` until Phase 7 lands. Phase 6's loop gate text now
+points at Phase 7. Plan-only change: nothing built.
 </details>
