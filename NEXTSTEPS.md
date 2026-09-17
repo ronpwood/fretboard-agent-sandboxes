@@ -1423,3 +1423,16 @@ remote were untouched.
 
 **Open:** greenfield's factory copy is now 2 files behind (`target_sync.py`, `just/target.just`).
 Re-sync with `--push` when approved.
+
+### Found at wrap-up: setup gates C/D/E are not enforced (fix before the next fan-out)
+
+On `gf-e2e-20260917-cbb166`, gate C printed `FAIL  openai/gpt-5.6-luna: … rate-limited upstream` and
+then `[gate] C PASS`. Gate D's "pi reports cost" line and gate E's limit/used/remaining lines never
+printed. Likely cause (from reading the code, not yet reproduced): gate C/D/E runs as one heredoc
+fed to `ssh … 'bash -s'`, and gate D's `pi -p --mode json …` (`just/sandbox/lifecycle/setup.just`,
+the `pi_cost=$(timeout 180 pi -p …)` line) has no `< /dev/null`. pi reads the rest of the heredoc
+off stdin as prompt input, bash hits EOF, and the script exits 0 via `|| echo 0`. The
+`[ "$ping_fail" -eq 0 ] || exit 2` and `cost_fail` checks never run, so **C, D and E pass
+unconditionally**. This is the same stdin-detachment class `observe.just` already documents.
+Fix: `< /dev/null` on that pi call. Then prove it with a deliberately failing roster model:
+C must fail, and D/E must print.
