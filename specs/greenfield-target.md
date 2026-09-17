@@ -5,13 +5,17 @@ modified:
   - 2026-09-15T08:11:29-07:00
   - 2026-09-17T05:30:04-07:00
   - 2026-09-17T05:41:53-07:00
+  - 2026-09-17T05:50:52-07:00
 commits:
   - a32190b
   - 5145d53
   - e440589
   - c19c3ad
   - e1efec6
+  - 2f3446b
+  - ef17b2f
 agents:
+  - claude-opus-5[1m]
   - claude-opus-5[1m]
   - claude-opus-5[1m]
   - claude-opus-5[1m]
@@ -19,12 +23,13 @@ sessions:
   - cc-interactive-20260915
   - 81d4f414-33e2-42a8-86ee-469f12ff2a87
   - 81d4f414-33e2-42a8-86ee-469f12ff2a87
+  - 81d4f414-33e2-42a8-86ee-469f12ff2a87
 back_refs:
   - specs/payload-app-manifest.md — the manifest reader (`adws/adw_modules/manifest.py`) this plan extends with named targets
   - specs/greenfield-cof-experiment.md — defines the greenfield-sandboxes clean room and the manual manifest-flip procedure this plan replaces
   - specs/tdd-red-gate-phase.md — `adw_tdd_sdlc.py` / `just adw tdd`, the chain a greenfield team runs end to end
 forward_refs: []
-status: building
+status: complete
 ---
 
 # Plan: Greenfield target — per-run `--target` for sandbox mounts
@@ -408,38 +413,38 @@ the two checks below would catch that merge independently.
 
 #### 1. Target file
 
-- [ ] Add `target.pristine: c9b98d1e1dbd06e99cc64c644e8880d885587e71` and `target.pristine_paths: [apps]` to `targets/greenfield.yaml`, commented: the commit whose `pristine_paths` define "blank". Bump it only by a deliberate edit in this repo when the shell itself is meant to change, so that edit shows up in this repo's history
+- [x] Add `target.pristine: c9b98d1e1dbd06e99cc64c644e8880d885587e71` and `target.pristine_paths: [apps]` to `targets/greenfield.yaml`, commented: the commit whose `pristine_paths` define "blank". Bump it only by a deliberate edit in this repo when the shell itself is meant to change, so that edit shows up in this repo's history
 
 #### 2. `target_sync.py`
 
-- [ ] `load_config`: `pristine_paths` requires `pristine`; each `pristine_paths` entry must sit under an `owned` prefix (a sync path would be overwritten anyway). Missing or malformed → exit 1
-- [ ] `pristine_guard(cfg)` runs in step 1 **after** the fast-forward to `origin/<branch>` (so a polluted remote is caught too) and **before** export, in every mode (`--dry-run`, plain, `--push`). A failure never touches the checkout:
-  - [ ] `git cat-file -e <pristine>^{commit}` in the checkout; a missing sha → exit 1
-  - [ ] **Content check:** `git diff --quiet <pristine> HEAD -- <pristine_paths>`; non-zero → exit 5 and print `git diff --stat <pristine> HEAD -- <pristine_paths>`
-  - [ ] **Stray-path check:** every path in `git ls-tree -r --name-only HEAD` is under a `sync_paths` or `owned` prefix; any other path → exit 5, listing them (catches `specs/`, `app_docs/` a merged run brings)
-  - [ ] Failure message names the fix: "a sandbox run appears merged into <branch>. Keep results in their own repo (PLAYBOOK § Greenfield runs → Keeping a result). To recover, reset <branch> to the last factory sync. If the shell change is intended, bump target.pristine in targets/<name>.yaml"
-- [ ] Add exit code 5 ("target not pristine") to the docstring's exit-code table
-- [ ] `just target show NAME` prints one pristine line: `pristine: ok (apps unchanged since <short sha>)` or `pristine: DIRTY — N files differ / M stray paths`. It reuses the script (add a `--check-pristine` mode that runs only step 1's guard and exits 0/5), not a second implementation in bash
+- [x] `load_config`: `pristine_paths` requires `pristine`; each `pristine_paths` entry must sit under an `owned` prefix (a sync path would be overwritten anyway). Missing or malformed → exit 1
+- [x] `pristine_guard(cfg)` runs in step 1 **after** the fast-forward to `origin/<branch>` (so a polluted remote is caught too) and **before** export, in every mode (`--dry-run`, plain, `--push`). A failure never touches the checkout:
+  - [x] `git cat-file -e <pristine>^{commit}` in the checkout; a missing sha → exit 1
+  - [x] **Content check:** `git diff --quiet <pristine> HEAD -- <pristine_paths>`; non-zero → exit 5 and print `git diff --stat <pristine> HEAD -- <pristine_paths>`
+  - [x] **Stray-path check:** every path in `git ls-tree -r --name-only HEAD` is under a `sync_paths` or `owned` prefix; any other path → exit 5, listing them (catches `specs/`, `app_docs/` a merged run brings)
+  - [x] Failure message names the fix: "a sandbox run appears merged into <branch>. Keep results in their own repo (PLAYBOOK § Greenfield runs → Keeping a result). To recover, reset <branch> to the last factory sync. If the shell change is intended, bump target.pristine in targets/<name>.yaml"
+- [x] Add exit code 5 ("target not pristine") to the docstring's exit-code table
+- [x] `just target show NAME` prints one pristine line: `pristine: ok (apps unchanged since <short sha>)` or `pristine: DIRTY — N files differ / M stray paths`. It reuses the script (add a `--check-pristine` mode that runs only step 1's guard and exits 0/5), not a second implementation in bash
 
 #### 3. Docs
 
-- [ ] `PLAYBOOK.md` § Greenfield runs → new subsection `### Keeping a result (never merge into a target's main)`. Cover: compare and judge from `refs/sandbox/<id>`; keep an app by pushing its ref to a **separate** repo (`git -C ../greenfield-sandboxes push <other-repo-url> refs/sandbox/<id>:refs/heads/main`), or bring it here with `just app swap`; why a branch on the target repo still leaks (`git clone` fetches every branch); that the sync refuses a non-pristine `main` (exit 5); and the deliberate `pristine` bump for intended shell changes
-- [ ] `PLAYBOOK.md` §6 "Merge, once you like what you see": one line saying it applies to `default`-target runs only, with a pointer to the new subsection
-- [ ] `cookbooks/fan_out_n.md` greenfield bullets: "never merge an arm into greenfield `main`; sync refuses with exit 5, so push a keeper to its own repo"
-- [ ] `NEXTSTEPS.md`: dated entry
+- [x] `PLAYBOOK.md` § Greenfield runs → new subsection `### Keeping a result (never merge into a target's main)`. Cover: compare and judge from `refs/sandbox/<id>`; keep an app by pushing its ref to a **separate** repo (`git -C ../greenfield-sandboxes push <other-repo-url> refs/sandbox/<id>:refs/heads/main`), or bring it here with `just app swap`; why a branch on the target repo still leaks (`git clone` fetches every branch); that the sync refuses a non-pristine `main` (exit 5); and the deliberate `pristine` bump for intended shell changes
+- [x] `PLAYBOOK.md` §6 "Merge, once you like what you see": one line saying it applies to `default`-target runs only, with a pointer to the new subsection
+- [x] `cookbooks/fan_out_n.md` greenfield bullets: "never merge an arm into greenfield `main`; sync refuses with exit 5, so push a keeper to its own repo"
+- [x] `NEXTSTEPS.md`: dated entry
 
 #### Validation — Phase 7
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `just target sync greenfield --dry-run; echo $?` — `0`: the real `main` passes the guard
-- [ ] Merge self-test: `git clone ../greenfield-sandboxes $SCRATCH/gf-merge`, fetch `refs/sandbox/gf-e2e-20260917-cbb166` into it and `git merge --ff-only` it. Point a scratch target file (`targets/zz-pristine.yaml`, a copy of greenfield's with `checkout: $SCRATCH/gf-merge`) at the clone, then run `uv run sandbox_mount/host/target_sync.py zz-pristine --dry-run`. Expect exit `5`, output naming the `apps/` diff stat and `specs/474f412f_circle-of-fifths-guitar.md`, and a clone that is still clean. Remove the scratch file and clone afterwards
-- [ ] Stray-only self-test: in a fresh scratch clone, commit only `specs/x.md` — exit `5` naming it (proves the stray check stands alone)
-- [ ] Owned-edit self-test: in a fresh scratch clone, commit a change to `prompts/greenfield.md` — exit `0` (legitimate owned edits still sync)
-- [ ] Bad-sha self-test: scratch target file with `pristine: 0000000000000000000000000000000000000000` — exit `1`
-- [ ] `just target show greenfield | grep 'pristine: ok'` — status line present
-- [ ] `git grep -n "never merge" PLAYBOOK.md .claude/skills/sssf-sandbox-orchestrator/cookbooks/fan_out_n.md` — hits in both
-- [ ] `git -C ../greenfield-sandboxes status --short` — empty, and `git ls-remote https://github.com/ronpwood/greenfield-sandboxes.git refs/heads/main` still equals `.sandbox/targets/greenfield.json` `target_sha` (no self-test touched the real checkout or the remote)
+- [x] `just target sync greenfield --dry-run; echo $?` — `0`: the real `main` passes the guard
+- [x] Merge self-test: `git clone ../greenfield-sandboxes $SCRATCH/gf-merge`, fetch `refs/sandbox/gf-e2e-20260917-cbb166` into it and `git merge --ff-only` it. Point a scratch target file (`targets/zz-pristine.yaml`, a copy of greenfield's with `checkout: $SCRATCH/gf-merge`) at the clone, then run `uv run sandbox_mount/host/target_sync.py zz-pristine --dry-run`. Expect exit `5`, output naming the `apps/` diff stat and `specs/474f412f_circle-of-fifths-guitar.md`, and a clone that is still clean. Remove the scratch file and clone afterwards
+- [x] Stray-only self-test: in a fresh scratch clone, commit only `specs/x.md` — exit `5` naming it (proves the stray check stands alone)
+- [x] Owned-edit self-test: in a fresh scratch clone, commit a change to `prompts/greenfield.md` — exit `0` (legitimate owned edits still sync)
+- [x] Bad-sha self-test: scratch target file with `pristine: 0000000000000000000000000000000000000000` — exit `1`
+- [x] `just target show greenfield | grep 'pristine: ok'` — status line present
+- [x] `git grep -n "never merge" PLAYBOOK.md .claude/skills/sssf-sandbox-orchestrator/cookbooks/fan_out_n.md` — hits in both
+- [x] `git -C ../greenfield-sandboxes status --short` — empty, and `git ls-remote https://github.com/ronpwood/greenfield-sandboxes.git refs/heads/main` still equals `.sandbox/targets/greenfield.json` `target_sha` (no self-test touched the real checkout or the remote)
 
 ## Global Validation
 
@@ -632,4 +637,31 @@ tracked path may fall outside sync/owned prefixes), a `--check-pristine` mode su
 or `just app swap` here; never a branch on the target repo, since clones fetch every branch).
 Status moves from `complete` back to `building` until Phase 7 lands. Phase 6's loop gate text now
 points at Phase 7. Plan-only change: nothing built.
+</details>
+
+<details>
+<summary>2026-09-17T05:50:52-07:00 — Phase 7 built (pristine-main guard); deviations from the amendment as written</summary>
+
+Built in commit `ef17b2f`. Greenfield re-synced and pushed as `c05bf1b` (user-approved), because Phase 7
+changed two synced files (`target_sync.py`, `just/target.just`). Global Validation's "nothing to
+commit right after a real sync" holds again.
+
+- **`pristine_paths` validation rule changed.** The plan said each entry must sit *under* an `owned`
+  prefix. But its own config uses `apps`, the parent of owned `apps/app`, so that rule rejected it.
+  The implemented rule is that a pristine path must not overlap any `sync_paths` entry (a synced path
+  is regenerated on every sync, so guarding it would only fire on factory drift). `apps` stays
+  broader than `apps/app` on purpose: it also catches a second app dir.
+- **`--check-pristine` is read-only.** It runs the guard against the checkout as it is, with no
+  fetch or fast-forward. The sync path still runs the guard after the fast-forward, as planned.
+  `just target show` must not mutate a checkout.
+- **Error shape:** the exit-5 message's first line is a one-line summary
+  (`target not pristine — N file(s) under apps differ / M stray path(s)`), which `just target show`
+  reports as `pristine: DIRTY — …`. Details and the fix follow on later lines.
+- **Merge self-test used `git merge --no-edit`, not `--ff-only`.** The harvested run is based on the
+  first sync (`66a7432`), and `main` had moved to `a765e92`, so a fast-forward was impossible. A real
+  merge is also what a person would do. Result: exit 5, 22 files under `apps` plus stray
+  `specs/474f412f_circle-of-fifths-guitar.md`, clone unchanged.
+- **Bad-sha self-test used `deadbeef…`, not all zeros.** YAML parses a 40-digit all-zero value as an
+  integer, which fails the format check (also exit 1) without exercising the "not a commit" path.
+  Both are now covered: the format check by construction, the missing-commit check by `deadbeef…`.
 </details>
