@@ -122,7 +122,18 @@ log.
 
 ### Running a different ADW
 
-`execute` hardcodes `adw sdlc`. For any other chain, go through `run`:
+`execute RUN_ID PROMPT [CONFIG] [ADW] [EXTRA…]` — `ADW` is any recipe name from `just --list adw`
+(`sdlc` by default, `tdd`, `simple-sdlc`, …). Pass `""` for CONFIG to keep the default roster:
+
+```bash
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd     # the TDD chain, default roster
+```
+
+A prompt **path** is resolved inside the VM's checkout — the **target's** repo, not this one. On a
+`--target greenfield` box, `prompts/greenfield.md` is the greenfield repo's own prompt file; a path
+that only exists here reads as literal inline text.
+
+Chains with no `just adw` recipe still go through `run`:
 
 ```bash
 just sbx run cmd <run-id> 'just --shell bash --shell-arg -c adw scout "where does auth live"'

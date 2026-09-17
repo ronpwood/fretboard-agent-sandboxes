@@ -1,5 +1,5 @@
 ---
-description: Prime context for Inkwell — the app, the Super Simple Software Factory that builds it, and the sandbox mount system that runs both on throwaway VMs.
+description: Prime context for Inkwell — the app, the Super Simple Software Factory that builds it, and the sandbox mount system that runs both on throwaway VMs (including named targets such as the greenfield clean room).
 ---
 
 # Purpose
@@ -8,7 +8,7 @@ Orient yourself in a three-layer system: **Inkwell** (a small blog-writing app),
 
 ## Workflow
 
-1. Map the surface first, because it is the fastest way to see the shape: `just` (four namespaces, nothing else), then `just --list sbx`, `just --list adw`, `just --list obs`, `just --list local`. The namespace answers *where the work happens*: `sbx` orchestrates VMs from the host, `adw` runs the workflows, `local` boots an orchestrator agent on this machine, `obs` reads the trace db. Then `git ls-files | head -60` and `ls sandbox_mount/host sandbox_mount/guest just/sandbox`.
+1. Map the surface first, because it is the fastest way to see the shape: `just` (the namespaces, nothing else: sbx, adw, obs, local, target, app, plus the payload app's own), then `just --list sbx`, `just --list adw`, `just --list obs`, `just --list local`, `just --list target`. The namespace answers *where the work happens*: `sbx` orchestrates VMs from the host, `adw` runs the workflows, `local` boots an orchestrator agent on this machine, `obs` reads the trace db. Then `git ls-files | head -60` and `ls sandbox_mount/host sandbox_mount/guest just/sandbox`.
 
 2. Read `TREE.md` — every file that matters and why it exists, grouped by layer, ending with the
    five things that will bite you. It is the map; the rest of this workflow is the territory. Then
@@ -22,8 +22,10 @@ Orient yourself in a three-layer system: **Inkwell** (a small blog-writing app),
 
 6. Read `.claude/skills/sssf-sandbox-orchestrator/SKILL.md` and its `references/gotchas.md`. The governing rule is **thin skill, fat recipes**: every action should be a `just` command a human could type. Dropping to `ssh`/`curl` to *inspect* is fine; re-implementing mint, revoke, or port logic is not. `cookbooks/just_command_model.md` explains why modules inherit nothing and what each missing `set` line silently breaks.
 
-7. Read `.claude/skills/sssf/SKILL.md` and `adws/adw_sssf_config/sssf.config.yaml` for the factory itself and its roster. Every model is `openrouter/<id>`; the roster runs entirely through OpenRouter on a disposable per-sandbox key (`$50` default, revoked at teardown). Models carry a **four-field** `cost` block — a partial one fails schema validation and pi silently drops the entire roster, and with no rates pi reports `$0.0000` forever while genuinely spending.
+7. Read `targets/` and PLAYBOOK.md § "Greenfield runs (a blank codebase)". A sandbox doesn't have to clone this repo: `just sbx mount <id> --target greenfield` mounts a separate clean-room repo (an empty app shell with fresh history) so a team can build from nothing, typically with `just sbx lifecycle execute <id> prompts/greenfield.md "" tdd`. `just target list|show|sync` manages targets. `just target sync greenfield --push` regenerates the clean room's factory from HEAD with a leak check, and fill pins to that sync. The run record's `target` field carries the choice through every phase; harvest lands greenfield commits in `../greenfield-sandboxes`. The root manifest is never flipped.
 
-8. Check live state before acting: `just sbx manage doctor` (host prerequisites), `just sbx manage list` (sandboxes and whether their VMs are alive), and `ssh exe.dev ls --json` (ground truth). A sandbox hosts **many** ADW runs — `just sbx manage list` counts sandboxes, `just obs sessions` counts runs inside one. Never run `just sbx lifecycle teardown` unless asked: it is always an explicit human decision, and it is the one phase not yet exercised.
+8. Read `.claude/skills/sssf/SKILL.md` and `adws/adw_sssf_config/sssf.config.yaml` for the factory itself and its roster. Every model is `openrouter/<id>`; the roster runs entirely through OpenRouter on a disposable per-sandbox key (`$50` default, revoked at teardown). Models carry a **four-field** `cost` block — a partial one fails schema validation and pi silently drops the entire roster, and with no rates pi reports `$0.0000` forever while genuinely spending.
 
-9. Summarize your understanding: the three layers, the four namespaces, what the credential boundary protects, what is verified versus outstanding, and the entry points you would use next. Then stop and wait for a request rather than surveying further.
+9. Check live state before acting: `just sbx manage doctor` (host prerequisites), `just sbx manage list` (sandboxes and whether their VMs are alive), and `ssh exe.dev ls --json` (ground truth). A sandbox hosts **many** ADW runs — `just sbx manage list` counts sandboxes, `just obs sessions` counts runs inside one. Never run `just sbx lifecycle teardown` unless asked: it is always an explicit human decision, and it is the one phase not yet exercised.
+
+10. Summarize your understanding: the three layers, the four namespaces, what the credential boundary protects, what is verified versus outstanding, and the entry points you would use next. Then stop and wait for a request rather than surveying further.

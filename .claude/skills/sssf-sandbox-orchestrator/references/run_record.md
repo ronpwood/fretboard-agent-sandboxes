@@ -11,7 +11,7 @@ before any toolchain exists and must never be the reason a teardown cannot start
 
 ---
 
-## The twelve fields
+## The fields
 
 The schema is **closed**. Every field is referenced by name somewhere in the six phases, so a
 typo in a `set` would be silent data loss — unknown keys are rejected rather than written.
@@ -30,6 +30,7 @@ typo in a `set` would be silent data loss — unknown keys are rejected rather t
 | 10 | `pid` | execute | operator | int | The detached SDLC's remote pid |
 | 11 | `created_at` | create | list ordering | str, **immutable** | Identity, not state |
 | 12 | `closed_at` | teardown (`close`) | reap | str or null | **Non-null means the key is revoked.** This is what distinguishes a live run from an orphan |
+| 13 | `target` | create (`--target NAME`) | fill, observe, refresh, harvest | str | Which codebase the VM cloned: `default` (this repo's `app.manifest.yaml`) or a `targets/<name>.yaml`. `get <id> target` prints `default` when the value is null or the key is absent, so every record from before the field existed reads as `default` — which is what those runs used |
 
 `run_id` and `created_at` are immutable: `set` refuses them.
 

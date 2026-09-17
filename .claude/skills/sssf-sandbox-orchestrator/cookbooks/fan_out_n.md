@@ -57,6 +57,33 @@ outside the parallel section (it already is), and a gate failure in one arm must
 **A failed arm stays up.** `just sbx lifecycle setup` never destroys. Read `debug_a_failed_gate.md`, fix, re-run
 `just sbx lifecycle setup <id>` for that arm only.
 
+## Greenfield fan-out (a named target)
+
+Same loop, two differences: **sync once, then pin every arm to that sync**, and pass `--target`.
+
+```bash
+just target sync greenfield --dry-run          # read the diff stat and the gate results
+just target sync greenfield --push             # outward-facing: ask the user first
+PIN=$(python3 -c 'import json;print(json.load(open(".sandbox/targets/greenfield.json"))["target_sha"])')
+
+for i in "${!ARMS[@]}"; do
+  ID=$("$RR" new-id "gf-$i")
+  just sbx lifecycle create "$ID" --limit 10 --target greenfield
+  just sbx lifecycle fill   "$ID" "$PIN"          # explicit is clearest; omitting it pins to the same sync
+  just sbx lifecycle setup  "$ID"
+  just sbx lifecycle observe "$ID"
+done
+# execute: just sbx lifecycle execute "$ID" prompts/greenfield.md "adws/adw_sssf_config/<roster>" tdd
+```
+
+- **Never re-sync mid-fan-out.** An arm filled after a new sync would start from different bytes.
+  With `$PIN` passed explicitly a re-sync can't move an arm, but don't rely on it.
+- **`$PIN` is a greenfield commit.** `git rev-parse HEAD` here is the wrong sha for these arms.
+- Harvests land in `../greenfield-sandboxes` as `refs/sandbox/<id>`. Diff arms there.
+- **Judge rubrics live in this repo's `specs/`, never in a target's `prompts/`.** The sync can't
+  carry `specs/` across (it isn't a sync path), but a human pasting a rubric into
+  `prompts/greenfield.md` would hand every arm the answer key.
+
 ## Then execute
 
 ```bash

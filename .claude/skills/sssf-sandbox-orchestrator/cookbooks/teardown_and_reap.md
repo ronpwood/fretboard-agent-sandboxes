@@ -47,6 +47,12 @@ git fetch .sandbox/runs/<run-id>.bundle 'refs/heads/*:refs/heads/sandbox/<run-id
 git log --oneline --graph sandbox/<run-id>/main
 ```
 
+**Named targets harvest elsewhere.** A run mounted with `--target <name>` has a base commit from the
+target's repo, which this repo's history lacks, so `just sbx manage harvest` verifies and fetches the
+bundle into `target.checkout` (`../greenfield-sandboxes` for greenfield). Look for
+`refs/sandbox/<run-id>` **there**: `git -C ../greenfield-sandboxes log --oneline <commit_sha>..refs/sandbox/<run-id>`.
+The bundle file itself still lands at `.sandbox/runs/<run-id>.bundle`.
+
 **4 before 5 — revoke before destroy.** A crash between them leaves a dead key and a live VM: visible
 in `ssh exe.dev ls`, cheap, obvious. The reverse leaves a live key nobody can find — invisible, and it
 spends. Order the failure modes, not the happy path.

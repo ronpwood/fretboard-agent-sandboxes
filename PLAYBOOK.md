@@ -148,6 +148,91 @@ committed after step 5) → refuse if the tree is dirty → revoke the OpenRoute
 destroy the VM → close the run record. Verified this session: revoked key confirmed
 absent from `https://openrouter.ai/api/v1/keys` before declaring success.
 
+## Greenfield runs (a blank codebase)
+
+Use this when you want a team to design and build an app **from nothing** — no reference
+implementation to crib from — typically with the TDD chain. The codebase is a separate repo,
+`github.com/ronpwood/greenfield-sandboxes` (checkout at `../greenfield-sandboxes`): the same factory,
+an empty `apps/app` shell, and a prompt at `prompts/greenfield.md`. `targets/greenfield.yaml` in this
+repo describes it; `just target list` shows every target.
+
+### Why a separate repo (the leak rule)
+
+A clone of *this* repo carries the reference app everywhere: `git log -p`, `archive/`, `specs/`,
+`app_docs/`, harvested refs. Deleting `apps/fretboard` on the VM doesn't remove any of that. The clean
+room has fresh history, so there is nothing to find. That's also why the sync is careful: it exports
+only tracked factory files (`git archive HEAD`), drops the host app's `just/<app>.just` module and
+`mod` line, fails on any mention of the host app name, archived app names, or the target's
+`leak_patterns`, and commits with a neutral `factory sync <date>` message. Fix a leak hit **at the
+source in this repo**. Never allowlist it.
+
+### The commands
+
+One-time prerequisite: the checkout must exist where `targets/greenfield.yaml` says
+(`git clone https://github.com/ronpwood/greenfield-sandboxes.git ../greenfield-sandboxes`).
+
+```bash
+# 1. bring the clean room's factory up to this repo's HEAD (commit your factory changes first)
+just target show greenfield                    # last sync: host_sha vs current HEAD
+just target sync greenfield --dry-run          # diff stat + leak check + gates, then resets
+just target sync greenfield --push             # commit + push to a PUBLIC repo (outward-facing); writes .sandbox/targets/greenfield.json
+
+# 2. mount on it — fill pins to the last pushed sync's target_sha
+just sbx mount gf-1 --target greenfield --limit 10
+
+# 3. run the TDD chain ("" = default roster; name a roster file to pick another)
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd
+just sbx run cmd <run-id> 'tail -5 run.log'
+just sbx lifecycle refresh <run-id>            # after it finishes, before you trust the review URL
+
+# 4. bring it home — into the GREENFIELD checkout, not this repo
+just sbx manage harvest <run-id>
+git -C ../greenfield-sandboxes log --oneline <commit_sha>..refs/sandbox/<run-id>
+
+# 5. tear down
+just sbx lifecycle teardown <run-id>
+```
+
+`prompts/greenfield.md` resolves inside the VM's checkout, which is the greenfield repo, so it reads
+that repo's own prompt file.
+
+### Where commits land
+
+A greenfield run's base commit exists only in the greenfield repo, so harvest verifies and fetches
+the bundle into `../greenfield-sandboxes` (`target.checkout`). `refs/sandbox/<run-id>` lives **there**.
+The bundle file stays at `.sandbox/runs/<run-id>.bundle` as usual.
+
+### Fanning out N arms
+
+Sync **once** with `--push`, then mount every arm. Each fill pins to the same `target_sha`, or pass
+it explicitly (`python3 -c 'import json;print(json.load(open(".sandbox/targets/greenfield.json"))["target_sha"])'`).
+Never re-sync mid-fan-out. The loop is in `.claude/skills/sssf-sandbox-orchestrator/cookbooks/fan_out_n.md`.
+
+Judge rubrics live in **this** repo's `specs/`, never in the target's `prompts/`. The sync can't
+carry them (`specs/` isn't a sync path), but a rubric pasted into the prompt hands every arm the
+answer key.
+
+### Re-syncing, and what you may edit in the clean room
+
+Re-sync whenever factory paths change here (`adws/`, `just/`, `sandbox_mount/`,
+`.claude/skills/sssf/`, `justfile`, `.env.sample`). A VM runs the factory in the repo it cloned, so a
+stale clean room silently runs an old factory. In the greenfield repo, edit only what it owns:
+`apps/`, `prompts/`, `README.md`, `.gitignore`, `app.manifest.yaml`. Everything else is overwritten by
+the next sync. The sync refuses a dirty checkout, so commit owned edits first.
+
+### Nothing to revert
+
+The root `app.manifest.yaml` is never touched. The target lives in the run record (`target` field),
+so a fretboard run and a greenfield run can be live at once, and a forgotten step can't point the
+next mount at the wrong codebase. (The old procedure copied greenfield's manifest over the root one.
+That is gone.)
+
+### Adding another target
+
+Create the repo with fresh history (`gh repo create`, a manual one-time step), give it an
+`app.manifest.yaml` and an app shell, add `targets/<name>.yaml` (copy greenfield's; its `app:` section
+must equal the new repo's manifest), then `just target sync <name> --dry-run`.
+
 ## Refresh the review URL after an ADW
 
 `observe` starts the dev server once, at mount time, and its `listening()` guard

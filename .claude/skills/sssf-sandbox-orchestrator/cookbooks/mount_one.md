@@ -3,7 +3,7 @@
 One command takes a blank exe.dev VM to a health-checked, running factory and stops:
 
 ```bash
-just sbx mount <task-or-run-id> [--limit 200]
+just sbx mount <task-or-run-id> [--limit 200] [--target NAME]
 ```
 
 `mount` chains **create → fill → setup → observe**. It never tears down. Teardown is always a
@@ -26,6 +26,34 @@ becomes a public hostname, so a collision is two runs fighting over one URL.
 
 Everything after `create` takes the **full run id**. `mount` echoes it, and prints it again at the
 end.
+
+## Mounting a named target (`--target`)
+
+```bash
+just target list                                      # default, greenfield
+just sbx mount gf-1 --target greenfield --limit 10
+```
+
+`mount` forwards the flag to `create`, which validates the name against `just target list`
+**before anything is created** and records it as the run record's `target` field
+(`target:  greenfield` in the create output). Every later phase reads the target from the record,
+never from a flag:
+
+- **fill** clones the target's `source.repo`. With no explicit `SHA` it pins to the last **pushed**
+  `just target sync` (`.sandbox/targets/<name>.json`) and prints `pin from last sync: <sha>`. An
+  unpushed sync warns and runs unpinned. An explicit SHA always wins.
+- **observe / refresh** take `app.name` / `app.dir` from the target file (`apps/app` for greenfield).
+- **harvest** fetches into the target's checkout (`../greenfield-sandboxes`), not this repo.
+
+Confirm on the box that it really is the clean room:
+
+```bash
+sandbox_mount/host/run_record.py get <run-id> target        # greenfield
+just sbx run cmd <run-id> 'head -20 app.manifest.yaml && ls apps && git log --oneline | head -3'
+```
+
+If the target's factory is stale (`just target show greenfield` says HEAD moved), sync first — a
+VM runs the factory that is **in the repo it cloned**, not this repo's.
 
 ## Timing
 
@@ -55,7 +83,7 @@ Order is the design: **record → VM → key.**
 ```
 run id:  inkwell-e2e-20260804-e08747
 record:  .sandbox/runs/inkwell-e2e-20260804-e08747.json
-vm:      creating inkwell-e2e-20260804-e08747 (ssh exe.dev new --tag inkwell) ...
+vm:      creating inkwell-e2e-20260804-e08747 (ssh exe.dev new --tag sssf) ...
 vm:      inkwell-e2e-20260804-e08747  ->  https://inkwell-e2e-20260804-e08747.exe.xyz
 key:     sbx-inkwell-e2e-20260804-e08747  limit $50.00  hash <64 hex>
 key:     secret written to .sandbox/runs/<run-id>.key (0600) — FILL injects it
@@ -166,7 +194,7 @@ keys, so a typo in a `set` fails loudly instead of silently losing data.
 
 | Phase | Writes |
 |---|---|
-| create | `run_id`, `created_at`, `vm_name`, `https_url`, `key_hash`, `limit`, `session_id` — plus the secret to `.sandbox/runs/<run-id>.key` (0600) |
+| create | `run_id`, `created_at`, `target`, `vm_name`, `https_url`, `key_hash`, `limit`, `session_id` — plus the secret to `.sandbox/runs/<run-id>.key` (0600) |
 | fill | `commit_sha` (the sha actually checked out, never the one asked for) — plus `app/.env` on the VM |
 | setup | **nothing** — it only reads `vm_name` and `commit_sha` |
 | execute | `pid` |

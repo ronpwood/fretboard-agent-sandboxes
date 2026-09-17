@@ -22,7 +22,7 @@ tree stays clean and a harvested branch carries only the run's own work.
 
 | Phase | Runs where | Needs | Gate | Writes to the run record |
 | --- | --- | --- | --- | --- |
-| **create** `RUN_ID [--limit N]` | host only — exe.dev control plane + OpenRouter mint API. Nothing lands on the VM. | `ssh`, `curl`, `python3` on PATH; `OPENROUTER_PROVISIONING_KEY` in `.env`; hostname-safe run id (≤63 chars) | ssh answers on `<vm>.exe.xyz` within 60s | `run_id`, `created_at`, `vm_name`, `https_url`, `key_hash`, `limit`, `session_id` |
+| **create** `RUN_ID [--limit N] [--target NAME]` | host only — exe.dev control plane + OpenRouter mint API. Nothing lands on the VM. | `ssh`, `curl`, `python3` on PATH; `OPENROUTER_PROVISIONING_KEY` in `.env`; hostname-safe run id (≤63 chars) | ssh answers on `<vm>.exe.xyz` within 60s | `run_id`, `created_at`, `target`, `vm_name`, `https_url`, `key_hash`, `limit`, `session_id` |
 | **fill** `RUN_ID [SHA]` | host-triggered, the clone runs inside the VM | `vm_name` in the record; `.sandbox/runs/<id>.key` non-empty | checked-out HEAD == the resolved pin (when a SHA/tag/branch was given). Unpinned: HEAD is reported and recorded, not gated | `commit_sha` |
 | ↳ *the run branch* | inside, at the end of the clone step | — | none — `git switch -c sbx/<run-id>` at existing HEAD adds no commit and changes no file, so assertion **A** still compares the same sha | *nothing* |
 | **setup** `RUN_ID` | inside — `ssh <vm> 'bash app/sandbox_mount/guest/provision.sh'`, then the gate | `vm_name` **and** `commit_sha` in the record | five assertions **A–E**, all must pass | *nothing* |
@@ -44,6 +44,19 @@ And the fleet-wide backstop, which takes no run id:
 × `.sandbox/runs/*.json` and revokes every `sbx-*` key whose record is closed or whose VM no
 longer exists. **The `sbx-` prefix is the entire safety model**: personal keys carry no prefix,
 and the prefix is re-asserted at the point of deletion, not just at selection.
+
+### Where each phase gets the target
+
+| Phase | Target handling |
+| --- | --- |
+| **create** | parses `--target NAME` (default `default`), validates it against `manifest.py list` **before** anything is created, writes `target` |
+| **fill** | reads `target`; clones `manifest.py --target <t> get source.repo`; with no SHA and a non-default target, pins to `.sandbox/targets/<t>.json` `target_sha` when `pushed: true` |
+| **setup / execute / teardown** | nothing target-specific — they act on whatever `app/` holds |
+| **observe / refresh** | read `target`; `app.name` / `app.dir` via `manifest.py --target <t>` |
+| **harvest** | reads `target`; `default` fetches here, a named target fetches into its `target.checkout` |
+
+No phase reads the root manifest implicitly: `grep -n 'manifest.py get' just/sandbox/lifecycle/*.just`
+shows `--target` on every line.
 
 ---
 
@@ -170,7 +183,7 @@ the branch tip still equals `commit_sha`) before suspecting the bundle.
 ## The mount chain
 
 ```
-just sbx mount RUN_ID [--limit N]    # create -> fill -> setup -> observe
+just sbx mount RUN_ID [--limit N] [--target NAME]    # create -> fill -> setup -> observe
 ```
 
 Stops at observe **by design**. Teardown is never chained. `mount` re-reads the generated run id

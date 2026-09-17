@@ -1,6 +1,6 @@
 ---
 name: sssf-sandbox-orchestrator
-description: Drive the six-phase sandbox mount system from the host — mount throwaway exe.dev VMs, run the Super Simple Software Factory inside them, watch from outside, harvest the commits, tear down. Use when the user says mount a sandbox, run the factory in a sandbox, spin up N sandboxes, best-of-N, check on a run, harvest a run's commits, or tear down. Keywords - sandbox, mount, exe.dev VM, run id, fan out, best-of-N, harvest, bundle, teardown, reap.
+description: Drive the six-phase sandbox mount system from the host — mount throwaway exe.dev VMs, run the Super Simple Software Factory inside them, watch from outside, harvest the commits, tear down. Also mounts named targets such as greenfield (a blank-codebase clean room) and syncs their factory. Use when the user says mount a sandbox, run the factory in a sandbox, spin up N sandboxes, best-of-N, greenfield run, blank codebase, sync a target, check on a run, harvest a run's commits, or tear down. Keywords - sandbox, mount, exe.dev VM, run id, fan out, best-of-N, target, greenfield, harvest, bundle, teardown, reap.
 argument-hint: "[mount|execute|agent|observe|harvest|teardown] [run-id or prompt]"
 ---
 
@@ -84,11 +84,11 @@ their own contents when run bare.
 
 | Command | What it does |
 |---|---|
-| `just sbx mount RUN_ID [--limit N]` | create → fill → setup → observe. **Never teardown.** Prints the resolved run id and both URLs. |
-| `just sbx lifecycle create RUN_ID [--limit N]` | mint `sbx-<run-id>` (\$50 default) + boot the VM, in record → VM → key order |
+| `just sbx mount RUN_ID [--limit N] [--target NAME]` | create → fill → setup → observe. **Never teardown.** Prints the resolved run id and both URLs. |
+| `just sbx lifecycle create RUN_ID [--limit N] [--target NAME]` | mint `sbx-<run-id>` (\$50 default) + boot the VM, in record → VM → key order. Records `target` (default `default`) |
 | `just sbx lifecycle fill RUN_ID [SHA]` | public `git clone` (2.61s, no auth), optional SHA pin, write `.env` with the runtime key |
 | `just sbx lifecycle setup RUN_ID` | `provision.sh` + the five-assertion gate |
-| `just sbx lifecycle execute RUN_ID "PROMPT"` | full SDLC detached inside the box; returns a pid, records it |
+| `just sbx lifecycle execute RUN_ID "PROMPT" [CONFIG] [ADW]` | an ADW (default `sdlc`; e.g. `tdd`) detached inside the box; `""` CONFIG = default roster. Returns a pid, records it |
 | `just sbx run cmd RUN_ID '<cmd>'` | generic escape hatch, synchronous, runs in `app/`. Your inspection tool. |
 | `just sbx run agent RUN_ID "PROMPT"` | Claude Code inside the box, resumable session — hand off, then keep talking |
 | `just sbx lifecycle observe RUN_ID` | start both servers, expose 4501, print URLs. Idempotent. |
@@ -97,6 +97,28 @@ their own contents when run bare.
 | `just sbx manage traces RUN_ID [SESSION]` | pull the run's agent traces home (`raw_output.jsonl` thinking + tool streams, prompts, envelopes, `sssf.db`) to `.sandbox/traces/<run-id>/`. harvest = commits, traces = thinking. Non-destructive, idempotent; traces are gitignored on the box and die at teardown otherwise. |
 | `just sbx lifecycle teardown RUN_ID [--no-harvest]` | spend → artifacts → **harvest** → revoke → destroy → close. **The only destructive recipe.** |
 | `just sbx manage reap [--yes]` | delete orphaned `sbx-*` keys. Dry run by default. Run it at the start of a session. |
+| `just target list` / `show NAME` | known targets (`default` + `targets/*.yaml`), and a target's definition + last sync provenance |
+| `just target sync NAME [--dry-run] [--push]` | regenerate a target repo's factory from HEAD: leak-checked, gated, neutral commit. `--push` is outward-facing (public repo) — ask first |
+
+## Targets: which codebase a sandbox clones
+
+By default a VM clones **this** repo (the root `app.manifest.yaml`, the `default` target). A named
+target in `targets/<name>.yaml` points it at a separate clean-room repo instead — today
+`greenfield`, an empty app shell a team grows from nothing via the TDD chain. It is a separate repo
+with fresh history so no arm can find this repo's reference app through `git log`, `archive/` or
+`specs/`; never "strip the payload on the VM" instead.
+
+```bash
+just target sync greenfield --dry-run && just target sync greenfield --push   # (ask before --push)
+just sbx mount gf-1 --target greenfield --limit 10    # fill pins to the last pushed sync
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd
+just sbx manage harvest <run-id>                     # lands in ../greenfield-sandboxes, not here
+```
+
+`create` records the target; fill/observe/refresh/harvest read it from the record, so fretboard
+and greenfield runs can be live at once and nothing global is flipped. Details: PLAYBOOK.md
+§ Greenfield runs, [cookbooks/mount_one.md](cookbooks/mount_one.md),
+[cookbooks/fan_out_n.md](cookbooks/fan_out_n.md).
 
 The run id is the handle for every phase. `create` appends `-<date>-<6 hex>` if you did not, and
 prints what it settled on — use that string, not the one you typed.
@@ -112,12 +134,13 @@ alive**.
 | Activity | When to read | File |
 |---|---|---|
 | Understand the recipes before running any | first time, or when a recipe surprises you | [cookbooks/just_command_model.md](cookbooks/just_command_model.md) |
-| Stand up one sandbox end to end | "mount a sandbox", "run this in a sandbox" | [cookbooks/mount_one.md](cookbooks/mount_one.md) |
+| Stand up one sandbox end to end | "mount a sandbox", "run this in a sandbox", "mount on greenfield / a named target" | [cookbooks/mount_one.md](cookbooks/mount_one.md) |
 | Put work into a mounted box | "build X in there", "ask the agent", picking `run cmd` vs `lifecycle execute` vs `run agent` | [cookbooks/execute_work.md](cookbooks/execute_work.md) |
 | Watch a run and report it back | "check on the run", "is it done", "show me the URLs" | [cookbooks/observe_and_report.md](cookbooks/observe_and_report.md) |
 | Give the user access to a running box | "get me into the sandbox", a shell in there, talk to the in-box agent | [cookbooks/access_a_running_sandbox.md](cookbooks/access_a_running_sandbox.md) |
 | A gate assertion failed | `setup` exited non-zero, or the box looks wrong | [cookbooks/debug_a_failed_gate.md](cookbooks/debug_a_failed_gate.md) |
-| Spin up N and pick a winner | "best-of-N", "three variants", "diff the runs" | [cookbooks/fan_out_n.md](cookbooks/fan_out_n.md) |
+| Spin up N and pick a winner | "best-of-N", "three variants", "diff the runs", "greenfield fan-out" (sync once, pin every arm) | [cookbooks/fan_out_n.md](cookbooks/fan_out_n.md) |
+| Sync a target's factory, or send a team at a blank codebase | "sync greenfield", "greenfield run", "blank codebase" | PLAYBOOK.md § Greenfield runs, then [cookbooks/mount_one.md](cookbooks/mount_one.md) |
 | Shut a run down, clean up keys | the human decided to tear down; orphaned `sbx-` keys | [cookbooks/teardown_and_reap.md](cookbooks/teardown_and_reap.md) |
 
 ## References (deep specs, read on demand)

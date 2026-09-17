@@ -202,6 +202,19 @@ just sbx manage harvest <run-id>  # commits land in refs/sandbox/<run-id>
 just sbx lifecycle teardown <run-id>
 ```
 
+**Greenfield variant: send a team at a blank codebase.** Same flow, a different codebase. `--target greenfield` mounts the clean-room repo (`../greenfield-sandboxes`, an empty app shell with fresh history) instead of this one:
+
+```bash
+just target sync greenfield --dry-run          # regenerate its factory from HEAD: leak-checked, gated
+just target sync greenfield --push             # neutral commit, pushed to a PUBLIC repo; becomes the pin
+just sbx mount gf-1 --target greenfield --limit 10    # fill pins to that sync
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd   # the TDD chain, default roster
+just sbx lifecycle refresh <run-id>            # after it finishes, before trusting the review URL
+just sbx manage harvest <run-id>               # commits land in ../greenfield-sandboxes as refs/sandbox/<run-id>
+```
+
+Nothing global flips: the root `app.manifest.yaml` stays the `default` target, so fretboard and greenfield runs can be live at the same time. PLAYBOOK.md § Greenfield runs has the whole story.
+
 Or just ask. With `/sssf-sandbox-orchestrator` loaded, the same flow runs conversationally: "mount a sandbox and add a word-count badge," "spin up three and give me best-of-N," "harvest the winner." The skill picks the recipes; the typed `just` commands above stay the deterministic ground truth underneath.
 
 Two handles, do not confuse them: **`<run-id>`** names the sandbox (it is also the VM name and the public hostname), while **`<adw_id>`** names one factory run inside that box. `just sbx manage list` counts sandboxes; `just obs sessions` counts the runs within them. A single box can host many ADW runs.
@@ -241,19 +254,22 @@ just sbx manage list        # every sandbox: state, VM alive, spend
 
 ## The command surface
 
-Five namespaces, and the namespace answers *where the work happens*:
+Six namespaces, and the namespace answers *where the work happens*:
 
 ```
 justfile
 ├── fretboard   boot and test the app itself: run / dev / test
 ├── adw         the workflows: sdlc, build-test, scout, simple-sdlc … (runs IN a sandbox)
 ├── sbx         sandbox orchestration: mount, lifecycle, run, manage, orch (host-only)
+├── target      named codebases a sandbox can mount instead of this repo: list / show / sync (host-only)
 ├── obs         read the trace: sessions, phases, tail, procs, ui
 └── local       boot an orchestrator agent on THIS machine: cc / pi / ipi
 ```
 
 ```bash
 just sbx mount my-feature                                  # blank VM → running factory, ~10s
+just sbx mount gf-1 --target greenfield                    # same, on a named target (see `just target list`)
+just target sync greenfield [--dry-run] [--push]           # regenerate a target repo's factory from HEAD
 just sbx run cmd <id> 'tail -f run.log'                    # look inside, synchronously
 just sbx manage harvest <id>                               # commits home → refs/sandbox/<id>
 just sbx manage traces <id> [session]                     # agent thinking/tool streams + sssf.db → .sandbox/traces/<id>/

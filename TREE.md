@@ -16,7 +16,10 @@ The command surface mirrors that split: `just adw` (the workflows), `just sbx` (
 ## Root
 
 ```
-justfile              4 namespaces and nothing else: adw, sbx, local, obs.
+justfile              the namespaces and nothing else: adw, sbx, target, local, obs, app.
+targets/              HOST-ONLY named targets: codebases a sandbox can mount instead of this
+                      repo. greenfield.yaml = app:/source: (a manifest) + target: (checkout,
+                      sync_paths, owned, leak_patterns). The root app.manifest.yaml is `default`.
 README.md             the three layers, the layout, and how to run each one.
 TREE.md               this file.
 .env.sample           OPENROUTER_PROVISIONING_KEY is HOST-ONLY; the runtime key is minted
@@ -34,6 +37,8 @@ just/adws.just        the `adw` namespace: 14 ADW recipes. Carries `set working-
 just/local.just       the `local` namespace: cc / pi / ipi, an orchestrator agent on THIS
                       machine. Declares `shell := ["zsh","-ic"]` because `ipi` is a zsh
                       FUNCTION, not a binary.
+just/target.just      the `target` namespace: list / show / sync. `sync` runs
+                      sandbox_mount/host/target_sync.py.
 just/obs.just         the `obs` namespace: sessions, phases, tail, procs, kill, rosters, ui.
                       Meant to work inside a sandbox too — reading your own traces is wanted there.
 just/sandbox/         the `sbx` namespace. HOST-ONLY: needs the exe.dev account and the
@@ -67,6 +72,9 @@ just/sandbox/         the `sbx` namespace. HOST-ONLY: needs the exe.dev account 
 ```
 host/run_record.py    the ONLY state shared across the six phases (each is a separate
                       process). Without it teardown cannot know which key to revoke.
+host/target_sync.py   `just target sync`: regenerate a target repo's factory from HEAD —
+                      git archive export, derived app-name exclusions, leak check, owned-path
+                      guard, gates, neutral commit, optional push, provenance json.
 host/runs_table.py    renders `just sbx manage list`. A file, not embedded, because an unindented
                       line inside a just recipe body TERMINATES the recipe.
 guest/provision.sh    runs INSIDE the VM: installs bun + just from CDNs
@@ -127,6 +135,8 @@ ai_docs/exedev_sandbox_mounting.md   every exe.dev fact, measured on live VMs. S
 prompts/              five ready-made tasks to point the factory at (01-05), usable verbatim:
                       `just sbx lifecycle execute <id> "$(cat prompts/01-fts5-search.md)"`.
 specs/*.md            plans the factory itself wrote on earlier runs.
+.sandbox/targets/     gitignored sync provenance per target: {synced_at, host_sha, target_sha,
+                      pushed}. fill pins a named target's mount to target_sha when pushed.
 app_docs/             write-ups the factory produced after those runs.
 images/               diagrams used by the README.
 ```

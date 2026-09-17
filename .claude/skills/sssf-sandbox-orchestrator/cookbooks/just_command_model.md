@@ -73,6 +73,14 @@ They are `import`s, so they share the root's scope, settings and working directo
 - Relative paths in a phase recipe resolve against the **repo root**, which is why
   `sandbox_mount/host/run_record.py` works unqualified.
 
+## The `target` namespace
+
+`mod target 'just/target.just'` — host-side, like `sbx`: `just target list`, `just target show NAME`,
+`just target sync NAME [--dry-run] [--push]`. It follows the module rules above (its own
+`set working-directory := '..'` and `set positional-arguments`), and `sync` hands its arguments to
+`sandbox_mount/host/target_sync.py` as `"$@"`, never interpolated into shell text. The `--target
+NAME` **flag** is not this namespace: it belongs to `just sbx mount` / `just sbx lifecycle create`.
+
 ## Discovery cheat-sheet
 
 ```bash

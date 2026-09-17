@@ -1,5 +1,7 @@
 # app.manifest.yaml — the single place the factory learns the payload app's identity.
 # `just app swap` edits this file; quality.py, fill.just, and observe.just read it.
+# This is the `default` target. Named targets (other codebases a sandbox can mount,
+# e.g. greenfield) live in targets/ — `just target list`, `just sbx mount <id> --target NAME`.
 app:
   name: fretboard
   dir: apps/fretboard
