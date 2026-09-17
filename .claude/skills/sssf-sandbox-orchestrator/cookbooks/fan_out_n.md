@@ -80,6 +80,8 @@ done
   With `$PIN` passed explicitly a re-sync can't move an arm, but don't rely on it.
 - **`$PIN` is a greenfield commit.** `git rev-parse HEAD` here is the wrong sha for these arms.
 - Harvests land in `../greenfield-sandboxes` as `refs/sandbox/<id>`. Diff arms there.
+- **Keepers: never merge an arm into greenfield `main`.** The sync refuses with exit 5 (pristine guard), so
+  push a keeper to its own repo instead: `git -C ../greenfield-sandboxes push <other-repo-url> refs/sandbox/<id>:refs/heads/main`.
 - **Judge rubrics live in this repo's `specs/`, never in a target's `prompts/`.** The sync can't
   carry `specs/` across (it isn't a sync path), but a human pasting a rubric into
   `prompts/greenfield.md` would hand every arm the answer key.

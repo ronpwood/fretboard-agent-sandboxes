@@ -134,6 +134,9 @@ git diff <base-sha>..refs/sandbox/<run-id>
 git merge --ff-only refs/sandbox/<run-id>
 ```
 
+Applies to `default`-target runs only. For a greenfield (named-target) run, never merge into the
+target's `main`; see § Greenfield runs → Keeping a result.
+
 Fast-forwards cleanly because the run branch descends directly from the commit `fill`
 pinned. If it doesn't fast-forward, something diverged — look before forcing anything.
 
@@ -211,6 +214,28 @@ Never re-sync mid-fan-out. The loop is in `.claude/skills/sssf-sandbox-orchestra
 Judge rubrics live in **this** repo's `specs/`, never in the target's `prompts/`. The sync can't
 carry them (`specs/` isn't a sync path), but a rubric pasted into the prompt hands every arm the
 answer key.
+
+### Keeping a result (never merge into a target's main)
+
+The clean room's `main` must stay blank. If an arm's work lands on it, the next
+`just target sync greenfield --push` would publish it, and every later arm would clone an earlier
+arm's answer. So:
+
+- **To compare or judge arms:** work from `refs/sandbox/<run-id>` in `../greenfield-sandboxes`. Harvest
+  keeps them there, local-only, and the sync pushes only `main`.
+- **To keep an app for real:** push its ref to a **separate** repo:
+  `git -C ../greenfield-sandboxes push <other-repo-url> refs/sandbox/<run-id>:refs/heads/main`.
+  Or bring it into this repo as the payload with `just app swap`.
+- **Not a branch on the greenfield repo, either.** `git clone` fetches every branch, so a VM would
+  have it one `git log --all` away.
+
+The sync enforces this. `targets/greenfield.yaml` records `target.pristine`, the empty-shell commit.
+Before exporting anything, every sync (including `--dry-run`) checks that `apps/` still matches that
+commit and that no tracked path lies outside the sync and owned paths (a merged run brings `specs/`).
+If either check fails, it exits **5** and leaves the checkout untouched. `just target show greenfield` prints
+`pristine: ok` or `pristine: DIRTY — …`. To recover, reset `main` to the last `factory sync` commit.
+If you are changing the shell **on purpose** (a new sanity test, a different `index.html`), commit
+it in the greenfield repo and bump `target.pristine` in this repo, so the decision is recorded here.
 
 ### Re-syncing, and what you may edit in the clean room
 

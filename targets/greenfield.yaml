@@ -31,6 +31,14 @@ target:
     - prompts
     - README.md
     - .gitignore
+  # The clean room's definition of "blank": pristine_paths must equal this commit
+  # (the empty shell), and every tracked path must sit under sync_paths or owned.
+  # Sync refuses (exit 5) otherwise — that is what a sandbox run merged into main
+  # looks like. Bump pristine ONLY by a deliberate edit here, when the shell itself
+  # is meant to change, so the decision is recorded in this repo's history.
+  pristine: c9b98d1e1dbd06e99cc64c644e8880d885587e71
+  pristine_paths:
+    - apps
   leak_patterns:                      # extra, target-specific; app names are derived, never listed
     - circle of fifths
     - circle-of-fifths

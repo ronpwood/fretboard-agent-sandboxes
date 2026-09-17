@@ -1399,3 +1399,27 @@ committed by hand on the run branch as
 - Pre-existing doc staleness surfaced by the fresh-agent check: TREE/prime still describe
   Inkwell/four namespaces in places, `mount_one.md` hard-codes the old `disler/...` clone URL.
 - Doctor drift warning when a target's `host_sha` lags HEAD (deferred in the plan).
+
+# 2026-09-17b — pristine-main guard: the clean room can't be polluted by a merged run
+
+Harvest keeps a team's work in local-only `refs/sandbox/*` in `../greenfield-sandboxes`, and the sync
+pushes only `main`, so greenfield was already a clean room. The gap was PLAYBOOK §6's
+"merge once you like it" step. Done in the greenfield checkout, it would have put a built app on
+`main`, and the next `--push` sync would have published it without a word: the leak check reads only
+the factory export. Every later arm would then clone an earlier arm's answer.
+
+**Shipped (plan Phase 7):** `targets/greenfield.yaml` records `target.pristine: c9b98d1` (the empty
+shell) and `pristine_paths: [apps]`. `target_sync.py` checks, after the fast-forward and before
+export, in every mode: `apps/` equals pristine, and no tracked path lies outside sync/owned. On
+failure it exits **5** and leaves the checkout untouched. `--check-pristine` is a read-only mode;
+`just target show` prints `pristine: ok` / `pristine: DIRTY — …`. The PLAYBOOK now has
+§ "Keeping a result": keepers go to their own repo (`push … refs/sandbox/<id>:refs/heads/main`) or
+come here via `just app swap`, never a branch on the target repo (clones fetch every branch).
+
+**Proven in scratch clones:** a real merge of `gf-e2e-20260917-cbb166` → exit 5, naming 22 differing
+files under `apps` plus stray `specs/474f412f_circle-of-fifths-guitar.md`; a stray-only commit →
+exit 5; an owned `prompts/` edit → exit 0; a missing pristine sha → exit 1. The real checkout and
+remote were untouched.
+
+**Open:** greenfield's factory copy is now 2 files behind (`target_sync.py`, `just/target.just`).
+Re-sync with `--push` when approved.
