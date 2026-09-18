@@ -86,6 +86,58 @@ item 6 and 7 scores are the design-judgment signal this experiment exists to
 measure. Cross-grade note from the 2026-08-27 A/B still applies: score against
 the brief's words, never against another arm's spec.
 
+### Part B — discriminators (added 2026-09-18, after part A hit its ceiling)
+
+Part A above is FROZEN so 2026-08-28 and 2026-09-18 scores stay comparable. Do
+not renumber or reword it. But it no longer separates good arms from mediocre
+ones: on 2026-09-18 two arms both scored 20/20 while one had been rejected by its
+own reviewer and used 2.3x the tokens, and items 1, 2, 3, 6 and 9 were scored 2 by
+every single arm. Part B is where the headroom went. Same 0/1/2 scale, 12 max,
+reported beside part A and never folded into it.
+
+11. **Survives interaction, not merely load.** Drive it: select a different key,
+    click a chord, change a tuning or mode. 0 if it throws or goes blank, 1 if
+    some controls are inert, 2 if the dependent views stay coherent throughout.
+    Part A item 8 asks whether interaction is wired; this asks whether it holds up.
+12. **Visual design.** Look at the page. Is there a deliberate hierarchy, spacing
+    and type treatment that tells a user where to start? 0 is browser-default
+    serif and unstyled buttons; 1 is styled but undifferentiated; 2 reads as
+    designed. Judge the artifact, not the effort.
+13. **Legibility of the core object.** The circle is the whole point — is it
+    readable at a glance, correctly labelled, and large enough to use? An arm can
+    style a page and still render an illegible 200px wheel with 6pt text.
+14. **Error-free under use.** Zero console errors after the interaction pass in
+    item 11, not merely on load. Capture with `just sbx manage shot <run-id>`
+    (screenshot + console) AFTER `just sbx lifecycle refresh <run-id>`.
+15. **Restraint.** Did the arm build what the brief asked, or bolt on scope it
+    was never asked for while core items stayed thin? 2 means the effort landed
+    where the brief pointed. This is the counterweight to items 11-14 rewarding
+    surface.
+16. **Recoverability.** Pick the arm's worst finding from its own review and ask
+    how far the code is from fixing it. 2 if it is a contained change, 0 if the
+    defect is structural. A rejected arm that is one commit from good is worth
+    more than one that needs a rewrite, and nothing else on this rubric sees it.
+
+### Process metrics — recorded beside the score, NEVER scored
+
+These describe how the arm worked, not what it built, so they stay out of both
+totals. Report them in every scorecard:
+
+- **tokens**, total and for the builder seat — the legitimate efficiency signal,
+  because it tracks real work. Caveat it: tokenizers, cache accounting and MoE-vs-
+  dense sparsity make tokens safest compared WITHIN a model family, or across
+  families only at order-of-magnitude (a 6x gap is signal, 15% is not).
+- **builder tool-error rate and schema-failure count** (`just sbx manage
+  trace-metrics <run-id>`), with `model-format` errors reported separately —
+  those are provider bugs, not instruction-following failures.
+- **fix and revise loops consumed** out of the bounded maximum.
+- **billed spend**, as a DATED FACT ONLY. Never scored, never a rubric item, never
+  a cost-per-point ratio. A price is a business decision, not a measurement of
+  work — subsidised or loss-leader pricing would rank whoever is currently
+  burning investor money, and a scorecard graded on price silently changes grade
+  when a vendor reprices. Record it so the landscape can be read over time; keep
+  it out of the ranking.
+
 ## Watch-fors
 
 - An arm building outside `apps/app/` — gates pass vacuously on the shell. The

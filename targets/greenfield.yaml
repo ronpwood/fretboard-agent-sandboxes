@@ -49,7 +49,10 @@ target:
   # fails the same way the browser does — verified against both crashed arms'
   # actual main.ts. `configurable: false` on the document binding is the part
   # that catches the redefine-document class.
-  pristine: 4d6e63bdd2eff0c09dec1a60839a33a468fbf0fb
+  # 2026-09-18b: bumped from 4d6e63bd to add apps/app/declarations.d.ts, so an
+  # `import "./styles.css"` passes the typecheck gate instead of failing TS2882
+  # on code that builds and runs. Both ways of adding styles now pass.
+  pristine: 4a6dfc8312a163aa16745b12b75f0bdad6e73996
   pristine_paths:
     - apps
   leak_patterns:                      # extra, target-specific; app names are derived, never listed

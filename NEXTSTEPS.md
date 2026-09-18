@@ -1831,3 +1831,86 @@ overlapped anyway. Both copies (factory + sssf template) stay byte-identical.
 **Method note worth keeping:** both corrections came from re-deriving numbers from the traces rather
 than trusting a summary I had written hours earlier. A prompt bullet built on the wrong tool would
 have taught the builder to guard a call that was never failing.
+
+---
+
+## 2026-09-18c — the remaining four follow-ups, and a prompt audit
+
+### The prompt audit (Ron's call, and the sharper framing)
+
+Ron's point, which reframes the design-blindness finding: telling an agent "style is not your
+problem" in a way that leaves it optional is **worse** than a clean prohibition, because the results
+become random — some arms look, some don't, and we learn nothing about their judgment either way.
+His analogy: a client who says "I don't care how it looks, just ship the features" and then grades
+you on looks. Better that the client had said nothing and found out whether you have taste.
+
+**That means my first fix was also wrong.** I had replaced "don't judge style" with "do judge
+style" — still steering, just in the opposite direction, and equally fatal to measuring whether
+these agents have design judgment on their own.
+
+Audited all six prompts (planner, builder, reviewer, test_designer, documenter, scout). Almost
+everything is a legitimate **role boundary** (scout is read-only; test_designer writes exactly one
+file) or **accuracy constraint** (documenter: name a file only if it is in the diff). Those stay.
+
+One offender, and the clause was broader than the one I had already touched:
+
+> Not your job: … **or anything the request did not ask for**. Work the request never asked for is
+> not blocking on its own.
+
+A brief that says *"how it looks is up to you"* **delegates** a decision. An agent can easily file
+that under "not asked for" → not blocking. Replaced with three explicit cases:
+
+- **Stated** — the spec asks for it: missing is always blocking.
+- **Delegated** — the spec leaves it to the builder: the decision is still in scope, and a delegated
+  decision made badly is a finding. Judge what was delivered against what a competent engineer would
+  deliver for that request.
+- **Unrequested** — neither asked for nor delegated: not blocking on its own.
+
+The reviewer prompt now contains **zero** design-specific words. It neither suppresses design
+judgment nor mandates it. Whether these agents notice an unstyled app is now a thing we can measure.
+
+**Evidence that this is the right scope:** all four planners DID plan design (13–19 mentions each),
+and builders built it. Only the reviewer was told not to look. So the planner prompt is left alone —
+there is no evidence it suppresses anything.
+
+### The four follow-ups
+
+1. **tsc CSS false positive** — `apps/app/declarations.d.ts` in the greenfield shell (`declare module
+   "*.css"` etc), pristine bumped to `4a6dfc83`. Ambient declarations are not reachable by import, so
+   `quality.typecheck` now globs `APP_DIR` for `*.d.ts` and names them on the command line.
+   Verified: with a css import, entry alone = 1 error, entry + declarations = 0.
+2. **`lint` added to `run_verify`** — now `[lint, typecheck, tests]`.
+3. **`model-format` error kind** in `trace_metrics.py`, checked BEFORE `schema` because provider
+   corruption arrives through the ordinary validator. gf2-1 now reads `model-format=2 schema=1`
+   instead of burying both in `schema`/`other`. Baseline still reproduces at `schema=18`.
+4. **Rubric part B** (`specs/greenfield-cof-experiment.md`): part A frozen for comparability, six new
+   discriminators (survives interaction, visual design, legibility of the core object, error-free
+   under use, restraint, recoverability) and a process-metrics block that is recorded and never
+   scored.
+
+### Two measurements that changed the plan
+
+**`no-explicit-any` is NOT being enabled, and my justification for adding lint was wrong.** I had
+written that both crashes hid behind explicit `any` "which oxlint's no-explicit-any flags". It does
+flag them — 55 errors on gf2-1, 5 on gf2-4 — but measuring the rest of the fleet killed the idea:
+
+| tree | default rules | `no-explicit-any` |
+|---|---|---|
+| greenfield shell | 0 | 0 |
+| fretboard (default target) | 0 errors | **2 errors** |
+| gf2-2 (the arm that worked) | 0 | **6 errors** |
+
+It would have failed the default target and blocked the one accepted arm. Since happy-dom now
+catches the actual crashes directly, a noisy rule that fails working code is a bad trade. `lint` runs
+default rules only; the docstring records the measurement so nobody re-proposes it blind.
+
+**The `.d.ts` glob had two bugs, both caught by verification, neither by review.** First it matched
+every `.d.ts` in `node_modules` (~700 from happy-dom) and would have put them all on the tsc command
+line. Then the `node_modules`/hidden-dir filter matched `..` in `../greenfield-sandboxes`, silently
+excluding everything. Now filtered on the path *relative to* `APP_DIR`.
+
+### Also
+
+`sssf.inverse.config.yaml`'s header said a roster "buys more rubric score per dollar" — that file
+syncs to the public greenfield repo, so it was telling VM agents a score exists. No rubric contents
+leaked, but it is needless contamination and it embedded the cost framing we just retired. Reworded.
