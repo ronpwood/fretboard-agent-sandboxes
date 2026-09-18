@@ -311,7 +311,7 @@ N=4, TDD chain, one pin, same prompt (`prompts/greenfield.md`, unchanged since 2
 - [x] `adws/adw_sssf_config/sssf.asymmetric.config.yaml`: copy of `sssf.config.yaml` with the `planner` and `reviewer` agents' `model:` set to `openrouter/anthropic/claude-opus-5`; header comment "the 2026-08-28 judge's designed next experiment: frontier plan + review, flash build". It must be committed **before** the sync above, so it ships to the VMs. `agents.validate` passes on the host, and `grep -n 'claude-opus-5' sandbox_mount/guest/models.json.tmpl` shows opus-5 is registered with four cost fields
 - [x] `adws/adw_sssf_config/sssf.inverse.config.yaml`: copy of `sssf.config.yaml` with the `builder` agent's `model:` set to `openrouter/moonshotai/kimi-k3`; header comment "inverse of asymmetric: flash plan + review, frontier builder (2026-09-17 hypothesis: a good plan still misses when the builder is weak)". Committed before the sync; `agents.validate` passes; `grep -n 'moonshotai/kimi-k3' sandbox_mount/guest/models.json.tmpl` shows it registered with four cost fields
 - [ ] Budget check before mounting: read rates from `models.json.tmpl` (on 2026-09-17: opus-5 5.0/25.0, kimi-k3 3.0/15.0 per M). The builder role consumed 12.0M tokens on 2026-09-17, so it's the expensive seat. Limits: default arms `--limit 10`, asymmetric `--limit 25`, inverse `--limit 30`. State all four limits to the user in the go-ahead request
-- [ ] Capacity: the account has 2 shared vCPU across all VMs. Mount arms **one at a time** (provision and `bun install` are CPU-bound), and record in the scorecard that wall clock across concurrent arms isn't comparable. With four arms, consider starting executes in two waves (arms 1+3, then 2+4 once the first wave's builds finish) so no more than two builders run `bun test` at once; record which wave each arm was in
+- [x] Capacity: **the two-wave plan was wrong and was abandoned mid-run** — see the corrected Notes bullet. Mounting one at a time is still sensible (it keeps mint/clone failures attributable to one arm), but executes fire together: the run records show 3–5 concurrent arms completing fine, and each guest sees the full 2 vCPU / 7.9 GB. Record wall clock as non-comparable, which it is either way. Actual: arms 1+2 executed 03:29, arms 3+4 at 03:52 after the pacing was corrected
 
 #### 2. Run
 
@@ -412,8 +412,15 @@ and bumps pristine for a much larger surface.
   roster's builder, so the builder seat is changed the way the frontier roster already changes it.
 - **Confound to record, not fix:** the inverse arm changes the builder model **and** runs Phase 2's tool
   contract on a different model. Its tool-error rate is reported but not attributed to the contract.
-- **N=4, not 5:** 2 shared vCPU. The five-roster run on 2026-08-22 had arms contending for CPU, which
-  muddied wall clock and possibly a mount failure.
+- **N=4, not 5:** budget, not capacity. **Corrected 2026-09-18:** this bullet originally blamed
+  2 shared vCPU and cited the 2026-08-22 five-roster run as a contention casualty. The run records
+  say otherwise — 2026-08-21 ran **five** arms created in the same second, 2026-08-22 ran **four**
+  plus a live probe, and 2026-08-28 ran **three**, all completing with real spend and no failures.
+  Measured with four arms live on 2026-09-18, each guest reports `nproc` 2 and 7935 MB with ~7.6 GB
+  free: the pool is soft, not partitioned, and agent phases are I/O-blocked on OpenRouter so
+  contention is bursty (`bun install`/`test`) rather than a ceiling. Acting on the wrong version of
+  this bullet cost ~40 minutes of needless serialization during Phase 5. Fire arms concurrently and
+  report wall clock as non-comparable regardless.
 
 ### What this plan doesn't do
 
