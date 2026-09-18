@@ -2100,3 +2100,100 @@ defect, never repair one. **A gate has to live where a failure can still be fixe
 timeout against a server that has been serving since millisecond four. Resolve the name and try
 every family, as a browser does.
 
+---
+
+## 2026-09-18f — solo validation run: the render gate works, and the factory is deaf
+
+One VM, greenfield, TDD chain, same prompt and pin. `gf4-solo-20260918-d2a2ae`, **$0.89 billed**,
+17.7M tokens, rejected at review_2. Harvested, traced, torn down, key verified absent.
+
+### What it was sent to answer
+
+| question | answer |
+|---|---|
+| chromium on the VM? | yes — ~30s install inside the mount, **1.9s** standalone |
+| render gate in a live chain? | yes, twice: `test_1` 12.4s, `test_2` 12.5s |
+| **does it false-positive?** | **no** — passed a build whose tests were failing, and passed a clean build |
+
+That was the fan-out blocker and it is cleared. Cost is trivial against a 407s `test_design`.
+
+### Three findings it was NOT sent to get
+
+**1. An agent can deadlock a run indefinitely, and nothing times it out.** The builder wrote a
+`/tmp` diagnostic to probe whether a cached import yields to a timer, containing
+`setInterval(()=>{...},0)` with no `clearInterval`. `bun run` never exits, the bash tool call never
+returns, pi waits forever. **37 minutes of total silence**, 0.4% CPU, zero tokens. Killing the child
+(`bun` PID 2894) unblocked it and the builder resumed within seconds. Nothing in pi, the ADW, or the
+phase bounds tool execution time. At N=6 a wedged arm is indistinguishable from a slow one and holds
+a VM and a live key open with no upper bound. **Fan-out blocker: bash needs a timeout, plus a
+phase-level watchdog as backstop.** Note the builder's instinct was *good* — empirically testing
+async behaviour — the tool layer just had no ceiling.
+
+**2. The render gate never runs on revised code.** Phases were
+`… test_1 → fix_1 → test_2 → review_1 → revise_1 → review_2 ✗`. The retest phase sits *after* the
+review loop concludes, so a rejected arm's final tree is never render-verified. Only accepted arms
+get their final state checked.
+
+**3. Reviewers CAN catch unwired controls — fan-out 3's miss was SCOPE, not capability.** This
+reviewer, unprompted, reported *"no click handlers on `.fret-cell` or `.chord-card`; quiz panel is
+static; `quiz-view.ts` engine unmounted; CAGED static"*. That is exactly gf3-6's defect class, found
+by grepping for handlers. **Correcting the fan-out 3 write-up**: I attributed gf3-6's miss to the
+reviewer being structurally unable to see interactivity. Wrong — gf3-6's review scope was a
+single-file fix (`app.test.ts`), so it never audited the app at all. **The final review before
+acceptance must audit the delivered app, not just the last diff.**
+
+The division of labour is now clean: the **render gate** catches controls that exist but do not work
+(occluded, crashing, throwing); the **reviewer** catches controls that were never wired.
+
+### The factory is deaf, and Ron found it in thirty seconds
+
+He played the chords. They sounded wrong. `main.ts:88-92`:
+
+```ts
+const root = 60 + normalizeNote(notes[0]);
+return notes.map((_n, i) => ({ frequency: freqForMidi(root + i), midi: root + i }));
+```
+
+It discards the chord's actual notes and plays `root, root+1, root+2` — **three consecutive
+semitones**. Verified by reproducing the computation: **C major plays C–C♯–D (60,61,62)** instead of
+C–E–G (60,64,67); **A major plays A–A♯–B**. Every chord in the app is a chromatic cluster. The UI
+displays the correct spelling ("C – E – G") while the synth plays something else — display and
+playback read different code paths and only one is right.
+
+The `_n` is the tell: it maps over the chord's notes and throws each one away, keeping only the
+index.
+
+**What it survived:** 41 passing tests (none assert frequencies) · typecheck (`root + i` is a fine
+number) · lint (`_n` is the *idiomatic* unused marker) · **the new render gate** (clicking Strum
+throws nothing — it plays, just wrongly) · the reviewer · and my own browser interaction pass, where
+I verified the chord *labels* said "A – C♯ – E" and never checked what was emitted.
+
+**Generalised:** we have been calling the factory blind to design. It is also **deaf**, and that is
+worse — a bad layout is at least visible in a screenshot, so `shot` can record it. Nothing in the
+pipeline, including a real browser, can detect that the right notes are on screen and the wrong ones
+in the speakers. Any output channel with no assertion is a channel where a confident, well-typed,
+fully-tested wrong answer ships. Audio is merely the one we tripped over.
+
+A cheap fix exists and is worth having before the next run: assert **frequencies**, not labels — for
+a known chord, that the emitted MIDI set equals the expected one. That is a unit test, no browser
+needed. It would have caught this in `test_1`.
+
+### Also
+
+- Ranked against all seven greenfield arms, this app is the **strongest** produced — legible wheel
+  with per-key accidental counts, accessible `<title>`s carrying correct theory
+  (`"A Major · 3 #s · rel F#m"`), functional colour-coding with a legend, harmonic-cluster
+  explanation, chord diagrams with fingerings *and* spellings, coherent interaction (clicking A
+  correctly drove centre, cluster and chord list). **Rejected**, for real but secondary gaps —
+  unwired quiz/CAGED/fret-cell handlers. **The fan-out 3 anti-correlation reproduces at n=7.**
+- Its red suite went red on a **real assertion failure**, not module-not-found — the first
+  non-degenerate red seen on greenfield. So that finding was too strong: degenerate is the common
+  case, not an inevitability.
+- **No agent, in any of the six fan-out 3 arms or this one, ever reached for a browser.** Zero
+  mentions of chromium/playwright/puppeteer/jsdom/selenium across all seats. Every "browser" hit is
+  passive context (the prompt's `--target=browser`, happy-dom filenames, our own comment). They
+  wanted runtime truth and reconstructed it by inference instead.
+- My first hang-detector fired on every run after phase one: it flagged *any* stale
+  `raw_output.jsonl`, and a finished planner's file is stale by design. A monitor that always fires
+  is worse than none — it trains you to ignore it. Fixed to track only the newest agent output.
+
