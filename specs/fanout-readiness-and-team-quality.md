@@ -232,37 +232,37 @@ with the user before mounting.
 
 #### 1. `quality.py`
 
-- [ ] `TSC_VERSION = "7.0.2"` beside `OXLINT_VERSION` (measured 2026-09-17 via `bun x --package typescript tsc --version`), with a comment that bumping it is a deliberate change, like oxlint
-- [ ] `typecheck(run)`: `argv=[BUN, "x", "--package", f"typescript@{TSC_VERSION}", "tsc", "--noEmit", "--skipLibCheck", "--strict", "false", "--target", "es2022", "--module", "esnext", "--moduleResolution", "bundler", "--allowImportingTsExtensions", "--lib", "es2022,dom,dom.iterable", ENTRY]`. Update the module docstring: "typecheck" is now real type-checking of the entry graph, non-strict, so undeclared names and wrong argument types fail. `build` keeps `bun build`
-- [ ] `run_verify(run, extra_files=None) -> QualityResult`: `[typecheck(run), tests(run, extra_files)]`, failures and artifacts collected exactly like `run_quality`. Keep `run_tests` unchanged for the chains that still use it
-- [ ] `bun x` writes a lockfile under the bun cache, not the repo. Confirm `git status --short` stays clean after a typecheck on the host and on a VM (on 2026-09-17 the host stayed clean)
+- [x] `TSC_VERSION = "7.0.2"` beside `OXLINT_VERSION` (measured 2026-09-17 via `bun x --package typescript tsc --version`), with a comment that bumping it is a deliberate change, like oxlint
+- [x] `typecheck(run)`: `argv=[BUN, "x", "--package", f"typescript@{TSC_VERSION}", "tsc", "--noEmit", "--skipLibCheck", "--strict", "false", "--target", "es2022", "--module", "esnext", "--moduleResolution", "bundler", "--allowImportingTsExtensions", "--lib", "es2022,dom,dom.iterable", ENTRY]`. Update the module docstring: "typecheck" is now real type-checking of the entry graph, non-strict, so undeclared names and wrong argument types fail. `build` keeps `bun build`
+- [x] `run_verify(run, extra_files=None) -> QualityResult`: `[typecheck(run), tests(run, extra_files)]`, failures and artifacts collected exactly like `run_quality`. Keep `run_tests` unchanged for the chains that still use it
+- [x] `bun x` writes a lockfile under the bun cache, not the repo. Confirm `git status --short` stays clean after a typecheck on the host and on a VM (on 2026-09-17 the host stayed clean)
 
 #### 2. Chains
 
-- [ ] `adw_tdd_sdlc.py`: `test_{i}` and `retest` call `quality.run_verify(run, extra_files=both_suites)`; rename the phase descriptions to "Typecheck, then run fixed + generated suites". Update the docstring's `Phases:` line (`code(verify: typecheck + fixed + generated)`)
-- [ ] `adw_simple_sdlc.py`: the same at both call sites (lines ~101 and ~137), with no `extra_files`; docstring likewise
-- [ ] Do **not** change `adw_build_test.py` / `adw_plan_build_test.py` (not fan-out chains; recorded in Notes)
+- [x] `adw_tdd_sdlc.py`: `test_{i}` and `retest` call `quality.run_verify(run, extra_files=both_suites)`; rename the phase descriptions to "Typecheck, then run fixed + generated suites". Update the docstring's `Phases:` line (`code(verify: typecheck + fixed + generated)`)
+- [x] `adw_simple_sdlc.py`: the same at both call sites (lines ~101 and ~137), with no `extra_files`; docstring likewise
+- [x] Do **not** change `adw_build_test.py` / `adw_plan_build_test.py` (not fan-out chains; recorded in Notes)
 
 #### 3. Greenfield render smoke (the first deliberate pristine bump)
 
-- [ ] In `../greenfield-sandboxes`, rewrite `apps/app/app.test.ts` so a minimal document stub is installed at the top of the file, **before** any import of `./main.ts` (module scope runs once, and the first import wins). Stub: `globalThis.document = { getElementById: (id) => id === "app" ? appEl : null }`, where `appEl` is a plain object with `textContent: ""`. Keep the existing "module graph loads" test and add "renders into #app on import", asserting `appEl.textContent !== ""`. A header comment tells agents: the stub is the render smoke; when the UI grows (`createElement`, SVG, events), extend the stub so this test keeps executing the real render path. Never delete it to make the suite pass
-- [ ] `bun test apps/app/app.test.ts` in the checkout — 2 pass
-- [ ] Commit in the checkout: `shell: render smoke — the fixed suite executes main.ts's render path`
-- [ ] Confirm the guard fires first: `just target sync greenfield --dry-run; echo $?` → `5`, naming `apps/app/app.test.ts`
-- [ ] Bump `target.pristine` in `targets/greenfield.yaml` to that commit's full sha, with a dated comment line saying why
-- [ ] `just target sync greenfield --dry-run; echo $?` → `0`
+- [x] In `../greenfield-sandboxes`, rewrite `apps/app/app.test.ts` so a minimal document stub is installed at the top of the file, **before** any import of `./main.ts` (module scope runs once, and the first import wins). Stub: `globalThis.document = { getElementById: (id) => id === "app" ? appEl : null }`, where `appEl` is a plain object with `textContent: ""`. Keep the existing "module graph loads" test and add "renders into #app on import", asserting `appEl.textContent !== ""`. A header comment tells agents: the stub is the render smoke; when the UI grows (`createElement`, SVG, events), extend the stub so this test keeps executing the real render path. Never delete it to make the suite pass
+- [x] `bun test apps/app/app.test.ts` in the checkout — 2 pass
+- [x] Commit in the checkout: `shell: render smoke — the fixed suite executes main.ts's render path`
+- [x] Confirm the guard fires first: `just target sync greenfield --dry-run; echo $?` → `5`, naming `apps/app/app.test.ts`
+- [x] Bump `target.pristine` in `targets/greenfield.yaml` to that commit's full sha, with a dated comment line saying why
+- [x] `just target sync greenfield --dry-run; echo $?` → `0`
 
 #### Validation — Phase 3
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Fixture — undeclared name: in a scratch worktree of `refs/sandbox/gf-e2e-20260917-cbb166` (`git -C ../greenfield-sandboxes worktree add $SCRATCH/wt refs/sandbox/gf-e2e-20260917-cbb166`), `sed` `String(keys[i].signature.count)` → `String(idx)` in `apps/app/ui/circle-wheel.ts`, then run the exact `typecheck` argv from `quality.py` → non-zero, output contains `TS2304: Cannot find name 'idx'`; `bun build --target=browser apps/app/main.ts --outdir $SCRATCH/b` → exit 0 (proves the old gate would have passed it). Remove the worktree
-- [ ] Fixture — clean shell: the typecheck argv run in `../greenfield-sandboxes` → exit 0
-- [ ] Default target: the typecheck argv run in this repo (entry `apps/fretboard/main.ts`) → exit 0
-- [ ] `uv run adws/adw_quality.py "typecheck gate smoke"` on the host is **not** run (Hard rule: never run ADWs on the host). Instead: `uv run --with pydantic --with pyyaml python -c 'import sys; sys.path.insert(0,"adws"); from adw_modules import quality; print(quality.TSC_VERSION, hasattr(quality,"run_verify"))'` → `7.0.2 True`
-- [ ] `grep -n 'run_verify' adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py` — 2 hits in each; `grep -n 'run_tests' adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py` — none
-- [ ] `just target show greenfield | grep 'pristine: ok'` — guard passes on the bumped sha
-- [ ] `git -C ../greenfield-sandboxes status --short` — empty
+- [x] Fixture — undeclared name: in a scratch worktree of `refs/sandbox/gf-e2e-20260917-cbb166` (`git -C ../greenfield-sandboxes worktree add $SCRATCH/wt refs/sandbox/gf-e2e-20260917-cbb166`), `sed` `String(keys[i].signature.count)` → `String(idx)` in `apps/app/ui/circle-wheel.ts`, then run the exact `typecheck` argv from `quality.py` → non-zero, output contains `TS2304: Cannot find name 'idx'`; `bun build --target=browser apps/app/main.ts --outdir $SCRATCH/b` → exit 0 (proves the old gate would have passed it). Remove the worktree
+- [x] Fixture — clean shell: the typecheck argv run in `../greenfield-sandboxes` → exit 0
+- [x] Default target: the typecheck argv run in this repo (entry `apps/fretboard/main.ts`) → exit 0
+- [x] `uv run adws/adw_quality.py "typecheck gate smoke"` on the host is **not** run (Hard rule: never run ADWs on the host). Instead: `uv run --with pydantic --with pyyaml python -c 'import sys; sys.path.insert(0,"adws"); from adw_modules import quality; print(quality.TSC_VERSION, hasattr(quality,"run_verify"))'` → `7.0.2 True`
+- [x] `grep -n 'run_verify' adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py` — 2 hits in each; `grep -n 'run_tests' adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py` — none
+- [x] `just target show greenfield | grep 'pristine: ok'` — guard passes on the bumped sha
+- [x] `git -C ../greenfield-sandboxes status --short` — empty
 
 ### Phase 4: Keep rejected work — `just sbx manage snapshot`
 

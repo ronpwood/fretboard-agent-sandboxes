@@ -36,7 +36,13 @@ target:
   # Sync refuses (exit 5) otherwise — that is what a sandbox run merged into main
   # looks like. Bump pristine ONLY by a deliberate edit here, when the shell itself
   # is meant to change, so the decision is recorded in this repo's history.
-  pristine: c9b98d1e1dbd06e99cc64c644e8880d885587e71
+  # 2026-09-17: bumped from c9b98d1e1dbd (empty shell) to add the render smoke to
+  # apps/app/app.test.ts. `bun test` has no DOM, so main.ts's module-scope render
+  # was never executed by the suite — the typecheck gate catches undeclared names,
+  # but only a test that actually renders catches code that type-checks and then
+  # throws while drawing. This is the first deliberate bump, and it is what the
+  # escape hatch is for: the guard correctly refused (exit 5) until this line moved.
+  pristine: 0382e2757f3fb3e64f4079ce678df1079fc8fafd
   pristine_paths:
     - apps
   leak_patterns:                      # extra, target-specific; app names are derived, never listed
