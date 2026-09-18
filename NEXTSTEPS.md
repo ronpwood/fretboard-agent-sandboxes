@@ -2032,3 +2032,71 @@ can claim one id. Precompute ids and pass them to `create`.
 Stop ranking on accept/reject · browser in `run_verify` · guard invariant in the test_designer
 prompt + protect the harness block · re-examine merged-edit advice · retire part A items 2/3/6/7/9/10
 and part B item 14 · make the red gate mean something on greenfield.
+
+---
+
+## 2026-09-18e — a real browser in `run_verify`
+
+Follow-up #2 from the fan-out 3 results, applied. `run_verify` is now
+**[lint, typecheck, tests, render]**; `adws/adw_modules/render_smoke.py` carries the rationale.
+
+**Why, in one line:** all six fan-out 3 arms passed lint + typecheck + every test, and two did not
+work — both surviving defect classes were render-only. happy-dom closed crash-on-load but does no
+**layout** and no **hit-testing**.
+
+It asserts four things nothing else in the chain checks: the real bundle loads in a real chromium
+without an uncaught error; it draws; **no interactive element is completely unreachable**; and
+**clicking the controls neither throws nor blanks the page**. That last one is new signal outright —
+every gate we had was load-time, and part B item 11 has been a manual judgement until now.
+
+### Scope, stated honestly rather than overclaimed
+
+- **CATCHES gf3-5.** Verified against the harvested tree: `8 interactive element(s) are completely
+  unreachable — every point is covered by path.slice`. That is the one wrong SVG large-arc-flag,
+  found generically, with no app-specific knowledge.
+- **Does NOT catch gf3-6.** Its wheel sectors carry no cursor, no role and no handler — from a
+  machine's view there is no control there, only a drawing. The wheel is **absent, not broken**, and
+  a gate cannot detect a missing feature. That is the rubric's job. Widening the interactive
+  heuristic to every SVG path would trade signal for noise; the file says so, so nobody
+  re-proposes it blind.
+
+### False positives were the thing to get right
+
+`no-explicit-any` was measured and rejected for `run_verify` for exactly this reason, so the same
+bar applied. **The first cut flagged gf3-2, which works.** Two causes, both real:
+
+1. `cursor: pointer` **inherits**, so label `<span>`s inside a `<button>` were tested as separate
+   controls — then reported as "covered by" their own parent.
+2. A wedge-shaped button has its bounding-box centre over the wheel hub, so centre-biased sampling
+   calls a working control unreachable.
+
+Fixed by testing only the **outermost** interactive element in a chain, and by sampling each
+control's **descendants'** boxes as well as its own. All five working arms plus the default
+fretboard app now pass; only gf3-5 fails.
+
+### Mutation-checked five ways
+
+Full-screen overlay (→ 77 unreachable), a click handler that throws, a blank render, a module-scope
+throw, and restored baseline. **The click mutation exposed a reporting bug**: an interaction-time
+error was labelled "on load", which would send a builder to the wrong place. Load errors are now
+frozen before the interaction pass and the two phases are reported separately, naming the control.
+
+### Cost, and the deliberate reversal
+
+~35 s per verify, and a chromium download per mount. **Exit 2 ("could not look at all") degrades to
+a non-blocking SKIP**, so a missing browser or a slow CDN leaves the chain exactly as it was instead
+of failing every arm of a fan-out. `provision.sh` installs chromium best-effort with the same retry
+the `just` installer uses, for the same reason — a shared egress IP makes N concurrent arms N
+simultaneous downloads.
+
+This **reverses** the 2026-09-18 "keep chromium off the VM" decision on purpose. That call was right
+about cost and wrong about coverage: `shot` runs after the chain is over, so it can only record a
+defect, never repair one. **A gate has to live where a failure can still be fixed.**
+
+### Gotcha worth keeping
+
+`bun index.html` binds the **IPv6 loopback only** — measured with bun 1.3.0: `127.0.0.1` refused,
+`localhost` and `[::1]` both 200. A readiness probe hardcoded to `127.0.0.1` waits out its entire
+timeout against a server that has been serving since millisecond four. Resolve the name and try
+every family, as a browser does.
+
