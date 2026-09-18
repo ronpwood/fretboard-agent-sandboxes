@@ -319,42 +319,43 @@ first design review this factory has ever had. Cost: a heavier image and a slowe
 | H4 | asymmetric beats both default arms by more than they differ from each other | **NOT SUPPORTED** — ties the ceiling while using the most tokens in the run (29.2M), still rejected; within-condition spread (6 pts) exceeds between-condition |
 | H5 | inverse beats both default arms by more than their spread | **NOT SUPPORTED** — lowest score (12) and shipped a crash, despite the best token efficiency (3.3M, 6.4× better than gf2-1) and best tool-use metrics in the run. Efficiency did not convert into a working app |
 
-## Follow-ups (none applied — all need review)
+## Follow-ups
 
-**Items 1 and 2 are a pair and should land together**: one removes the cause of this run's crashes,
-the other detects any crash at all. If only one gets done, do the browser — a stub fix prevents the
-failure we happened to find; a load check catches the ones we have not.
+**Applied 2026-09-18** (after review, same morning):
 
-1. **Seal or replace the render stub** — removes the *cause* found in this run. Preferred:
-   `happy-dom`. Minimum: `#private` storage + freeze, and forbid production code from referencing
-   it. Also rewrite the header comment: the rule is "do not reference this from production", not
-   merely "do not delete this test".
+- **#1 stub → happy-dom.** Greenfield commit `4d6e63bd`, `target.pristine` bumped to it. Verified
+  against the real crashed code from both arms: gf2-1 now fails with
+  `undefined is not an object (evaluating 'btn.classNameSet.add')` and gf2-4 with
+  `Attempting to change configurable attribute of unconfigurable property` — the same errors the
+  browser reported, now inside the fix loop. `configurable: false` on the document binding is the
+  load-bearing part; without it the gf2-4 class still passes.
+- **#2 scope corrected, then done host-side.** Building #1 showed the browser is **not needed for
+  crash detection** — happy-dom catches both classes. So `just sbx manage shot <run-id>` records
+  what shipped (screenshot + console errors) from the host, where a browser already exists, rather
+  than putting ~190 MB of chromium on every arm. It is an observation, not a gate: gating belongs in
+  the fix loop.
+- **#2b reviewer design criteria.** Root cause was sharper than "blind": the reviewer prompt said
+  *"Not your job: … style opinions …"*, so it was **instructed** to ignore the UI. Now split — code
+  style stays out of scope, the delivered interface is a requirement.
 
-2. **Put a headless browser in the chain** — the *detection* half, and the broadest single change
-   available. One provisioning change buys two things (§6):
-   - a **load assertion** in `run_verify` (zero console errors on open), which would have caught
-     both gf2-1 and gf2-4 — every gate in this run was green on two apps that crash;
-   - a **screenshot in the reviewer's context**, giving the factory its first design review. The
-     reviewer is not negligent about design, it is blindfolded; no prompt fixes a missing sense.
+**Still open:**
 
-   Cost: a heavier VM image and a slower provision.
-
-3. **Generalize the `path` bullet** to every file tool (`edit`, `write`, `read`) and strengthen the
+1. **Generalize the `path` bullet** to every file tool (`edit`, `write`, `read`) and strengthen the
    non-overlap constraint on multi-edit calls. *Cheapest win on the list — H1 already proved the
    mechanism works, this just widens its scope.*
 
-4. **Fix the tsc CSS false positive** — `declare module "*.css";` in the greenfield shell (another
+2. **Fix the tsc CSS false positive** — `declare module "*.css";` in the greenfield shell (another
    deliberate pristine bump).
 
-5. **Add `lint` to `run_verify`** so `no-explicit-any` runs in the chain. Both crashes hid behind
+3. **Add `lint` to `run_verify`** so `no-explicit-any` runs in the chain. Both crashes hid behind
    explicit `any`, which tsc cannot see in either mode.
 
-6. **Rework the rubric** for headroom, with **no cost item** (§5).
+4. **Rework the rubric** for headroom, with **no cost item** (§5).
 
-7. **Test seat *pairs*, not single seats** (§3) — upgrading the planner alone taxed the flash
+5. **Test seat *pairs*, not single seats** (§3) — upgrading the planner alone taxed the flash
    test_designer downstream.
 
-8. **Add a `model-format` error kind to `trace_metrics.py`** so DSML-style corruption is not folded
+6. **Add a `model-format` error kind to `trace_metrics.py`** so DSML-style corruption is not folded
    into `schema`/`other`. Provider bugs and instruction-following failures have different owners and
    should not share a bucket.
 

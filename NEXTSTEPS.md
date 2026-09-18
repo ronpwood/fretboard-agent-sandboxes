@@ -1732,3 +1732,70 @@ should upgrade **seat pairs**, not single seats.
 6. Rework the rubric — gf2-2 and gf2-3 both hit 20/20 despite an 11.7× cost difference.
 7. Add a `model-format` error kind to `trace_metrics.py` (deepseek leaked DSML markup into JSON
    arguments on gf2-1; that is a provider bug, not an instruction-following failure).
+
+---
+
+## 2026-09-18b — the two crash fixes, and a scope correction found by building them
+
+Follow-ups 1 and 2 from the fan-out 2 results, done together.
+
+### happy-dom replaces the hand-rolled stub (greenfield `4d6e63bd`, pristine bumped)
+
+**The browser turned out not to be needed for crash detection.** A real DOM plus one detail —
+binding `document` with `configurable: false`, as a browser does — catches *both* crash classes
+inside `bun test`, in the fix loop. Verified against the actual crashed code from both arms, not a
+reconstruction:
+
+```
+gf2-1  TypeError: undefined is not an object (evaluating 'btn.classNameSet.add')
+gf2-4  TypeError: Attempting to change configurable attribute of unconfigurable property
+```
+
+Those are the same errors the browser reported. Without `configurable: false`, gf2-4's class still
+passes — happy-dom alone is not enough, and that one flag is the difference.
+
+Mutation-checked four ways (render removed, invented property, redefined document, clean → 2 pass),
+confirmed to run from the repo root the way `quality.tests()` invokes it, and lint/typecheck/build
+all still exit 0. `bun.lock` is committed so every arm resolves the same dependency, for the same
+reason oxlint and tsc are pinned. No provisioning change: `provision.sh` already runs `bun install`
+for `apps/*/` when a `package.json` exists.
+
+**The lesson, generalized:** a test double that is not API-faithful is an attractive nuisance. The
+instruction to *extend* the old stub made it worse — agents extended it, invented APIs on it, and
+shipped dependencies on those inventions. A real implementation fails the same way production does,
+which is the only property that matters in a test double.
+
+### The reviewer was told to ignore design
+
+Root cause is sharper than "blind". The reviewer prompt read *"Not your job: running tests, style
+opinions, refactors"* — so it was **instructed** to skip the UI. That is why gf2-2's reviewer
+produced 9 rigorous line-cited blocking findings and never noted the app had no styling at all.
+
+Now split: CODE-style opinions (formatting, naming) stay out of scope; the **delivered interface is
+a requirement** — does it apply any styling at all, is there a visible hierarchy, are controls
+distinguishable from static text. Bounded honestly: the reviewer reads source, so *absence* of
+styling is checkable and whether a palette is attractive is not.
+
+I had written that the reviewer was "blindfolded, and no prompt fixes a missing sense." Half wrong,
+and worth correcting: presence of styling is visible in source; only design *quality* needs sight.
+
+### `just sbx manage shot <run-id>` — records what shipped
+
+Screenshot + console errors from the **host**, where a browser already exists. Chromium is ~190 MB
+and would buy nothing on the VM that happy-dom does not already cover in the fix loop, so it stays
+off the arms. **Deliberately not a gate** — exits 0 on a crashed page and reports the crash, because
+gating belongs where a failure can still be repaired.
+
+Verified against a locally served shell, clean and crashed. One fact worth keeping: **under Bun's
+dev server a module-scope TypeError arrives on `console`, not `pageerror`**, because the HMR client
+catches it. My first code comment asserted the opposite. The script now watches both channels and
+also reports rendered-text length, which is the signal that does not depend on how a dev server
+chooses to report an exception — a crashed page shows 0 chars.
+
+Run `just sbx lifecycle refresh <id>` before `shot`, or you photograph a stale bundle.
+
+### Still open
+
+`path` bullet generalization · tsc CSS false positive (`declare module "*.css";`) · `lint` in
+`run_verify` · rubric headroom with no cost item · seat-pair experiment · `model-format` error kind
+in `trace_metrics.py`.
