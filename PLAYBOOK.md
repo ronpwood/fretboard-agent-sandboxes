@@ -119,11 +119,18 @@ just sbx run cmd <run-id> 'git add -A && git commit -m "Fix <one-line summary>"'
 ## 5. Harvest the commits home
 
 ```
-just sbx manage snapshot <run-id> "<why>"          # FIRST, if the tree is dirty — see below
+just sbx lifecycle refresh <run-id>                # fresh bundle FIRST, or you photograph stale bytes
+just sbx manage shot     <run-id>                 # what actually shipped: screenshot + console errors
+just sbx manage snapshot <run-id> "<why>"          # if the tree is dirty — see below
 just sbx manage harvest  <run-id>
 just sbx manage traces   <run-id> [sssf-session-id]   # the thinking, not the commits
 just sbx manage trace-metrics <run-id>                # how hard the agents fought their tools
 ```
+
+**Look at the page before you judge the run.** On 2026-09-18 two arms had green tests, zero type
+errors and a reviewer's partial sign-off, and threw a TypeError on load. `shot` is an observation,
+not a gate — it exits 0 on a crashed page and records the crash — because the gate belongs in the
+fix loop, where `happy-dom` now catches render failures while they can still be fixed.
 
 **Harvest carries commits only.** When review rejects a build the TDD chain leaves the
 code uncommitted on purpose, and a crashed or killed chain leaves the same dirty tree —

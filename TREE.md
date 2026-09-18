@@ -68,6 +68,9 @@ just/sandbox/         the `sbx` namespace. HOST-ONLY: needs the exe.dev account 
                       from the PULLED traces. Reads no VM, so it still works after teardown.
     snapshot.just     `snapshot <run-id> "<why>"`: commit a dirty VM tree onto sbx/<run-id> so
                       harvest can carry a build review rejected. Pipes the guest script over ssh.
+    shot.just         `shot <run-id>`: screenshot the live app and record its console errors.
+                      HOST-side (chromium is ~190 MB; happy-dom already gates crashes in the
+                      chain). An observation, not a gate — exits 0 on a crashed page.
     reap.just         revoke orphaned sbx- keys. Dry run by default.
   run/                put work in, or look inside.
     mod.just          `run cmd` (inspect, synchronous) and `run agent` (resumable Claude Code
@@ -86,6 +89,9 @@ host/target_sync.py   `just target sync`: regenerate a target repo's factory fro
                       guard, gates, neutral commit, optional push, provenance json.
 host/runs_table.py    renders `just sbx manage list`. A file, not embedded, because an unindented
                       line inside a just recipe body TERMINATES the recipe.
+host/shoot_app.py     screenshot a run's live app + capture console/page errors, via playwright
+                      on the HOST. Watches BOTH error channels and the rendered text length: under
+                      Bun's dev server a module-scope throw lands on console, not pageerror.
 host/trace_metrics.py per-agent tool calls, errors and error kinds out of a pulled traces dir.
                       Counts unparseable lines rather than dropping them — a truncated trace
                       must not read as a clean, low error rate.
