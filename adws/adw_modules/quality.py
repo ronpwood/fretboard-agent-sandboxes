@@ -263,17 +263,18 @@ def run_verify(run, extra_files: list[str] | None = None) -> QualityResult:
     loop per gate. `run_tests` stays as it was for the chains that only want the
     suite.
 
-    `lint` runs oxlint's DEFAULT rules, which every tree passes today (greenfield
-    shell, the fretboard target, and all four 2026-09-18 arms). It is here for the
-    ordinary lint errors the TDD chain never checked, not as a crash gate.
+    `lint` runs oxlint's DEFAULT rules, which every tree passes today — the
+    greenfield shell, the default payload app, and all four 2026-09-18 arms. It is
+    here for the ordinary lint errors the TDD chain never checked, not as a crash
+    gate.
 
     It deliberately does NOT enable `typescript/no-explicit-any`, though that was
     the original reason for adding lint: both 2026-09-18 browser crashes hid
     behind an explicit `any` (`h(): any`, `Map<string, any>`), which defeats tsc
     in strict and non-strict mode identically. Measured before deciding — the
     rule WOULD have flagged both crashed arms (55 and 5 errors), but it also
-    flags the arm that worked and shipped (6) and the default fretboard target
-    (2). A gate that fails working code to catch a hazard that `happy-dom` now
+    flags the arm that worked and shipped (6) and the default payload app (2).
+    A gate that fails working code to catch a hazard that `happy-dom` now
     catches directly is a bad trade, so it stays off. Revisit only if a future
     crash slips past the fixed suite.
     """
