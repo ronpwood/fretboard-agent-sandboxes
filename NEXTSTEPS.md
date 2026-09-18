@@ -1649,3 +1649,86 @@ gate" line is now SIX.
 - Watch H2 in the fan-out: 13 of the harvested tree's 15 non-strict errors were TS2345
   (number→string arguments). If a first build burns a whole fix loop purely on those, consider
   failing only on undeclared names (TS2304/TS2552).
+
+---
+
+## 2026-09-18 — greenfield fan-out 2 (N=4, judged): H1 won, my two new gates lost
+
+Full scorecard: `specs/greenfield-fanout-2-results.md`. Four arms, one prompt, one pin
+(`da460ca6`), **$11.28 billed** against a $75 cap. All four torn down, keys revoked and verified
+absent.
+
+| arm | roster | outcome | tokens | billed | rubric /20 |
+|---|---|---|---|---|---|
+| gf2-1 | default | ✗ rejected | 21.2M | $1.14 | 14 |
+| gf2-2 | default | **✓ accepted** | 12.7M | **$0.66** | **20** |
+| gf2-3 | asymmetric (opus-5 plan+review) | ✗ rejected | 29.2M | $7.73 | 20 |
+| gf2-4 | inverse (kimi-k3 builder) | ✗ rejected | 3.3M | $1.75 | 12 |
+
+**The cheapest arm won. Both frontier arms failed.**
+
+### What worked
+
+**H1 CONFIRMED.** The builder tool-contract section cut `edit` schema failures from 18 to 0–2 in
+every arm; the three deepseek arms agree (2, 2, 1). Builder error rate 15.6% → 2.1–5.5%. The
+residual moved off `edit` onto `write` and `read`, and the glm-5.3 **reviewer** hit the same
+`write` missing-`path` error, so it is a general pattern against this tool schema, not a deepseek
+quirk. Generalize the bullet to every file tool.
+
+`just sbx manage snapshot` earned its place three times — gf2-1, gf2-3 and gf2-4 all finished
+rejected with dirty trees, and all three builds would have died at teardown without it.
+
+### What failed, and it is my own work
+
+**H2 FAILED.** `quality typecheck` ran in all four arms and **passed every time**. Zero defects
+caught, never entered a fix loop. It also has a false positive: `import "./styles.css"` fails with
+TS2882 while `bun build` accepts it; gf2-2 only dodged it by using a `<link>` tag.
+
+**H3 FAILED, and caused harm.** The render smoke put test-double code into the production source of
+**all four** arms (gf2-3 ships an entire `apps/app/testing/fake-dom.ts` inside the app), and
+**crashed two of them in a browser**:
+
+- gf2-1 — `main.ts` reached past the DOM API into the stub's internal `classNameSet` field.
+- gf2-4 — `main.ts` ran `Object.defineProperty(globalThis, "document", …)` to cooperate with the
+  stub; `document` is non-configurable in a browser, so it throws at module load. Its neighbouring
+  `try { render(); } catch {}` also made the smoke test structurally unable to fail.
+
+The plan predicted the stub might go *vacuous*. Instead agents extended it enthusiastically,
+invented APIs on it, and depended on those inventions in production. **An unfaithful test double is
+an attractive nuisance**, and telling agents to extend it made that worse.
+
+tsc cannot see either crash in strict **or** non-strict mode — verified, both 0 errors. The hole is
+explicit `any`, which defeats both. `oxlint`'s `no-explicit-any` would flag it, but `lint` is not in
+`run_verify` or the TDD chain. That gap is mine.
+
+**The damning summary: all four arms had green tests and 0 tsc errors. Two of them do not run.**
+
+### Unplanned finding — a frontier planner taxes the flash seats downstream
+
+`test_designer` is deepseek in every roster, giving four samples on one task. Opus-5's plan was ~2×
+the size of the flash plans, and the flash test_designer spent **4× the tokens, 3–4× the tool calls
+and 46 minutes** on it — producing *fewer* test lines than a flash-planned arm. Asymmetric rosters
+should upgrade **seat pairs**, not single seats.
+
+### Also
+
+- Fixed mid-run: `just sbx manage snapshot` truncated multi-word reasons to the first word
+  (`ssh host bash -s -- a b c` joins argv; the remote shell re-splits). `printf %q`, verified live.
+- Fixed mid-run: every local `ssh` in `just/sandbox/` now has `< /dev/null`. A `while read … done <
+  arms.tsv` mount loop had silently mounted exactly one of four arms.
+- The plan's "2 shared vCPU caps the fan-out" note is **wrong** and cost ~40 min of needless
+  serialization; the run records show 3–5 concurrent arms completing fine. Corrected in the plan.
+- Billed ($11.28) ran ~84% of traced ($13.39). Use the billed column.
+
+### Next (nothing applied — all need review)
+
+1. **Seal or replace the render stub** — `happy-dom`, or `#private` storage + freeze. Highest value.
+2. **Add a real load check to the chain**: headless page load asserting zero console errors. Every
+   gate was green on two apps that crash on open; this is the single change most likely to move
+   outcomes.
+3. Generalize the `path` bullet to `edit`/`write`/`read`; strengthen non-overlap.
+4. `declare module "*.css";` in the greenfield shell (fixes the TS2882 false positive).
+5. Add `lint` to `run_verify`.
+6. Rework the rubric — gf2-2 and gf2-3 both hit 20/20 despite an 11.7× cost difference.
+7. Add a `model-format` error kind to `trace_metrics.py` (deepseek leaked DSML markup into JSON
+   arguments on gf2-1; that is a provider bug, not an instruction-following failure).

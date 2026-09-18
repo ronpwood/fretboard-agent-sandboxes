@@ -4,18 +4,29 @@ created: 2026-09-17T06:12:03-07:00
 modified:
   - 2026-09-17T06:12:03-07:00
   - 2026-09-17T06:22:53-07:00
+  - 2026-09-18T07:05:00-07:00
 commits:
   - b3e4629
+  - 7785a70
+  - 257f2c4
+  - 1742f7f
+  - 953029b
+  - a6a6eac
+  - 5ae5a66
+  - 9e8d38b
+  - 0e22f7d
 agents:
   - claude-opus-5[1m]
 sessions:
   - 81d4f414-33e2-42a8-86ee-469f12ff2a87
+  - f2d194d8-161e-4061-be71-2eec59f951ae
 back_refs:
   - specs/greenfield-target.md — named targets, `just target sync`, the pristine guard, and the gf-e2e-20260917-cbb166 run whose traces are this plan's baseline
   - specs/greenfield-cof-experiment.md — the hidden /20 rubric and the 2026-08-28 N=3 control scores (15 / 9 / 19) Phase 5 is judged against
   - specs/tdd-red-gate-phase.md — `adw_tdd_sdlc.py`, whose verify step Phase 3 changes
-forward_refs: []
-status: building
+forward_refs:
+  - specs/greenfield-fanout-2-results.md — the Phase 5 scorecard, verdicts on all five hypotheses, and the follow-ups they generated
+status: complete
 ---
 
 # Plan: Fan-out readiness + team quality
@@ -307,50 +318,50 @@ N=4, TDD chain, one pin, same prompt (`prompts/greenfield.md`, unchanged since 2
 
 #### 1. Prepare
 
-- [ ] `wip` Commit Phases 1–4 in this repo, then `just target sync greenfield --dry-run` (expect the builder prompt, `quality.py`, both chains, setup, snapshot, trace-metrics as changes; pristine ok; zero leaks; gates green), then `just target sync greenfield --push` **with approval**. Record `PIN=target_sha`
+- [x] `wip` Commit Phases 1–4 in this repo, then `just target sync greenfield --dry-run` (expect the builder prompt, `quality.py`, both chains, setup, snapshot, trace-metrics as changes; pristine ok; zero leaks; gates green), then `just target sync greenfield --push` **with approval**. Record `PIN=target_sha`
 - [x] `adws/adw_sssf_config/sssf.asymmetric.config.yaml`: copy of `sssf.config.yaml` with the `planner` and `reviewer` agents' `model:` set to `openrouter/anthropic/claude-opus-5`; header comment "the 2026-08-28 judge's designed next experiment: frontier plan + review, flash build". It must be committed **before** the sync above, so it ships to the VMs. `agents.validate` passes on the host, and `grep -n 'claude-opus-5' sandbox_mount/guest/models.json.tmpl` shows opus-5 is registered with four cost fields
 - [x] `adws/adw_sssf_config/sssf.inverse.config.yaml`: copy of `sssf.config.yaml` with the `builder` agent's `model:` set to `openrouter/moonshotai/kimi-k3`; header comment "inverse of asymmetric: flash plan + review, frontier builder (2026-09-17 hypothesis: a good plan still misses when the builder is weak)". Committed before the sync; `agents.validate` passes; `grep -n 'moonshotai/kimi-k3' sandbox_mount/guest/models.json.tmpl` shows it registered with four cost fields
-- [ ] Budget check before mounting: read rates from `models.json.tmpl` (on 2026-09-17: opus-5 5.0/25.0, kimi-k3 3.0/15.0 per M). The builder role consumed 12.0M tokens on 2026-09-17, so it's the expensive seat. Limits: default arms `--limit 10`, asymmetric `--limit 25`, inverse `--limit 30`. State all four limits to the user in the go-ahead request
+- [x] Budget check before mounting: read rates from `models.json.tmpl` (on 2026-09-17: opus-5 5.0/25.0, kimi-k3 3.0/15.0 per M). The builder role consumed 12.0M tokens on 2026-09-17, so it's the expensive seat. Limits: default arms `--limit 10`, asymmetric `--limit 25`, inverse `--limit 30`. State all four limits to the user in the go-ahead request
 - [x] Capacity: **the two-wave plan was wrong and was abandoned mid-run** — see the corrected Notes bullet. Mounting one at a time is still sensible (it keeps mint/clone failures attributable to one arm), but executes fire together: the run records show 3–5 concurrent arms completing fine, and each guest sees the full 2 vCPU / 7.9 GB. Record wall clock as non-comparable, which it is either way. Actual: arms 1+2 executed 03:29, arms 3+4 at 03:52 after the pacing was corrected
 
 #### 2. Run
 
-- [ ] For `i` in 1..4 (`ROSTER` = `sssf.config.yaml`, `sssf.config.yaml`, `sssf.asymmetric.config.yaml`, `sssf.inverse.config.yaml`): `ID=$(sandbox_mount/host/run_record.py new-id gf2-$i)`; `just sbx lifecycle create "$ID" --target greenfield --limit <limit>`; `fill "$ID" "$PIN"`; `setup "$ID" "adws/adw_sssf_config/$ROSTER"` (gate C now really pings that roster); `observe "$ID"`. Confirm `pin from last sync` / gate-A sha equals `PIN` for all four
-- [ ] Execute all four: `just sbx lifecycle execute "$ID" prompts/greenfield.md "adws/adw_sssf_config/$ROSTER" tdd` (in waves, per the capacity task). Watch with `just sbx run cmd "$ID" 'tail -5 run.log'`, and wait for all four to exit (a background poll on each recorded pid)
-- [ ] Per arm, after it exits: `just sbx lifecycle refresh "$ID"`; if `git status --porcelain` on the VM is non-empty, `just sbx manage snapshot "$ID" "<chain outcome, e.g. review_2 rejected: 20/23>"`; then `just sbx manage harvest "$ID"` and `just sbx manage traces "$ID"`
-- [ ] Before teardown, screenshot each arm's review URL (home plus the two most important views), as `specs/greenfield-judge/` did. Record per-arm billed spend with `just sbx manage list` after teardown writes it
+- [x] For `i` in 1..4 (`ROSTER` = `sssf.config.yaml`, `sssf.config.yaml`, `sssf.asymmetric.config.yaml`, `sssf.inverse.config.yaml`): `ID=$(sandbox_mount/host/run_record.py new-id gf2-$i)`; `just sbx lifecycle create "$ID" --target greenfield --limit <limit>`; `fill "$ID" "$PIN"`; `setup "$ID" "adws/adw_sssf_config/$ROSTER"` (gate C now really pings that roster); `observe "$ID"`. Confirm `pin from last sync` / gate-A sha equals `PIN` for all four
+- [x] Execute all four: `just sbx lifecycle execute "$ID" prompts/greenfield.md "adws/adw_sssf_config/$ROSTER" tdd` (in waves, per the capacity task). Watch with `just sbx run cmd "$ID" 'tail -5 run.log'`, and wait for all four to exit (a background poll on each recorded pid)
+- [x] Per arm, after it exits: `just sbx lifecycle refresh "$ID"`; if `git status --porcelain` on the VM is non-empty, `just sbx manage snapshot "$ID" "<chain outcome, e.g. review_2 rejected: 20/23>"`; then `just sbx manage harvest "$ID"` and `just sbx manage traces "$ID"`
+- [x] Before teardown, screenshot each arm's review URL (home plus the two most important views), as `specs/greenfield-judge/` did. Record per-arm billed spend with `just sbx manage list` after teardown writes it
 
 #### 3. Judge
 
-- [ ] Host-side judge per arm, one at a time, in a scratch worktree of `refs/sandbox/<id>` in the greenfield checkout, with `specs/greenfield-cof-experiment.md` § Hidden rubric in its context. The rubric never enters a VM or `prompts/`
-- [ ] Score columns per arm in `specs/greenfield-fanout-2-results.md`: rubric /20 (with per-item scores and one-line justifications) · chain outcome (accepted, or rejected at review N with requirements met/total) · `TestDesignOutput.cases[].requirement` coverage (cross-graded, per the 2026-08-27 lesson: generated suites over-spec) · typecheck exit and error count on the final tree · builder tool-error rate and `edit` schema failures (`trace-metrics`) · tokens · trace cost · **billed spend** (run record) · roster · wall clock (flagged non-comparable)
-- [ ] A "vs control" table: 2026-08-28 gf-1/2/3 rubric scores (15 / 9 / 19) beside this run's four, plus the baseline builder tool-error figures (18 schema failures, 16% rate) beside the two default arms' figures
-- [ ] Verdicts, one line each, on the five hypotheses: (H1) the builder tool contract cuts schema failures to ≤3; (H2) the tsc gate catches at least one real defect during a fix loop (grep each arm's `run.log` for `typecheck` failures); (H3) the render smoke surfaces a render crash before review, or its stub was extended rather than deleted; (H4) the asymmetric arm's rubric score beats both default arms by more than the default arms differ from each other, and at what cost ratio; (H5) the inverse arm's rubric score beats both default arms by more than their spread, and how it ranks against the asymmetric arm, i.e. which seat (plan+review vs build) buys more score per dollar. Also compare the inverse arm's builder tool-error rate against the default arms' (kimi-k3 with vs deepseek-flash with the same tool contract)
+- [x] Host-side judge per arm, one at a time, in a scratch worktree of `refs/sandbox/<id>` in the greenfield checkout, with `specs/greenfield-cof-experiment.md` § Hidden rubric in its context. The rubric never enters a VM or `prompts/`
+- [x] Score columns per arm in `specs/greenfield-fanout-2-results.md`: rubric /20 (with per-item scores and one-line justifications) · chain outcome (accepted, or rejected at review N with requirements met/total) · `TestDesignOutput.cases[].requirement` coverage (cross-graded, per the 2026-08-27 lesson: generated suites over-spec) · typecheck exit and error count on the final tree · builder tool-error rate and `edit` schema failures (`trace-metrics`) · tokens · trace cost · **billed spend** (run record) · roster · wall clock (flagged non-comparable)
+- [x] A "vs control" table: 2026-08-28 gf-1/2/3 rubric scores (15 / 9 / 19) beside this run's four, plus the baseline builder tool-error figures (18 schema failures, 16% rate) beside the two default arms' figures
+- [x] Verdicts, one line each, on the five hypotheses: (H1) the builder tool contract cuts schema failures to ≤3; (H2) the tsc gate catches at least one real defect during a fix loop (grep each arm's `run.log` for `typecheck` failures); (H3) the render smoke surfaces a render crash before review, or its stub was extended rather than deleted; (H4) the asymmetric arm's rubric score beats both default arms by more than the default arms differ from each other, and at what cost ratio; (H5) the inverse arm's rubric score beats both default arms by more than their spread, and how it ranks against the asymmetric arm, i.e. which seat (plan+review vs build) buys more score per dollar. Also compare the inverse arm's builder tool-error rate against the default arms' (kimi-k3 with vs deepseek-flash with the same tool contract)
 
 #### 4. Close
 
-- [ ] Tear down all four: `just sbx lifecycle teardown "$ID"` (each clean; keys absent)
-- [ ] `NEXTSTEPS.md` dated entry: the scorecard summary, the five verdicts, and anything that broke
+- [x] Tear down all four: `just sbx lifecycle teardown "$ID"` (each clean; keys absent)
+- [x] `NEXTSTEPS.md` dated entry: the scorecard summary, the five verdicts, and anything that broke
 
 #### Validation — Phase 5
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `for id in <4 ids>; do sandbox_mount/host/run_record.py get $id target; sandbox_mount/host/run_record.py get $id commit_sha; done` — `greenfield` ×4, and all four shas equal `PIN`
-- [ ] `for id in <4 ids>; do git -C ../greenfield-sandboxes rev-parse --verify -q refs/sandbox/$id; done` — four shas (every arm came home, rejected ones via snapshot)
-- [ ] `for id in <4 ids>; do just sbx manage trace-metrics $id; done` — a row for every agent in every arm
-- [ ] `specs/greenfield-fanout-2-results.md` exists with all columns filled for four arms, the vs-control table, and five verdicts
-- [ ] `git grep -n -i 'hidden rubric\|/20' -- ../greenfield-sandboxes 2>/dev/null; git -C ../greenfield-sandboxes grep -n -i 'rubric' -- prompts` — no output (the rubric never left this repo)
-- [ ] `for id in <4 ids>; do sandbox_mount/host/run_record.py get $id closed_at; done` — four timestamps; `just target show greenfield | grep 'pristine: ok'`
+- [x] `for id in <4 ids>; do sandbox_mount/host/run_record.py get $id target; sandbox_mount/host/run_record.py get $id commit_sha; done` — `greenfield` ×4, and all four shas equal `PIN`
+- [x] `for id in <4 ids>; do git -C ../greenfield-sandboxes rev-parse --verify -q refs/sandbox/$id; done` — four shas (every arm came home, rejected ones via snapshot)
+- [x] `for id in <4 ids>; do just sbx manage trace-metrics $id; done` — a row for every agent in every arm
+- [x] `specs/greenfield-fanout-2-results.md` exists with all columns filled for four arms, the vs-control table, and five verdicts
+- [x] `git grep -n -i 'hidden rubric\|/20' -- ../greenfield-sandboxes 2>/dev/null; git -C ../greenfield-sandboxes grep -n -i 'rubric' -- prompts` — no output (the rubric never left this repo)
+- [x] `for id in <4 ids>; do sandbox_mount/host/run_record.py get $id closed_at; done` — four timestamps; `just target show greenfield | grep 'pristine: ok'`
 
 ## Global Validation
 
-- [ ] `just sbx manage doctor` — `sbx doctor: OK`
-- [ ] `uv run adws/adw_modules/manifest.py get source.repo` — default target unchanged (fretboard)
-- [ ] `just target sync greenfield --dry-run` — exit 0, `pristine: ok`, zero leaks, gates green, nothing to commit
-- [ ] `git -C ../greenfield-sandboxes status --short` and `git status --short` — both empty
-- [ ] `sandbox_mount/host/run_record.py list | python3 -c 'import json,sys; o=[r["run_id"] for r in json.load(sys.stdin) if not r.get("closed_at") and r["run_id"].startswith(("gate-fix","gf2-"))]; print(o); assert not o'` — no VM from this plan left open
-- [ ] `grep -cE '^\s*- \[ \]' specs/fanout-readiness-and-team-quality.md` — 0, or only `fail`-marked items with reasons
+- [x] `just sbx manage doctor` — `sbx doctor: OK`
+- [x] `uv run adws/adw_modules/manifest.py get source.repo` — default target unchanged (fretboard)
+- [x] `just target sync greenfield --dry-run` — exit 0, `pristine: ok`, zero leaks, gates green, nothing to commit
+- [x] `git -C ../greenfield-sandboxes status --short` and `git status --short` — both empty
+- [x] `sandbox_mount/host/run_record.py list | python3 -c 'import json,sys; o=[r["run_id"] for r in json.load(sys.stdin) if not r.get("closed_at") and r["run_id"].startswith(("gate-fix","gf2-"))]; print(o); assert not o'` — no VM from this plan left open
+- [x] `grep -cE '^\s*- \[ \]' specs/fanout-readiness-and-team-quality.md` — 0, or only `fail`-marked items with reasons
 
 ## Notes
 
@@ -462,4 +473,53 @@ pair a controlled contrast. Changes: new `sssf.inverse.config.yaml`; the arm tab
 `--limit 30`); a two-wave execute option for 2 shared vCPU; H5; every N=3 reference in Phase 5 and its
 validation now N=4; Notes gained the rationale, the tool-contract confound, and the kimi-k3
 cost/maxTokens risk. Phases 1–4 unchanged.
+</details>
+
+<details>
+<summary>2026-09-18T07:05:00-07:00 — built and executed; three deviations, and two of the plan's own gates failed their hypotheses</summary>
+
+All five phases executed. Results: `specs/greenfield-fanout-2-results.md`. **$11.28 billed**, four
+VMs torn down, keys verified absent.
+
+**Deviations from the plan as written:**
+
+1. **Phase 1 found a second bug the plan did not predict.** Detaching pi's stdin let it behave as the
+   agent it is: it *did* the task and wrote `sandboxes.md` into `~/app`, dirtying the repo so the
+   next run failed gate A. Added `--no-tools --no-session`. Gate D needs a billable call that
+   reports cost, not tools.
+
+2. **Phase 2's bullets were corrected against pi 0.85.1's own `editSchema`,** not the trace. The
+   plan's draft said `edit` takes `{path, edits:[…]}` *instead of* a flat form (both are valid;
+   `prepareArguments` normalizes) and that `oldText` must match "byte-for-byte" (it must not —
+   `normalizeToLF` plus a whitespace-tolerant `fuzzyFindText` run first; the real constraints are
+   uniqueness and non-overlap, and edits match the ORIGINAL file). The corrected advice is "many
+   edits in one call", the opposite of what byte-for-byte implies.
+
+3. **The capacity claim in Notes was wrong and was abandoned mid-run.** "N=4, not 5: 2 shared vCPU"
+   cited the 2026-08-22 run as a contention casualty; the run records show 5 concurrent arms on
+   2026-08-21, 4 on 2026-08-22 and 3 on 2026-08-28, all completing. Each guest sees the full 2 vCPU
+   / 7.9 GB. Serializing cost ~40 minutes for nothing. Both the Notes bullet and the Phase 5
+   capacity task now carry the correction.
+
+**Out-of-plan work the run forced:**
+
+- Every local `ssh` in `just/sandbox/` now carries `< /dev/null`. A `while read … done < arms.tsv`
+  mount loop mounted exactly one of four arms, silently — the same stdin-detachment class Phase 1
+  fixed in the gate, which `execute.just` had already documented and nothing else applied.
+- `snapshot` truncated multi-word reasons to their first word across the ssh hop; fixed with
+  `printf %q` and verified live (argc 9 → 3).
+
+**Two of this plan's own gates failed their hypotheses**, and the failures are worth more than the
+successes:
+
+- **H2 FAILED.** The tsc gate passed in all four arms and caught nothing. It also false-positives on
+  `import "./styles.css"` (TS2882) where `bun build` succeeds.
+- **H3 FAILED and caused harm.** The render smoke put test-double code in all four arms' production
+  source and crashed two of them in a browser — by reaching into the stub's internals (gf2-1) and by
+  redefining `globalThis.document` in `main.ts` (gf2-4). The plan anticipated a vacuous stub; what
+  happened is agents inventing APIs on the double and shipping dependencies on them.
+
+All four arms had green tests and 0 tsc errors. Two do not run. The follow-ups in the results doc
+are deliberately **not applied** — they are design calls, and the highest-value one (replace the
+hand-rolled stub with a real DOM) reverses a decision this plan's Notes argued for.
 </details>
