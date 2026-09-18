@@ -190,10 +190,13 @@ curl -sS https://openrouter.ai/api/v1/chat/completions \
 | HTTP 402 / `credits` | the $50 cap is already spent | `just sbx lifecycle create` a fresh run with `--limit`, or raise the key's limit |
 | `User not found` | you are calling with the **provisioning** key | the provisioning key cannot do inference. It mints and revokes only. The gate uses the runtime key from `app/.env` on purpose |
 
-**Note on config selection:** the gate reads `${SSSF_CONFIG:-adws/adw_sssf_config/sssf.config.yaml}`
-inside the sandbox, and `ssh vm "cmd"` carries no environment — `--env` lands in
-`/etc/profile.d/exe-env.sh`, which a non-interactive ssh never reads. In practice the gate always
-pings the **default** roster. If a run uses a different roster, C did not check it.
+**Note on config selection:** pass the roster as `setup`'s second argument —
+`just sbx lifecycle setup <id> adws/adw_sssf_config/<roster>` — and C pings exactly that file's
+models. The path is forwarded over ssh as a **positional argument**, not an env var, because
+`ssh vm "cmd"` carries no environment: `--env` lands in `/etc/profile.d/exe-env.sh`, which a
+non-interactive ssh never reads. The `${SSSF_CONFIG:-…}` fallback in the recipe is therefore dead over
+ssh and only the default path ever comes out of it. **With no argument, C pings the default roster** —
+so in a fan-out, an arm you gated without its roster was never really gated.
 
 ---
 
@@ -276,10 +279,11 @@ ssh $VM.exe.xyz 'cd app && set -a && . ./.env && set +a && curl -sS -o /dev/null
 
 ---
 
-## Two false failures already paid for
+## Three gate bugs already paid for
 
-Both of these were healthy sandboxes that the system called broken. They are here because the shape
-repeats.
+The first two were healthy sandboxes that the system called broken. The third is the opposite and
+worse: a broken sandbox the system called healthy. All three are here because the shape repeats —
+**a gate is only as good as the evidence it prints.**
 
 ### 1. Gate D diffed the wrong instrument
 
@@ -321,6 +325,54 @@ into a home directory: put it on `/usr/local/bin` or it does not exist as far as
 concerned. The same fact is why `--env` is useless for secrets (it lands in `/etc/profile.d/`) and why
 `just` in the sandbox needs `just --shell bash --shell-arg -c` (the root justfile sets `zsh -ic`, and
 zsh is not in the image; installing it is ~35s of apt for no benefit).
+
+---
+
+### 3. FAIL then PASS in one gate block — stdin detachment
+
+**Symptom.** A gate block prints a real `FAIL` line and then reports `PASS` anyway, and the assertions
+*after* the failing one print nothing at all:
+
+```
+   pass  deepseek/deepseek-v4-flash-0731
+   FAIL  nonexistent/no-such-model: nonexistent/no-such-model is not a valid model ID
+[gate] C PASS  every roster model answered
+[gate] D PASS  non-zero cost and a loaded rate table     <- no "pi reports cost $..." line
+[gate] E PASS  credit reported above                     <- no limit/used/remaining lines
+```
+
+**This is not a flaky model.** It is a truncated script. C, D and E run as one heredoc piped to
+`ssh … 'bash -s'`, so remote bash reads the script **from stdin** — and any command in that script
+that also reads stdin consumes the rest of it. Bash then hits EOF, exits 0, and the
+`[ "$ping_fail" -eq 0 ] || exit 2` lines at the bottom never run. Every PASS after that point is the
+*host* echoing its success message because ssh returned 0.
+
+**The tell** is the missing output, not the contradiction: the assertions below the stdin-reader go
+silent. If a gate reports PASS without printing the evidence it is supposed to print, it did not run.
+
+**Find it:** in each gate heredoc, look for a command with no input redirect that reads stdin when it
+has one — `pi`, `claude`, `ssh`, `read`, `cat`, `sort` with no file argument. **Fix it** with
+`< /dev/null` on that command, attached to the command itself and not to something it pipes into:
+
+```bash
+pi_cost="$(timeout 180 pi -p --mode json < /dev/null \
+             --provider openrouter --model deepseek/deepseek-v4-flash-0731 \
+             'Write one sentence about sandboxes.' 2>/dev/null \
+           | jq -s '…')"
+```
+
+On a multi-line command put the redirect on the line with the command name, so
+`grep -n 'pi -p' … | grep '/dev/null'` can still see it.
+
+**Verify with a roster that must fail,** kept outside the repo so gate A's clean-tree check still
+passes: `just sbx run cmd <id> "sed 's#<a real model>#nonexistent/no-such-model#' adws/adw_sssf_config/sssf.config.yaml > /tmp/bad.config.yaml"`
+then `just sbx lifecycle setup <id> /tmp/bad.config.yaml; echo rc=$?`. Correct behaviour is a non-zero
+rc, `[gate] FAIL` naming assertion C, **and** D's cost line and E's credit lines printed — those lines
+are the proof the script ran to its end.
+
+Found and fixed 2026-09-17 (`just/sandbox/lifecycle/setup.just`, gate D's `pi -p`). It had made gates
+C, D and E pass unconditionally since the gate was introduced. Gate B's `pi --list-models` was
+detached at the same time as defence in depth.
 
 ---
 

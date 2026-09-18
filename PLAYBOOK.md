@@ -20,7 +20,7 @@ separate, explicit step):
 |---|---|
 | `create` | mints a capped ($50 default) OpenRouter runtime key, boots the VM, waits for SSH |
 | `fill` | clones this repo onto the VM, writes the runtime key to `app/.env` |
-| `setup` | runs `provision.sh`, then a 6-assertion health gate (git integrity, model registry, live roster ping, cost reporting, remaining credit, toolchain report) |
+| `setup` | runs `provision.sh`, then a 6-assertion health gate (git integrity, model registry, live roster ping, cost reporting, remaining credit, toolchain report). A gate block that prints `FAIL` but reports `PASS` is a bug, not a flaky model — see `debug_a_failed_gate` §3 |
 | `observe` | starts the app's dev server on loopback (`:4502`) behind a Host-rewriting proxy (`:4501`), plus the observability dashboard (`:4600`), makes the app URL public |
 | `refresh` | (5b, on demand) bounces **only** the dev server so the review URL serves a freshly built bundle — run it after an ADW commits, before you trust what the browser shows |
 

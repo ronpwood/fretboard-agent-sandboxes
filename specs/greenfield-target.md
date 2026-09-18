@@ -6,6 +6,7 @@ modified:
   - 2026-09-17T05:30:04-07:00
   - 2026-09-17T05:41:53-07:00
   - 2026-09-17T05:50:52-07:00
+  - 2026-09-17T06:14:49-07:00
 commits:
   - a32190b
   - 5145d53
@@ -28,7 +29,8 @@ back_refs:
   - specs/payload-app-manifest.md — the manifest reader (`adws/adw_modules/manifest.py`) this plan extends with named targets
   - specs/greenfield-cof-experiment.md — defines the greenfield-sandboxes clean room and the manual manifest-flip procedure this plan replaces
   - specs/tdd-red-gate-phase.md — `adw_tdd_sdlc.py` / `just adw tdd`, the chain a greenfield team runs end to end
-forward_refs: []
+forward_refs:
+  - specs/fanout-readiness-and-team-quality.md — gate C/D/E fix, builder tool contracts, tsc gate, snapshot recipe, and the judged greenfield fan-out built on these targets
 status: complete
 ---
 

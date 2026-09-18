@@ -40,10 +40,11 @@ PIN=$(git rev-parse HEAD)          # one commit for every arm — this is the co
 ARMS=(sssf.config.yaml sssf.frontier.config.yaml)
 
 for i in "${!ARMS[@]}"; do
+  ROSTER="adws/adw_sssf_config/${ARMS[$i]}"
   ID=$("$RR" new-id "bestof-$i")
   just sbx lifecycle create "$ID" --limit 10     # per-arm ceiling, not the $50 default
   just sbx lifecycle fill   "$ID" "$PIN"         # pin every arm to the same sha or the comparison is noise
-  just sbx lifecycle setup  "$ID"                # gate; on failure it STOPS and leaves this arm's VM alive
+  just sbx lifecycle setup  "$ID" "$ROSTER"      # gate THIS arm's roster; on failure it STOPS and leaves the VM alive
   just sbx lifecycle observe "$ID"
   echo "$ID ${ARMS[$i]}" >> /tmp/fanout.map
 done
@@ -55,7 +56,8 @@ outside the parallel section (it already is), and a gate failure in one arm must
 — run each chain in its own subshell and collect exit codes.
 
 **A failed arm stays up.** `just sbx lifecycle setup` never destroys. Read `debug_a_failed_gate.md`, fix, re-run
-`just sbx lifecycle setup <id>` for that arm only.
+`just sbx lifecycle setup <id> "<that arm's roster>"` for that arm only — drop the roster and you
+re-gate the default one.
 
 ## Greenfield fan-out (a named target)
 
@@ -66,14 +68,18 @@ just target sync greenfield --dry-run          # read the diff stat and the gate
 just target sync greenfield --push             # outward-facing: ask the user first
 PIN=$(python3 -c 'import json;print(json.load(open(".sandbox/targets/greenfield.json"))["target_sha"])')
 
-for i in "${!ARMS[@]}"; do
+ROSTERS=(sssf.config.yaml sssf.asymmetric.config.yaml)   # one per arm, same length as the loop
+
+for i in "${!ROSTERS[@]}"; do
+  ROSTER="adws/adw_sssf_config/${ROSTERS[$i]}"
   ID=$("$RR" new-id "gf-$i")
   just sbx lifecycle create "$ID" --limit 10 --target greenfield
   just sbx lifecycle fill   "$ID" "$PIN"          # explicit is clearest; omitting it pins to the same sync
-  just sbx lifecycle setup  "$ID"
+  just sbx lifecycle setup  "$ID" "$ROSTER"       # gate C pings THIS arm's models, not the default roster
   just sbx lifecycle observe "$ID"
+  echo "$ID ${ROSTERS[$i]}" >> /tmp/gf.map
 done
-# execute: just sbx lifecycle execute "$ID" prompts/greenfield.md "adws/adw_sssf_config/<roster>" tdd
+# execute: just sbx lifecycle execute "$ID" prompts/greenfield.md "$ROSTER" tdd
 ```
 
 - **Never re-sync mid-fan-out.** An arm filled after a new sync would start from different bytes.
@@ -107,42 +113,40 @@ orchestrator a set of recipes instead of an agent system.
 `just sbx lifecycle execute <id> "<prompt>"`. The obvious axis, and the one worth varying least: if the prompts
 differ, you are not comparing models, you are comparing prompts.
 
-### 2. `SSSF_CONFIG` — the roster
+### 2. The roster — `execute`'s and `setup`'s `CONFIG` argument
 
 The repo ships two rosters: `adws/adw_sssf_config/sssf.config.yaml` (starter) and
 `sssf.frontier.config.yaml`. A roster names an agent's coding agent, model, thinking level, tools and
 prompts — it is the single richest per-run knob.
 
-**`just sbx lifecycle execute` does not take a config argument.** It runs `adw sdlc <prompt>` with the module's
-default, and `--env`-style delivery is useless here (`ssh vm "cmd"` reads no profile). **The right
-fix is to teach `execute` a config flag rather than route around it.** Until that lands, the interim
-is a direct ssh — `just sbx run cmd` would need two layers of quoting for a prompt with spaces plus a remote
-`$!`, which is one layer too many:
+**Pass the roster as `execute`'s third argument.** The signature is
+`execute RUN_ID PROMPT CONFIG="" ADW="sdlc" *EXTRA`, so the roster is positional and an empty
+`CONFIG` builds the exact command it built before the argument existed:
 
 ```bash
-ssh "$VM".exe.xyz "cd app && ( SSSF_CONFIG=adws/adw_sssf_config/sssf.frontier.config.yaml nohup just --shell bash --shell-arg -c adw sdlc 'add a word-count badge' > run.log 2>&1 < /dev/null & echo \$! )"
+just sbx lifecycle execute "$ID" "$PROMPT" "adws/adw_sssf_config/sssf.frontier.config.yaml" sdlc
 ```
 
-Four things in that line are load-bearing:
+The recipe handles the two-hop quoting (`quote()` for just→host bash, `printf %q` for host→remote
+login shell), records the pid in the run record, and turns the path into `--config <path>` on the
+module recipe. No `SSSF_CONFIG` env var and no hand-rolled ssh: `ssh vm "cmd"` reads no profile and
+carries no environment, which is why the argument exists.
 
-- `SSSF_CONFIG=...` goes **before** `nohup`, not after. `nohup VAR=x cmd` makes nohup try to exec a
-  program literally named `VAR=x`.
-- `--shell bash --shell-arg -c` — the root justfile sets `shell := ["zsh", "-ic"]` and zsh is not in
-  the exeuntu image.
-- All three detachment pieces (`nohup`, the redirect, `< /dev/null`) or ssh never returns.
-- `\$!` — the pid must be expanded by the **remote** shell.
+`ADW` picks the workflow (`sdlc`, `tdd`, …) and is the fourth argument, so pass `CONFIG` — even as
+`""` — when you want a non-default ADW.
 
-The pid is not recorded in the run record when you go around `just sbx lifecycle execute` — write it yourself
-(`sandbox_mount/host/run_record.py set <id> pid=<n>`) if you want `just obs kill` semantics.
+**Gate C only pings the roster you hand to `setup`.** `setup RUN_ID CONFIG=""` forwards the path
+over ssh as a positional argument and pings every `model:` in that file; with no argument it pings
+the default roster. So in a fan-out, pass each arm's roster to **both** `setup` and `execute`, or the
+arm you gate is not the arm you run:
 
-A cleaner alternative that needs no new flag: the module recipe is
-`uv run adws/adw_plan_build_test.py --config {{config}} "$@"`, and argparse takes the **last**
-`--config`, so a trailing `--config <path>` in the args wins. `just sbx lifecycle execute` passes only the prompt,
-so that too waits on the recipe change.
+```bash
+just sbx lifecycle setup   "$ID" "adws/adw_sssf_config/$ROSTER"
+just sbx lifecycle execute "$ID" "$PROMPT" "adws/adw_sssf_config/$ROSTER" tdd
+```
 
-Note the gate does **not** see `SSSF_CONFIG`: assertion C reads it from the sandbox's environment, and
-`ssh vm "cmd"` carries no environment at all. C pings the default roster regardless. If an arm uses a
-different roster, its models were never gated — ping them by hand or accept the risk.
+A gate block that prints `FAIL <model>` and then `[gate] C PASS` is **not** a flaky model — it is
+stdin detachment inside the gate heredoc. See `debug_a_failed_gate.md`.
 
 ### 3. The model
 
@@ -228,8 +232,15 @@ What still runs after a `cp`:
   you want. There is no golden-VM variant of `just sbx lifecycle create` today; wiring one is the work this path
   needs.
 
-Costs: a golden VM bills continuously while it sits idle — exe.dev VMs are persistent and never
-expire. And it drifts: the toolchain it carries is the toolchain of the day you built it.
+Costs: an idle golden VM costs **capacity and disk, not dollars**. exe.dev is a flat subscription
+with shared vCPU (Individual Small: 2 vCPU / 8 GB across *all* your VMs), so a golden VM does not bill
+by the hour — it holds a slice of the pool that a real arm could be using. Two cookbooks used to claim
+hourly billing; they were wrong. What it does cost you is drift: the toolchain it carries is the
+toolchain of the day you built it.
+
+The same 2-vCPU ceiling is why cross-arm **wall clock is not comparable when arms overlap** — provision
+and `bun install` are CPU-bound, so concurrent arms contend. Mount arms one at a time, and record wall
+clock as indicative only.
 
 **This whole path is unexercised.** Five phases were verified end to end on a live VM by cold mount.
 The golden-VM route is designed, measured (0.37s, 5,641 files) and written down — but no run has been

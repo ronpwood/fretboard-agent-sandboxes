@@ -1436,3 +1436,107 @@ off stdin as prompt input, bash hits EOF, and the script exits 0 via `|| echo 0`
 unconditionally**. This is the same stdin-detachment class `observe.just` already documents.
 Fix: `< /dev/null` on that pi call. Then prove it with a deliberately failing roster model:
 C must fail, and D/E must print.
+
+---
+
+## 2026-09-17 — setup gates C/D/E: reproduced, fixed, and proven on a live VM
+
+Confirmed on `gate-fix-20260918-c336f6` (default target, `--limit 2`). The 2026-09-17 hypothesis was
+right about the mechanism, and the fix uncovered a **second** bug the first one had been hiding.
+
+### 1. The mechanism, isolated from setup
+
+Straight `ssh 'bash -s' <<'EOF'`, nothing to do with the gate:
+
+```
+# without a redirect on pi                # with `< /dev/null` on pi
+before                                    before
+rc=0                                      after-pi
+                                          still-here
+                                          rc=0
+```
+
+`after-pi` and `still-here` never print. Remote bash reads the script from stdin, `pi` reads the rest
+of it as prompt input, bash hits EOF and exits **0**. Every line below the pi call is silently
+skipped — including the gate's `[ "$ping_fail" -eq 0 ] || exit 2`.
+
+### 2. The gate, before the fix
+
+A failing roster pinned in `/tmp` so gate A's clean-tree check still passes:
+
+```
+just sbx run cmd <id> "sed 's#openrouter/openai/gpt-5.6-luna#openrouter/nonexistent/no-such-model#' \
+  adws/adw_sssf_config/sssf.config.yaml > /tmp/bad.config.yaml"
+just sbx lifecycle setup <id> /tmp/bad.config.yaml
+```
+
+```
+   FAIL  nonexistent/no-such-model: nonexistent/no-such-model is not a valid model ID
+[gate] C PASS  every roster model answered      <- contradicts the line above
+[gate] D PASS  non-zero cost and a loaded rate table   <- no "pi reports cost $..." line
+[gate] E PASS  credit reported above                   <- no limit/used/remaining lines
+[setup] GATE PASSED — ... is healthy             rc=0
+```
+
+**The tell is the missing evidence, not the contradiction.** D and E printed their PASS banners (the
+host echoes those when ssh returns 0) while printing none of the numbers they exist to report.
+
+### 3. The fix — two redirects and one flag
+
+`just/sandbox/lifecycle/setup.just`:
+
+- `< /dev/null` on gate D's `pi -p`, placed on the line carrying `pi -p` so
+  `grep -n 'pi -p' … | grep '/dev/null'` can see it. A redirect is valid anywhere in a simple command,
+  but on a continuation line it is invisible to grep and easy to mis-attach to the `jq` it pipes into.
+- `< /dev/null` on gate B's `pi --list-models` as defence in depth. Observation says it was not eating
+  stdin (the echo after it printed), but it is the same class and the only other agent CLI in a gate
+  heredoc.
+- **`--no-tools --no-session` on gate D's `pi -p`.** This is the second bug. `pi` is an *agent*, not a
+  completion endpoint — with stdin no longer truncating it, it started actually **doing** the task and
+  wrote a real `sandboxes.md` (186 bytes, one correct sentence about sandboxes) into `~/app`. That
+  dirtied the repo, so the *next* `setup` run failed **gate A** with `?? sandboxes.md`. Gate D only
+  needs a live billable call that reports a cost, so taking the tools away makes the probe incapable of
+  touching the tree. Side benefit: the probe got ~4× cheaper ($0.000286 → $0.000067) with no tool loop.
+
+Audit of the other two gate heredocs (`REMOTE_A`, `REMOTE_B`): no other stdin readers — every `sed`,
+`grep`, `jq`, `awk` and `sort` in them takes a file or a pipe. All three bodies pass `bash -n`.
+
+### 4. The gate, after the fix
+
+Bad roster — now a correct failure, **with** the D and E evidence proving the script ran to its end:
+
+```
+   FAIL  nonexistent/no-such-model: nonexistent/no-such-model is not a valid model ID
+   pi reports cost $0.00028574000000000004 on a live call (rate table is loaded)
+   rate table present: every model in models.json has a non-zero input cost
+   limit     $2
+   used      $0.001821125
+   remaining $1.998178875
+[setup] FAILED: assertion C — at least one roster model did not answer      rc=1
+```
+
+Default roster — a genuine six-assertion pass, tree still clean afterwards (`porcelain lines: 0`):
+
+```
+[gate] A PASS  ·  B PASS (425 models)  ·  C pass ×4
+   pi reports cost $0.00006734 on a live call (rate table is loaded)
+   limit $2 · used $0.001945103 · remaining $1.998054897
+[gate] C PASS  ·  D PASS  ·  E PASS  ·  F PASS      rc=0
+```
+
+### 5. Docs corrected alongside
+
+- `cookbooks/fan_out_n.md`: the "`execute` does not take a config argument" section and its hand-rolled
+  ssh workaround are gone, replaced with the real positional form
+  (`execute RUN_ID PROMPT CONFIG="" ADW="sdlc"`); both fan-out loops now pass each arm's roster to
+  `setup` as well, so gate C pings the arm it is gating; the golden-VM "bills continuously" claim is
+  corrected to capacity-and-disk on a flat subscription, with the 2-vCPU reason wall clock is not
+  comparable across overlapping arms.
+- `cookbooks/debug_a_failed_gate.md`: new §3 "FAIL then PASS in one gate block — stdin detachment",
+  with the symptom, the tell, the fix and the bad-roster verification. Its stale note claiming gate C
+  reads `$SSSF_CONFIG` from the sandbox environment is corrected — the roster is a positional argument.
+- `PLAYBOOK.md` §1: the `setup` row keeps "6-assertion" (true again) and adds that a block printing
+  FAIL then PASS is a bug, not a flaky model.
+
+**Lesson for the gate class generally:** a gate that reports PASS without printing the evidence it
+exists to print has not run. Assert on the evidence, not on the exit code.
