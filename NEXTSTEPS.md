@@ -1799,3 +1799,35 @@ Run `just sbx lifecycle refresh <id>` before `shot`, or you photograph a stale b
 `path` bullet generalization · tsc CSS false positive (`declare module "*.css";`) · `lint` in
 `run_verify` · rubric headroom with no cost item · seat-pair experiment · `model-format` error kind
 in `trace_metrics.py`.
+
+### `path` bullet generalized — and re-deriving the evidence corrected the write-up
+
+The contract's first bullet now covers **every file tool**, not just `edit`. Re-deriving the
+evidence before writing it found that my own H1 paragraph was wrong on two counts:
+
+| tool | missing `path` | agents |
+|---|---|---|
+| `edit` | 18 baseline · 1 gf2-1 · 1 gf2-2 | builder |
+| `write` | 1 gf2-2 | builder **and reviewer** |
+| `read` | **0** | — |
+
+The failure did **not** "move off `edit`" — `edit` is still the main offender, `write` joined it, and
+`read` never lost a `path` at all (gf2-1's `read` failure was `limit: must be number`, the DSML
+corruption). Results doc corrected.
+
+It also surfaced a schema failure I had never recorded: gf2-3 sent
+`edits.0.oldText: must have required properties oldText` — a malformed entry *inside* the array
+rather than a malformed call. The new second bullet states each tool's argument shape, including
+that every `edits[]` entry needs both `oldText` and `newText`, and that `read`'s `limit`/`offset`
+are numbers not strings.
+
+Non-overlap was promoted from advice to a hard rule, with the fix named: when two changes sit near
+each other, **merge them into one larger entry**. gf2-2 hit this twice — it adopted the
+one-call-many-edits advice and then overlapped the regions.
+
+Section held to the plan's 8-new-bullet ceiling by merging the two error-reading bullets, which
+overlapped anyway. Both copies (factory + sssf template) stay byte-identical.
+
+**Method note worth keeping:** both corrections came from re-deriving numbers from the traces rather
+than trusting a summary I had written hours earlier. A prompt bullet built on the wrong tool would
+have taught the builder to guard a call that was never failing.

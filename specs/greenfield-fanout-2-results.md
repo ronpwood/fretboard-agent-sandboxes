@@ -149,11 +149,29 @@ plus a phantom tool named `content` from the same mangled parse. Those are a ser
 between deepseek's native function-calling format and the OpenAI-style JSON schema pi/OpenRouter
 use. **No system prompt can fix them.** Prompt-attributable builder errors on gf2-1: 2 of 163.
 
-The residual schema failures moved off `edit` entirely and onto **`write`** (gf2-2 ×2) and **`read`**
-(gf2-1 ×1). The contract's first bullet gave `path` its own emphatic treatment for `edit` and
-mentioned `write ({path, content})` only in passing. The **reviewer** (glm-5.3, a different model
-family) also hit `write` missing `path`, so this is a general pattern against this tool schema, not
-a deepseek quirk.
+**Corrected 2026-09-18** (the first write-up of this paragraph was wrong; re-derived from the traces
+before generalizing the prompt bullet). Missing-`path`, by tool:
+
+| tool | occurrences | agents |
+|---|---|---|
+| `edit` | 18 baseline, 1 gf2-1, 1 gf2-2 | builder |
+| `write` | 1 gf2-2 | builder **and reviewer** |
+| `read` | **0** | — |
+
+So `path` still goes missing on `edit`, and now also on `write` — it did **not** move off `edit`, and
+`read` never lost one (gf2-1's `read` failure was `limit: must be number`, the DSML corruption).
+That the **reviewer** (glm-5.3, a different model family) hit it too makes it a general pattern
+against this tool schema rather than a deepseek quirk.
+
+Two other schema failures, each its own kind and neither a missing `path`:
+
+- gf2-3 — `edits.0.oldText: must have required properties oldText`: a malformed entry *inside* the
+  array, not a malformed call.
+- gf2-1 — `limit: must be number`: the DSML corruption, a provider bug.
+
+The contract's first bullet had given `path` emphatic treatment **for `edit` only**, mentioning
+`write ({path, content})` in passing. It now covers every file tool, and a second bullet states each
+tool's argument shape including the `edits[]` entry requirement.
 
 gf2-2 also produced two *overlapping-edit* errors — it adopted the "several changes in one `edit`
 call" advice and then violated non-overlap. That is a more sophisticated failure than the baseline's
@@ -334,28 +352,31 @@ first design review this factory has ever had. Cost: a heavier image and a slowe
   what shipped (screenshot + console errors) from the host, where a browser already exists, rather
   than putting ~190 MB of chromium on every arm. It is an observation, not a gate: gating belongs in
   the fix loop.
+- **#3 `path` bullet generalized.** Now covers every file tool, with a second bullet giving each
+  tool's argument shape (including that `edits[]` entries need both `oldText` and `newText`, and
+  that `read`'s `limit`/`offset` are numbers). The non-overlap constraint is promoted from advice to
+  a hard rule with the fix stated: merge neighbouring changes into one entry. Section held to the
+  plan's 8-new-bullet ceiling by merging the two error-reading bullets. Re-deriving the evidence for
+  this corrected the H1 paragraph above — the earlier version had the tools wrong.
 - **#2b reviewer design criteria.** Root cause was sharper than "blind": the reviewer prompt said
   *"Not your job: … style opinions …"*, so it was **instructed** to ignore the UI. Now split — code
   style stays out of scope, the delivered interface is a requirement.
 
 **Still open:**
 
-1. **Generalize the `path` bullet** to every file tool (`edit`, `write`, `read`) and strengthen the
-   non-overlap constraint on multi-edit calls. *Cheapest win on the list — H1 already proved the
-   mechanism works, this just widens its scope.*
 
-2. **Fix the tsc CSS false positive** — `declare module "*.css";` in the greenfield shell (another
+1. **Fix the tsc CSS false positive** — `declare module "*.css";` in the greenfield shell (another
    deliberate pristine bump).
 
-3. **Add `lint` to `run_verify`** so `no-explicit-any` runs in the chain. Both crashes hid behind
+2. **Add `lint` to `run_verify`** so `no-explicit-any` runs in the chain. Both crashes hid behind
    explicit `any`, which tsc cannot see in either mode.
 
-4. **Rework the rubric** for headroom, with **no cost item** (§5).
+3. **Rework the rubric** for headroom, with **no cost item** (§5).
 
-5. **Test seat *pairs*, not single seats** (§3) — upgrading the planner alone taxed the flash
+4. **Test seat *pairs*, not single seats** (§3) — upgrading the planner alone taxed the flash
    test_designer downstream.
 
-6. **Add a `model-format` error kind to `trace_metrics.py`** so DSML-style corruption is not folded
+5. **Add a `model-format` error kind to `trace_metrics.py`** so DSML-style corruption is not folded
    into `schema`/`other`. Provider bugs and instruction-following failures have different owners and
    should not share a bucket.
 
