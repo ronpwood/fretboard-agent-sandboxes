@@ -291,7 +291,7 @@ with the user before mounting.
 - [x] Wrong branch: `git -C $SCRATCH/snap switch -q main 2>/dev/null || git -C $SCRATCH/snap switch -q -c main HEAD~1; echo y > g.ts` then the script → exit 2, no commit on main
 - [x] Ignored files stay out: add `.env` to the scratch repo's `.gitignore`, create `.env`, snapshot → `.env` is not in `git show --stat HEAD`
 - [x] `just --show sbx::manage::snapshot` parses; `grep -n 'manage snapshot' just/sandbox/lifecycle/teardown.just` — one hit
-- [ ] Live use is proven in Phase 5 on any arm review rejects
+- [x] Live use is proven in Phase 5 on any arm review rejects — **proven on gf2-1** (review_2 rejected, 21.2M tokens, code uncommitted): snapshot committed 23 files / 2,683 insertions as `UNAPPROVED snapshot:` by `sssf-snapshot`, no `.env`, harvest then carried 3 commits home. It also exposed a real bug in the recipe — `ssh host bash -s -- a b c` joins argv and the remote shell re-splits it, so a multi-word reason arrived as its first word only (`review_2`). Fixed with `printf %q`; verified over live ssh (argc 9 → 3)
 
 ### Phase 5: The judged greenfield fan-out (live — needs the user's go-ahead)
 
