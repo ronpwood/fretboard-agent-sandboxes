@@ -69,8 +69,10 @@ just/sandbox/         the `sbx` namespace. HOST-ONLY: needs the exe.dev account 
     snapshot.just     `snapshot <run-id> "<why>"`: commit a dirty VM tree onto sbx/<run-id> so
                       harvest can carry a build review rejected. Pipes the guest script over ssh.
     shot.just         `shot <run-id>`: screenshot the live app and record its console errors.
-                      HOST-side (chromium is ~190 MB; happy-dom already gates crashes in the
-                      chain). An observation, not a gate — exits 0 on a crashed page.
+                      An observation, not a gate — exits 0 on a crashed page, and it runs after
+                      the chain is over, so it can only RECORD a defect, never repair one. That
+                      gap is why `render_smoke.py` now runs INSIDE run_verify; this stays for the
+                      picture, which no gate produces.
     reap.just         revoke orphaned sbx- keys. Dry run by default.
   run/                put work in, or look inside.
     mod.just          `run cmd` (inspect, synchronous) and `run agent` (resumable Claude Code
@@ -116,6 +118,11 @@ adws/adw_modules/     agents.py (roster + validation), agent_pi.py / agent_cc.py
                       adapters), data_types.py (typed envelopes), gates.py, quality.py
                       (deterministic checks incl. the test suite), tracer.py (the trace db),
                       session.py, runner.py, permissions.py, git_helper.py.
+  render_smoke.py     the fourth block in run_verify: boots the dev server, loads the app in a
+                      REAL chromium, and fails on what only a browser sees — an uncaught error,
+                      a blank page, an interactive element NOTHING can click, or a control that
+                      throws when clicked. happy-dom closed crash-on-load but does no layout and
+                      no hit-testing. Exit 2 (no browser) is a SKIP, never a failure.
 adws/adw_sssf_config/ sssf.config.yaml (cheap roster) and sssf.frontier.config.yaml.
                       Every model is `openrouter/<id>`; the first slash splits provider
                       from model id.
