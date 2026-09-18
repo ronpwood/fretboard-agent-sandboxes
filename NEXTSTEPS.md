@@ -1914,3 +1914,121 @@ excluding everything. Now filtered on the path *relative to* `APP_DIR`.
 `sssf.inverse.config.yaml`'s header said a roster "buys more rubric score per dollar" — that file
 syncs to the public greenfield repo, so it was telling VM agents a score exists. No rubric contents
 leaked, but it is needless contamination and it embedded the cost framing we just retired. Reworded.
+
+---
+
+## 2026-09-18d — greenfield fan-out 3 (N=6, one roster): the crash fix won, the verdict inverted
+
+Full scorecard: `specs/greenfield-fanout-3-results.md`. Predictions pre-registered and committed
+(`54f52c2`) **before any arm ran**. Six arms, one roster, one prompt, one pin (`a91e559`), TDD
+chain. **$5.37 billed.** All six torn down, keys revoked and verified absent.
+
+| arm | outcome | billed | A /20 | B /12 |
+|---|---|---|---|---|
+| gf3-1 | ✗ rejected | $1.07 | **20** | **12** |
+| gf3-2 | ✗ rejected | $1.17 | **20** | **12** |
+| gf3-3 | ✗ rejected | $1.43 | **20** | **12** |
+| gf3-4 | ✓ accepted | $0.62 | 19 | 10 |
+| gf3-6 | ✓ accepted | $0.36 | 17 | 7 |
+| gf3-5 | ✗ rejected | $0.71 | 16 | 8 |
+
+### P1 CONFIRMED — happy-dom did its job
+
+**Zero crashes in six arms**, against 2-of-4 in the control. Console clean on every arm, 582–1476
+chars rendered. That class of bug is closed.
+
+### The result I did not predict: acceptance is anti-correlated with quality
+
+The two accepted arms rank **4th and 6th of six**. All three arms that scored 32/32 were rejected.
+**An automated "ship the accepted arm" policy would have shipped the two worst apps in the run.**
+
+The reviewers are not careless — their findings are line-cited and correct. The mechanism is
+structural: **each arm's planner writes the spec its reviewer grades it against.** Ambition creates
+more checkable claims, so a rigorous reviewer finds more unmet ones and rejects. gf3-3 wrote 24
+requirements and was rejected with 18 met; gf3-6's final review ruled on **seven** and approved.
+Accept/reject measures plan conservatism, not delivered quality.
+
+Ron reviewed all six in a browser without seeing any review and picked **gf3-1** — a rejected arm,
+and a top scorer — as his favourite on first pass.
+
+### Three defects no gate could see, all render-only
+
+All six arms: **lint green, build green, every test passing** (32–86 tests). Two do not work.
+
+- **gf3-6 (accepted)** — the wheel swallows every click. Key labels sit above the sectors carrying
+  the handler with no `pointer-events: none` and no handler of their own. It has no other key
+  control.
+- **gf3-6 (accepted)** — all seven chord cards show the identical parent major scale as raw pitch
+  classes. `circle.ts:169` assigns `notes: MAJOR_SCALE.map(...)`; six of seven chords are wrong.
+- **gf3-5** — one SVG large-arc-flag (`1` on a 30° wedge) makes the F slice sweep ~330° and paint
+  over the whole ring. All 12 labels hit-test to the same slice. One character.
+
+happy-dom closed the crash class; it does no hit-testing or layout. **A headless load-and-drive
+assertion in `run_verify` is now the highest-value change** — the same argument that justified
+happy-dom, one layer up.
+
+### The `document` collision was ours, and the chain handled it correctly
+
+`quality.tests()` runs fixed + generated suites in one process. The fixed suite's
+`configurable: false` document conflicts with an unguarded rebind. **Five of six test_designers
+guarded unprompted, in three different idioms** — gf3-4's even comments *"Guarded so this file never
+fights app.test.ts if both run in one process."* Only gf3-6 collided; `test_1` caught it, `fix_1`
+flipped the guard, and its reviewer correctly identified what was lost and why nothing else was
+possible. Agents behaving correctly inside an impossible constraint we built.
+
+Real hole exposed: `apps/*/app.test.ts` is not in `protected_files`. But gf3-3 and gf3-5 also edited
+it — to **add durable regression tests**. Protect the harness block, not the file.
+
+### P2 split — we traded one error class for another
+
+Schema failures held flat (fleet total **4**, same as control). `not-found` rose **3 → 16**.
+`model-format` 0. Plausible cause: the same prompt change that hardened non-overlap also said
+"merge neighbouring changes into one larger entry" — bigger `oldText` blocks are harder to match
+exactly. **This is why P2 was restated before the run**: as originally written ("≤1 per arm") it sat
+inside the control's own range and would have passed by default.
+
+### P3 — reviewers look now, but mostly as spec conformance
+
+6 of 6 engaged the interface (control: 0 of 4). Only 4 raised an actual finding, and **none caught
+any of the three render-only defects** — a source reader cannot see a swallowed click.
+
+### Infrastructure: three fan-out ceilings, none of them CPU
+
+All appeared between N=4 and N=6; all are resources every arm reaches through one shared identity.
+
+1. **`bun.lock` across a host/guest bun gap** — host bun 1.3.0 wrote the lock, guest 1.4.2 adds
+   `"configVersion": 0`; `bun install` dirtied a tracked file and **gate A failed all six arms before
+   an agent ran**. `--frozen-lockfile` (`96ec208`).
+2. **GitHub rate-limits release assets per IP** — 403 on three of six `just` installs; every VM
+   shares one egress. Bounded retry (`96ec208`).
+3. **OpenRouter's ZDR pool** — gate C pins `zdr:true`, a much smaller pool. `gpt-5.6-luna` exhausted
+   four retries on three arms. Gate C now separates "rate-limited" (routing resolved, tolerated) from
+   "no endpoints matching your data policy" (still fails) (`0c69080`).
+
+**"Shared vCPU does not cap arm count" is still right. "Concurrency is free" does not follow.**
+
+Also: `just sbx mount` is not concurrency-safe — it re-reads the run id as `list | [0]`, so two arms
+can claim one id. Precompute ids and pass them to `create`.
+
+### Method notes
+
+- **Measure geometry, never eyeball it.** I called gf3-4's circle "visibly broken" from a
+  screenshot. Measured: 12 nodes, radius 150, **0% spread**, correct fifths order at exact 30°
+  intervals. Scoring from the image would have cost it 4 points for a defect that does not exist —
+  while gf3-5's genuinely broken ring needed a hit-test to prove. Errors run both directions.
+- **Do not classify varying behaviour by regex.** I twice reported a wrong count of which arms
+  guarded their `document` rebind, because I grepped for idioms I had thought of. Three arms wrote
+  three different correct guards. On a population whose purpose is to vary, pattern-matching
+  measures the patterns.
+- **A `set -u` subshell bug in my own gate C retry killed all six arms of a fresh mount.** `PING_ERR`
+  was assigned inside a function called in a command substitution. `just --evaluate` validates
+  justfile syntax and says nothing about embedded remote bash. Now unit-tested against eight response
+  shapes, with the loop **extracted from the shipped file** rather than transcribed.
+- The false start cost **$0.015**. Tearing down and remounting clean validated `--frozen-lockfile`
+  at N=6 on untouched boxes *and* surfaced the gate C bug before any tokens were spent.
+
+### Still open
+
+Stop ranking on accept/reject · browser in `run_verify` · guard invariant in the test_designer
+prompt + protect the harness block · re-examine merged-edit advice · retire part A items 2/3/6/7/9/10
+and part B item 14 · make the red gate mean something on greenfield.

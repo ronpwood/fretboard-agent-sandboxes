@@ -13,8 +13,9 @@ back_refs:
   - specs/greenfield-fanout-2-results.md — the run this one controls against
   - specs/greenfield-cof-experiment.md — the hidden rubric (part A frozen, part B new)
   - specs/greenfield-target.md — the named target and its pristine guard
-forward_refs: []
-status: in-progress
+forward_refs:
+  - specs/greenfield-fanout-3-results.md — the scorecard these predictions were graded against
+status: complete
 ---
 
 # Greenfield fan-out 3 — pre-registration
