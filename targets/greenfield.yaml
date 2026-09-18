@@ -42,7 +42,14 @@ target:
   # but only a test that actually renders catches code that type-checks and then
   # throws while drawing. This is the first deliberate bump, and it is what the
   # escape hatch is for: the guard correctly refused (exit 5) until this line moved.
-  pristine: 0382e2757f3fb3e64f4079ce678df1079fc8fafd
+  # 2026-09-18: bumped from 0382e275 to replace the hand-rolled DOM stub with
+  # happy-dom (+ apps/app/package.json, bun.lock). The stub was an attractive
+  # nuisance: it looked like a DOM, so agents coded against its internals, and
+  # two arms shipped browser crashes that `bun test` called green. A real DOM
+  # fails the same way the browser does — verified against both crashed arms'
+  # actual main.ts. `configurable: false` on the document binding is the part
+  # that catches the redefine-document class.
+  pristine: 4d6e63bdd2eff0c09dec1a60839a33a468fbf0fb
   pristine_paths:
     - apps
   leak_patterns:                      # extra, target-specific; app names are derived, never listed
