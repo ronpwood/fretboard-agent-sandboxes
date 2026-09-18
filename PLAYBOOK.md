@@ -57,8 +57,13 @@ just sbx run cmd <run-id> 'just obs phases <adw_id>'
 
 The `PROMPT` argument can be a path (read from the sandbox's own checkout, exactly
 what got cloned in `fill`) or inline text. Default workflow is `sdlc`: plan → build →
-deterministic test/fix loop → commit, landing on a dedicated `sbx/<run-id>` branch so
+deterministic verify/fix loop → commit, landing on a dedicated `sbx/<run-id>` branch so
 harvest can bundle exactly this run's work.
+
+**Verify is typecheck + tests**, in that order, reported as one result (`quality.run_verify`).
+The typecheck block is a pinned `tsc --noEmit` over the entry graph, non-strict — it was
+`bun build`, which strips types without checking them and exits 0 on an undeclared name.
+Both `sdlc` and `tdd` use it, so an A/B between them stays symmetric.
 
 ## 3. Picking a model roster
 
@@ -114,9 +119,19 @@ just sbx run cmd <run-id> 'git add -A && git commit -m "Fix <one-line summary>"'
 ## 5. Harvest the commits home
 
 ```
-just sbx manage harvest <run-id>
-just sbx manage traces <run-id> [sssf-session-id]   # the thinking, not the commits
+just sbx manage snapshot <run-id> "<why>"          # FIRST, if the tree is dirty — see below
+just sbx manage harvest  <run-id>
+just sbx manage traces   <run-id> [sssf-session-id]   # the thinking, not the commits
+just sbx manage trace-metrics <run-id>                # how hard the agents fought their tools
 ```
+
+**Harvest carries commits only.** When review rejects a build the TDD chain leaves the
+code uncommitted on purpose, and a crashed or killed chain leaves the same dirty tree —
+so harvest would bring home nothing and teardown would refuse to destroy. `snapshot`
+commits that tree onto `sbx/<run-id>` with an `UNAPPROVED snapshot:` subject and a
+distinct author, so it can be harvested without ever reading as approved work. It
+refuses unless HEAD is exactly `sbx/<run-id>`, and prints `CLEAN` when there is nothing
+to save, so it is safe to call for every arm of a fan-out.
 
 No push credential ever lands on the VM (deliberate — the agent runs
 `--dangerously-skip-permissions`), so this pulls the run's commits back as a git
@@ -189,7 +204,9 @@ just sbx run cmd <run-id> 'tail -5 run.log'
 just sbx lifecycle refresh <run-id>            # after it finishes, before you trust the review URL
 
 # 4. bring it home — into the GREENFIELD checkout, not this repo
+just sbx manage snapshot <run-id> "review_2 rejected"   # only if the tree is dirty; CLEAN is a no-op
 just sbx manage harvest <run-id>
+just sbx manage traces  <run-id>
 git -C ../greenfield-sandboxes log --oneline <commit_sha>..refs/sandbox/<run-id>
 
 # 5. tear down

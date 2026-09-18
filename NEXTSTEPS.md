@@ -1540,3 +1540,112 @@ Default roster — a genuine six-assertion pass, tree still clean afterwards (`p
 
 **Lesson for the gate class generally:** a gate that reports PASS without printing the evidence it
 exists to print has not run. Assert on the evidence, not on the exit code.
+
+---
+
+## 2026-09-17 — fan-out readiness, phases 2–4 (measure, type-check, keep)
+
+All three are offline changes, proven on the host against real artifacts rather than on a VM.
+
+### Phase 2 — you cannot fix a failure you are not counting
+
+`sandbox_mount/host/trace_metrics.py` + `just sbx manage trace-metrics <run-id>` count
+`tool_execution_end` events per (adw_id, agent) and classify each error from the tool's own message
+text. It reproduces the `gf-e2e-20260917-cbb166` baseline exactly:
+
+```
+474f412f   builder           128    20  15.6%  edit=20   schema=18 no-op=1 not-found=1
+474f412f   planner            35     1   2.9%  ls=1      other=1
+474f412f   reviewer           60     0   0.0%
+474f412f   test_designer       8     0   0.0%
+```
+
+Unparseable lines are counted in `skipped`, never dropped: a truncated trace would otherwise read as
+a clean, low error rate — the one wrong answer this tool must not give. It reads **pulled** traces
+only, so the number is reproducible and still available after teardown.
+
+The builder prompt gained a 7-bullet `## Tool contracts` section (mirrored into the sssf template).
+**The trace alone would have produced two wrong bullets**, so the schema was read out of pi 0.85.1
+itself (`editSchema` in the installed bundle):
+
+- The plan assumed `edit` takes `{path, edits:[…]}` *instead of* a flat form. Both are valid —
+  `prepareEditArguments` normalizes a flat `{path, oldText, newText}` into the array form. `path` is
+  the required property, and it is what all 18 schema failures omitted. (Confirmed from the other
+  side too: of 57 `edit` calls, the 39 with `path` succeeded and the 18 without it failed.)
+- The plan assumed `oldText` must match "byte-for-byte". It must not: `normalizeToLF` plus a
+  whitespace-tolerant `fuzzyFindText` fallback run first. The real constraints are **uniqueness** and
+  **non-overlap**, and every `oldText` is matched against the **original** file, not against earlier
+  edits in the same call. So the correct advice is "many edits in one call", not "re-read between
+  every edit" — the opposite of what a byte-for-byte reading implies.
+
+Hypothesis to score in the fan-out (H1): builder `edit` schema failures drop from 18 to ≤3.
+
+### Phase 3 — the typecheck gate compiled a crash and called it green
+
+`quality.typecheck` ran `bun build --target=browser`, which strips types without checking them.
+Measured on a worktree of `refs/sandbox/gf-e2e-20260917-cbb166`:
+
+| tree | `bun build` (old gate) | `tsc --noEmit` (new gate) |
+|---|---|---|
+| harvested, with `String(idx)` reintroduced | **exit 0**, "Bundled 18 modules" | exit 1, `circle-wheel.ts(99,36): error TS2304: Cannot find name 'idx'` |
+| harvested, as the reviewer approved it | exit 0 | exit 1, 15 errors (13 TS2345, 1 TS2322, 1 TS2304) |
+| greenfield shell / `apps/fretboard/main.ts` | exit 0 | exit 0 |
+
+So the old gate was blind to the exact defect that shipped. `typecheck` is now a pinned non-strict
+`tsc --noEmit` (TSC_VERSION 7.0.2, pinned like oxlint), and `quality.run_verify(run, extra_files)`
+runs typecheck then tests as one result. Both `adw_tdd_sdlc.py` and `adw_simple_sdlc.py` call it
+where they called `run_tests`, keeping the A/B symmetric; `adw_build_test.py` and
+`adw_plan_build_test.py` are untouched. `run_verify` deliberately does **not** short-circuit on a
+failed typecheck — a builder handed the type errors and the failing tests together can fix both
+inside one bounded fix loop. `bun x` keeps its lockfile in the bun cache; both repos stayed clean.
+
+**Greenfield render smoke** (greenfield commit `0382e275`, the first deliberate `target.pristine`
+bump). `bun test` has no DOM, so main.ts's module-scope render never executed under test: the old
+"module graph loads" only proved the file parsed. A document stub installed at module scope, before
+the first dynamic import, makes the real render path run. Mutation-checked rather than assumed —
+deleting the render fails it (1 pass/1 fail), a throwing render fails it (0 pass/2 fail). tsc catches
+names and types; only this catches code that type-checks and then throws while drawing.
+
+The pristine guard behaved exactly as designed: `just target sync greenfield --dry-run` exited **5**
+naming `apps/app/app.test.ts` until `targets/greenfield.yaml` was bumped, then exited 0 with all
+gates green. First real exercise of the escape hatch.
+
+### Phase 4 — a rejected build is no longer lost by default
+
+`just sbx manage snapshot <run-id> "<why>"` commits a dirty VM tree onto `sbx/<run-id>` with subject
+`UNAPPROVED snapshot: …` and author `sssf-snapshot`, so harvest can carry it and `git log` can never
+mistake it for approved work. The logic is in `sandbox_mount/guest/snapshot_run_branch.sh` and is
+**piped over ssh**, so a VM mounted from an older factory commit still gets today's behaviour — and
+so it can be tested with no VM at all. Verified locally against throwaway repos:
+
+| case | result |
+|---|---|
+| dirty tree on `sbx/t-000000` | `OK <sha> 1`, subject `UNAPPROVED snapshot: review_2 rejected` |
+| clean tree, re-run | `CLEAN`, exit 0, no new commit |
+| HEAD is `main` | exit 2, main unmoved, nothing staged |
+| HEAD detached | exit 2 (`symbolic-ref`, not `--abbrev-ref`, so "HEAD" can't pass as a branch name) |
+| gitignored `.env` present | committed 3 files, `.env` absent |
+| `.env` **not** gitignored | exit 1, refuses, unstages — added beyond the plan; that file holds the live runtime key, so it is asserted, not assumed |
+
+The chain's commit semantics are unchanged on purpose (see the plan's Notes): committing rejected
+code inside the chain would make "the latest commit is approved" untrue, and changing it in the TDD
+chain but not the simple one would break the A/B those two exist to provide. Teardown's dirty-tree
+refusal now offers the recipe above `--force-dirty`.
+
+### Docs
+
+PLAYBOOK §2 (verify = typecheck + tests), §5 and § Greenfield runs (snapshot before harvest,
+trace-metrics); `fan_out_n.md` gained a "Bringing every arm home" section and a tool-error column;
+TREE.md gained both host scripts, the guest script, the three manage recipes, and its "FIVE-assertion
+gate" line is now SIX.
+
+### Open
+
+- **Phase 5 (the judged N=4 greenfield fan-out) has not been run** — it needs explicit go-ahead: it
+  pushes a sync, mints 4 keys and boots 4 VMs. `snapshot`'s live use is proven there, on any arm
+  review rejects.
+- The two new rosters (`sssf.asymmetric.config.yaml`, `sssf.inverse.config.yaml`) are not written
+  yet; they must be committed **before** the sync so they ship to the VMs.
+- Watch H2 in the fan-out: 13 of the harvested tree's 15 non-strict errors were TS2345
+  (number→string arguments). If a first build burns a whole fix loop purely on those, consider
+  failing only on undeclared names (TS2304/TS2552).

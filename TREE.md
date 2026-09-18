@@ -51,7 +51,10 @@ just/sandbox/         the `sbx` namespace. HOST-ONLY: needs the exe.dev account 
                       teardown a handle.
     fill.just         phase 2. Public git clone (no auth), the `sbx/<run-id>` run branch, then
                       write .env with the runtime key.
-    setup.just        phase 3. provision.sh, then the FIVE-assertion gate.
+    setup.just        phase 3. provision.sh, then the SIX-assertion gate (A git integrity,
+                      B model registry, C roster ping, D cost reporting, E credit, F toolchain).
+                      Every gate command that could read stdin is `< /dev/null`-detached: the
+                      block is a heredoc on bash's stdin, so one stdin reader eats the rest.
     execute.just      phase 4. Full SDLC inside the box, detached, returns a pid.
     observe.just      phase 5. Start both servers, expose 4501 publicly, print both URLs.
     teardown.just     phase 6. Harvests first, then revoke -> destroy -> close.
@@ -59,6 +62,12 @@ just/sandbox/         the `sbx` namespace. HOST-ONLY: needs the exe.dev account 
     mod.just          settings + imports + the `doctor` preflight.
     list.just         every run: state, VM alive, spend.
     harvest.just      bundle the run branch off the VM into refs/sandbox/<run-id>.
+    traces.just       rsync the VM's adws/adw_data/ home: raw_output.jsonl, prompts,
+                      envelopes, the sssf.db mirror. The thinking, not the commits.
+    trace_metrics.just  `trace-metrics <run-id>`: per-agent tool calls, errors and error kinds
+                      from the PULLED traces. Reads no VM, so it still works after teardown.
+    snapshot.just     `snapshot <run-id> "<why>"`: commit a dirty VM tree onto sbx/<run-id> so
+                      harvest can carry a build review rejected. Pipes the guest script over ssh.
     reap.just         revoke orphaned sbx- keys. Dry run by default.
   run/                put work in, or look inside.
     mod.just          `run cmd` (inspect, synchronous) and `run agent` (resumable Claude Code
@@ -77,12 +86,19 @@ host/target_sync.py   `just target sync`: regenerate a target repo's factory fro
                       guard, gates, neutral commit, optional push, provenance json.
 host/runs_table.py    renders `just sbx manage list`. A file, not embedded, because an unindented
                       line inside a just recipe body TERMINATES the recipe.
+host/trace_metrics.py per-agent tool calls, errors and error kinds out of a pulled traces dir.
+                      Counts unparseable lines rather than dropping them — a truncated trace
+                      must not read as a clean, low error rate.
 guest/provision.sh    runs INSIDE the VM: installs bun + just from CDNs
                       (never apt), writes models.json, builds the UI, inits the trace db,
                       touches the sentinel last.
 guest/models.json.tmpl  10 models, each with a FOUR-field cost block. A partial block fails
                       schema validation and pi drops the entire roster; with no rates pi
                       reports $0.0000 forever while genuinely spending.
+guest/snapshot_run_branch.sh  commit the VM's dirty tree onto sbx/<run-id>, marked
+                      `UNAPPROVED snapshot:` with a distinct author. Refuses unless HEAD is
+                      exactly that branch. Piped over ssh, so the VM's factory version is
+                      irrelevant and it can be tested against a local throwaway repo.
 ```
 
 ## `adws/` — the factory

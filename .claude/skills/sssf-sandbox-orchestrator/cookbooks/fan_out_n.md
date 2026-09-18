@@ -166,6 +166,26 @@ pulled live 2026-08-04; they go stale.
 `commit_sha` is recorded from what actually got checked out, never from what was asked for, and FILL
 gates that they match.
 
+## Bringing every arm home
+
+**Snapshot before you harvest, or you lose the arms that failed review.** The TDD chain leaves code
+uncommitted when review rejects it, and a crashed or killed chain leaves the same dirty tree; harvest
+carries commits only. In a fan-out most arms may be in exactly that state, so make it part of the loop
+rather than a thing you remember per arm:
+
+```bash
+while read -r ID CFG; do
+  just sbx lifecycle refresh "$ID"                       # rebuild before you trust the review URL
+  just sbx manage snapshot "$ID" "<chain outcome>"       # prints CLEAN and exits 0 if there is nothing to save
+  just sbx manage harvest  "$ID"
+  just sbx manage traces   "$ID"
+done < /tmp/fanout.map
+```
+
+`snapshot` refuses unless the VM's HEAD is `sbx/<id>`, and marks what it commits
+`UNAPPROVED snapshot: …` with a distinct author, so a rejected build can never be mistaken for an
+approved one in `git log`.
+
 ## Ranking the arms
 
 `just sbx manage list` gives you state, VM liveness and spend for every run. There is no single
@@ -180,6 +200,7 @@ Where each column comes from:
 | commit | run record `commit_sha` (the input), plus the run's own commits in the teardown bundle (the output) |
 | model (per agent) | trace db `agent_sessions.model` |
 | tokens, cost, status, request | trace db `sessions.total_tokens`, `total_cost`, `status`, `request` |
+| tool calls, tool errors, error kinds | `just sbx manage trace-metrics <id>` (after `traces`) — the column that showed one builder losing 12.0M tokens to 18 identical malformed `edit` calls |
 
 Today:
 

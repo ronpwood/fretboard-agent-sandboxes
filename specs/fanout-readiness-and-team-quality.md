@@ -268,28 +268,29 @@ with the user before mounting.
 
 #### 1. Guest script
 
-- [ ] `sandbox_mount/guest/snapshot_run_branch.sh <repo-dir> <run-id> [reason]` (bash, `set -euo pipefail`):
+- [x] `sandbox_mount/guest/snapshot_run_branch.sh <repo-dir> <run-id> [reason]` (bash, `set -euo pipefail`):
   - `cd <repo-dir>`; refuse (exit 2) unless `git symbolic-ref --short HEAD` is exactly `sbx/<run-id>`. It must never commit to `main` or a detached HEAD
   - if `git status --porcelain` is empty: print `CLEAN` and exit 0
   - `git add -A`; commit with author `sssf-snapshot <sssf-snapshot@localhost>` and subject `UNAPPROVED snapshot: <reason or "uncommitted work at snapshot time">`; the body lists `git diff --cached --stat` and the newest `adws/adw_data/sessions/*/` adw_id, if any
   - print `OK <sha> <files-changed>`
-- [ ] It must not commit `.env` or anything gitignored. `git add -A` honors `.gitignore`; confirm `app/.env` is ignored in both repos' `.gitignore` (this repo and greenfield) before relying on it
+- [x] It must not commit `.env` or anything gitignored. **Beyond the plan:** the script also *asserts* it — if `.env` stages, it refuses (exit 1) and unstages, because that file holds the live runtime key
+- [x] It must not commit `.env` or anything gitignored. `git add -A` honors `.gitignore`; confirm `app/.env` is ignored in both repos' `.gitignore` (this repo and greenfield) before relying on it
 
 #### 2. Recipe and teardown hint
 
-- [ ] `just/sandbox/manage/snapshot.just`: `snapshot RUN_ID *REASON`. Reads `vm_name` from the record, pipes the script over ssh (`ssh "${SSH_OPTS[@]}" "$VM".exe.xyz bash -s -- app "$RUN_ID" "$REASON" < sandbox_mount/guest/snapshot_run_branch.sh`) so the VM's factory version doesn't matter, then maps `CLEAN` / `OK …` / exit 2 to messages. On `OK`, print `next: just sbx manage harvest <run-id>`
-- [ ] Wire it into `just/sandbox/manage/mod.just` the same way `traces.just` is imported
-- [ ] `teardown.just`: the dirty-tree refusal adds `or keep it: just sbx manage snapshot <run-id> "<why>"` above the existing `--force-dirty` line
+- [x] `just/sandbox/manage/snapshot.just`: `snapshot RUN_ID *REASON`. Reads `vm_name` from the record, pipes the script over ssh (`ssh "${SSH_OPTS[@]}" "$VM".exe.xyz bash -s -- app "$RUN_ID" "$REASON" < sandbox_mount/guest/snapshot_run_branch.sh`) so the VM's factory version doesn't matter, then maps `CLEAN` / `OK …` / exit 2 to messages. On `OK`, print `next: just sbx manage harvest <run-id>`
+- [x] Wire it into `just/sandbox/manage/mod.just` the same way `traces.just` is imported
+- [x] `teardown.just`: the dirty-tree refusal adds `or keep it: just sbx manage snapshot <run-id> "<why>"` above the existing `--force-dirty` line
 
 #### Validation — Phase 4
 
 > **Loop gate.** Do not start Phase 5 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Local, no VM: `git init $SCRATCH/snap && cd $SCRATCH/snap && git commit --allow-empty -m base && git switch -c sbx/t-000000 && echo x > f.ts` then `bash sandbox_mount/guest/snapshot_run_branch.sh $SCRATCH/snap t-000000 "review_2 rejected"` → `OK <sha> 1`, and `git -C $SCRATCH/snap log -1 --format=%s` starts with `UNAPPROVED snapshot: review_2 rejected`
-- [ ] Same repo, run again with a clean tree → `CLEAN`, exit 0, no new commit
-- [ ] Wrong branch: `git -C $SCRATCH/snap switch -q main 2>/dev/null || git -C $SCRATCH/snap switch -q -c main HEAD~1; echo y > g.ts` then the script → exit 2, no commit on main
-- [ ] Ignored files stay out: add `.env` to the scratch repo's `.gitignore`, create `.env`, snapshot → `.env` is not in `git show --stat HEAD`
-- [ ] `just --show sbx::manage::snapshot` parses; `grep -n 'manage snapshot' just/sandbox/lifecycle/teardown.just` — one hit
+- [x] Local, no VM: `git init $SCRATCH/snap && cd $SCRATCH/snap && git commit --allow-empty -m base && git switch -c sbx/t-000000 && echo x > f.ts` then `bash sandbox_mount/guest/snapshot_run_branch.sh $SCRATCH/snap t-000000 "review_2 rejected"` → `OK <sha> 1`, and `git -C $SCRATCH/snap log -1 --format=%s` starts with `UNAPPROVED snapshot: review_2 rejected`
+- [x] Same repo, run again with a clean tree → `CLEAN`, exit 0, no new commit
+- [x] Wrong branch: `git -C $SCRATCH/snap switch -q main 2>/dev/null || git -C $SCRATCH/snap switch -q -c main HEAD~1; echo y > g.ts` then the script → exit 2, no commit on main
+- [x] Ignored files stay out: add `.env` to the scratch repo's `.gitignore`, create `.env`, snapshot → `.env` is not in `git show --stat HEAD`
+- [x] `just --show sbx::manage::snapshot` parses; `grep -n 'manage snapshot' just/sandbox/lifecycle/teardown.just` — one hit
 - [ ] Live use is proven in Phase 5 on any arm review rejects
 
 ### Phase 5: The judged greenfield fan-out (live — needs the user's go-ahead)
