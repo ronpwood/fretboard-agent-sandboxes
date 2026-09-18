@@ -25,6 +25,30 @@ Run 2026-09-18. N=4, TDD chain, one prompt (`prompts/greenfield.md`, unchanged s
 one pin (`da460ca6cb50af47845dfc83f422eed881c9355e`). Total **billed** spend **$11.28** against a $75
 cap.
 
+### Cost is recorded, never scored
+
+**Dollar cost is a fact in this report, not a scoring lever, and must not become one.** Ron's call,
+2026-09-18, and the reasoning is sound:
+
+- **A price is a business decision, not a measurement of work.** DeepSeek doing this volume of work
+  for $0.04–$0.10 a phase is hard to reconcile with the electricity alone. Subsidy, loss-leader
+  pricing, or a market-share play are all likelier than a genuine 100× efficiency edge over vendors
+  who must price at cost-plus to survive. Scoring on price rewards whoever is currently burning
+  investor money.
+- **Scoring on price makes the scorecard unreproducible.** An arm graded partly on cost-per-point
+  silently changes grade when a vendor reprices. We would be tracking the pricing wars, not our own
+  engineering. Token counts do not move when someone's finance team does.
+- **Recorded cost still earns its place** as a dated snapshot of the landscape — useful for reading
+  who is buying share, who is pre-IPO, and how that shifts over time. Keep it visible; keep it out
+  of the score.
+
+**Token efficiency is the legitimate lever**, because it tracks real work. One caveat so it is not
+over-trusted: tokens are not a clean compute measure either — tokenizers differ, reasoning-token and
+cache accounting differ per provider, and a sparse MoE burns far fewer FLOPs per token than a dense
+frontier model. Tokens are safest compared *within* a model family, or read as order-of-magnitude
+across families. gf2-4's 3.3M against gf2-1's 21.2M is a 6.4× gap — well past that noise floor, and
+therefore meaningful. A 15% gap would not be.
+
 **Billed ≠ traced.** The chains' own cost reports total $13.39; OpenRouter billed $11.28, or ~84%.
 Every arm is traced-high by a similar factor (0.67×–0.93×), so rankings are unaffected, but **use
 the billed column** — it comes from the key's own usage endpoint at teardown, recorded in the run
@@ -217,34 +241,44 @@ is the TDD chain, so it must reason about a red suite without running anything.
 
 **Asymmetric rosters have a hidden cost nobody costed: upgrading one seat increases the load on the
 flash seats downstream of it.** Worth a real experiment — upgrade the *pair* (planner +
-test_designer) rather than one seat. In dollars this phase is trivial ($0.04–$0.10, deepseek is
-cheap); what it spends is wall clock.
+test_designer) rather than one seat. The cost here is not dollars (this phase is pennies) but
+**tokens and wall clock**: 1.94M tokens and 46 minutes, against 250k and 11 minutes for the same
+model on a flash-authored plan.
 
 ### 4. Frontier seats did not buy an accepted build (H4, H5 both NOT SUPPORTED)
 
-- **gf2-3 (asymmetric, opus-5 plan + review)** scored 20/20 but **cost $7.73 billed — 11.7× the winner** —
-  and was still rejected at review_2 (21 of its own 24 requirements). Its review_2 alone burned
-  3.28M tokens / $3.32. H4 asked whether it beats both default arms by more than they differ from
-  each other: it ties gf2-2 at the rubric ceiling while gf2-1 and gf2-2 differ by 6 points. **The
-  within-condition spread is larger than the between-condition difference.** Not supported.
-- **gf2-4 (inverse, kimi-k3 builder)** is the efficiency story: **3.3M tokens, 48 builder tool calls,
-  zero schema errors**, comparable code volume (2,195 src lines vs gf2-2's 2,020). It built more
-  with far less thrash. And it still shipped a crash, scored lowest (12/20), and cost $1.75 billed — the
-  worst cost-per-point of any arm. Not supported.
+- **gf2-3 (asymmetric, opus-5 plan + review)** scored 20/20, was still rejected at review_2, and was
+  the **least token-efficient arm in the run: 29.2M tokens**, with review_2 alone burning 3.28M. H4
+  asked whether it beats both default arms by more than they differ from each other: it ties gf2-2
+  at the rubric ceiling while gf2-1 and gf2-2 differ by 6 points. **The within-condition spread is
+  larger than the between-condition difference.** Not supported. (Billed $7.73 — recorded, not
+  scored.)
+- **gf2-4 (inverse, kimi-k3 builder)** is the efficiency story, and it is a real one: **3.3M tokens,
+  48 builder tool calls, zero schema errors**, with comparable code volume (2,195 src lines vs
+  gf2-2's 2,020). It built more with 6.4× fewer tokens than gf2-1 and 3.8× fewer than gf2-2 — a gap
+  far past the cross-family noise floor. And it still shipped a browser crash and scored lowest
+  (12/20). **Token efficiency did not convert into a working app.** Not supported. (Billed $1.75 —
+  recorded, not scored.)
 
-**Which seat buys more per dollar?** Neither, at these prices. The cheapest arm won. On this
-evidence the binding constraint is not model capability at any single seat — it is that **the gates
-cannot tell a working app from a broken one**, so a good build and a crashing build both reach
-review looking identical.
+**Which seat buys more?** Neither, on this evidence. The winning arm was neither frontier arm, and
+the most token-efficient arm scored last. The binding constraint is not model capability at any
+single seat — it is that **the gates cannot tell a working app from a broken one**, so a good build
+and a crashing build both reach review looking identical. Until that is fixed, roster experiments
+are measuring noise through a broken instrument.
 
 ### 5. The rubric has a ceiling problem
 
-gf2-2 and gf2-3 both scored 20/20 despite gf2-3 costing 11.7× more and being rejected by its own
-reviewer. A rubric that cannot separate them is not measuring what now matters. Items 1–3 and 6 and
-9 were scored 2 by every arm — they no longer discriminate.
+gf2-2 and gf2-3 both scored 20/20 despite gf2-3 using 2.3× the tokens and being rejected by its own
+reviewer. A rubric that cannot separate them is not measuring what now matters. Items 1–3, 6 and 9
+were scored 2 by every arm — they no longer discriminate.
 
-**Recommendation for the next run:** add items with headroom — cost-per-point, whether the app
-survives interaction (not just load), and design quality, which no arm's reviewer assessed. See §6.
+**Recommendation for the next run:** add items with headroom, and **no cost item** (see
+"Cost is recorded, never scored"):
+
+- **Survives interaction**, not merely loads — click the wheel, change a key, play a chord.
+- **Design quality**, which no arm's reviewer assessed at all (§6).
+- **Token efficiency per delivered feature**, as the legitimate efficiency signal.
+- Retire or split the items every arm aces, so the scale has room at the top.
 
 ### 6. Reviewers remain blind to visual design
 
@@ -257,6 +291,24 @@ This reproduces the 2026-08-28 finding that agents are "blind to their own desig
 extends to reviewers. Styling did arrive in gf2-2's `revise_1` (`styles.css`, 111 lines), so the
 outcome was fine; the point is the reviewer never asked.
 
+**The reviewer is not negligent — it is blindfolded.** It reads source. It has no channel through
+which an app can *look* like anything, so "the page is unstyled" is not a fact available to it. No
+prompt change fixes a missing sense; asking a text-only reviewer to judge design just invites it to
+guess from CSS line counts.
+
+**The fix shares infrastructure with the load check (follow-up 5), and that is the argument for
+doing both at once.** Both need one thing the VM does not have today: a headless browser in the
+chain. With it:
+
+- `run_verify` gains a real load assertion — zero console errors on open. That alone would have
+  caught gf2-1 and gf2-4.
+- The same render produces a **screenshot**, which can be attached to the reviewer's context. A
+  reviewer that can see the page can say "this is unstyled" as a finding, and can judge layout,
+  hierarchy and legibility — the rubric's item 7 territory that nothing currently measures.
+
+One provisioning change (add a headless browser to `provision.sh`) buys crash detection *and* the
+first design review this factory has ever had. Cost: a heavier image and a slower provision.
+
 ## Verdicts
 
 | # | hypothesis | verdict |
@@ -264,24 +316,47 @@ outcome was fine; the point is the reviewer never asked.
 | H1 | builder tool contract cuts `edit` schema failures to ≤3 | **CONFIRMED** — 18 → 0/1/2, all four arms, three deepseek arms agreeing (2,2,1) |
 | H2 | the tsc gate catches ≥1 real defect during a fix loop | **FAILED** — never failed once in any arm; 0 defects caught; has a CSS-import false positive |
 | H3 | the render smoke surfaces a crash, or its stub is extended not deleted | **FAILED** — stub was extended, but it *caused* 2 browser crashes and put test-double code in all 4 arms' production source |
-| H4 | asymmetric beats both default arms by more than they differ from each other | **NOT SUPPORTED** — ties the ceiling at 11.7× billed cost, still rejected; within-condition spread (6 pts) exceeds between-condition |
-| H5 | inverse beats both default arms by more than their spread | **NOT SUPPORTED** — lowest score (12), shipped a crash, worst cost-per-point, despite the best tool-use metrics in the run |
+| H4 | asymmetric beats both default arms by more than they differ from each other | **NOT SUPPORTED** — ties the ceiling while using the most tokens in the run (29.2M), still rejected; within-condition spread (6 pts) exceeds between-condition |
+| H5 | inverse beats both default arms by more than their spread | **NOT SUPPORTED** — lowest score (12) and shipped a crash, despite the best token efficiency (3.3M, 6.4× better than gf2-1) and best tool-use metrics in the run. Efficiency did not convert into a working app |
 
 ## Follow-ups (none applied — all need review)
 
-1. **Seal or replace the render stub.** Preferred: `happy-dom`. Minimum: `#private` storage + freeze,
-   and forbid production references to it. *(This is the highest-value item in the list.)*
-2. **Generalize the `path` bullet** to every file tool (`edit`, `write`, `read`), and strengthen the
-   non-overlap constraint on multi-edit calls.
-3. **Fix the tsc CSS false positive** — `declare module "*.css";` in the greenfield shell.
-4. **Add `lint` to `run_verify`** so `no-explicit-any` runs in the chain.
-5. **Add a real load check to the chain.** Every gate was green on two apps that crash on open. A
-   headless page load asserting zero console errors would have caught both, and is the single change
-   most likely to change outcomes next run.
-6. **Rework the rubric** for headroom (§5).
-7. **Test seat *pairs*, not seats** (§3).
-8. Add a `model-format` error kind to `trace_metrics.py` so DSML-style corruption is not folded into
-   `schema`/`other`.
+**Items 1 and 2 are a pair and should land together**: one removes the cause of this run's crashes,
+the other detects any crash at all. If only one gets done, do the browser — a stub fix prevents the
+failure we happened to find; a load check catches the ones we have not.
+
+1. **Seal or replace the render stub** — removes the *cause* found in this run. Preferred:
+   `happy-dom`. Minimum: `#private` storage + freeze, and forbid production code from referencing
+   it. Also rewrite the header comment: the rule is "do not reference this from production", not
+   merely "do not delete this test".
+
+2. **Put a headless browser in the chain** — the *detection* half, and the broadest single change
+   available. One provisioning change buys two things (§6):
+   - a **load assertion** in `run_verify` (zero console errors on open), which would have caught
+     both gf2-1 and gf2-4 — every gate in this run was green on two apps that crash;
+   - a **screenshot in the reviewer's context**, giving the factory its first design review. The
+     reviewer is not negligent about design, it is blindfolded; no prompt fixes a missing sense.
+
+   Cost: a heavier VM image and a slower provision.
+
+3. **Generalize the `path` bullet** to every file tool (`edit`, `write`, `read`) and strengthen the
+   non-overlap constraint on multi-edit calls. *Cheapest win on the list — H1 already proved the
+   mechanism works, this just widens its scope.*
+
+4. **Fix the tsc CSS false positive** — `declare module "*.css";` in the greenfield shell (another
+   deliberate pristine bump).
+
+5. **Add `lint` to `run_verify`** so `no-explicit-any` runs in the chain. Both crashes hid behind
+   explicit `any`, which tsc cannot see in either mode.
+
+6. **Rework the rubric** for headroom, with **no cost item** (§5).
+
+7. **Test seat *pairs*, not single seats** (§3) — upgrading the planner alone taxed the flash
+   test_designer downstream.
+
+8. **Add a `model-format` error kind to `trace_metrics.py`** so DSML-style corruption is not folded
+   into `schema`/`other`. Provider bugs and instruction-following failures have different owners and
+   should not share a bucket.
 
 ## Artifacts
 
