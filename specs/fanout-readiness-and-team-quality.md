@@ -204,29 +204,29 @@ with the user before mounting.
 
 #### 1. Trace metrics
 
-- [ ] `sandbox_mount/host/trace_metrics.py <traces-dir> [--json]` (stdlib-only, like `run_record.py`). For every `sessions/<adw_id>/<agent>/raw_output.jsonl`: count `tool_execution_end` events by `toolName`, count `isError`, and classify error text as `schema` (`Validation failed for tool`), `not-found` (`Could not find the exact text`), `no-op` (`No changes made`) or `other`. Print one row per (adw_id, agent): calls, errors, rate, per-tool errors, per-kind errors. `--json` emits the same as a list of objects. Skip unparseable lines and count them in a trailing `skipped` field, never silently
-- [ ] `just sbx manage trace-metrics <run-id>`: runs the script on `.sandbox/traces/<run-id>/`; if the dir is missing, exit 1 with `run: just sbx manage traces <run-id>` (traces are pulled, never read live)
+- [x] `sandbox_mount/host/trace_metrics.py <traces-dir> [--json]` (stdlib-only, like `run_record.py`). For every `sessions/<adw_id>/<agent>/raw_output.jsonl`: count `tool_execution_end` events by `toolName`, count `isError`, and classify error text as `schema` (`Validation failed for tool`), `not-found` (`Could not find the exact text`), `no-op` (`No changes made`) or `other`. Print one row per (adw_id, agent): calls, errors, rate, per-tool errors, per-kind errors. `--json` emits the same as a list of objects. Skip unparseable lines and count them in a trailing `skipped` field, never silently
+- [x] `just sbx manage trace-metrics <run-id>`: runs the script on `.sandbox/traces/<run-id>/`; if the dir is missing, exit 1 with `run: just sbx manage traces <run-id>` (traces are pulled, never read live)
 
 #### 2. Builder tool contracts
 
-- [ ] Add `## Tool contracts` to `adws/adw_data/prompt_engineering/builder/system.md`, no more than 8 bullets, each tied to an observed failure:
+- [x] Add `## Tool contracts` to `adws/adw_data/prompt_engineering/builder/system.md`, no more than 8 bullets, each tied to an observed failure:
   - `edit` takes `path` **and** `edits: [{oldText, newText}]`; every call needs `path`, even for a file you just read
   - A tool error names its cause. `Validation failed for tool "edit": path …` means a missing argument, not an edit that was too large. Read the error and fix the call; don't shrink the edit
   - `oldText` must match the file byte-for-byte, and must be unique. After any edit to a file, re-`read` it before the next edit to the same region
   - Prefer `edit` for changes to an existing file; use `write` for new files or a deliberate full rewrite, not as a fallback after edit errors
   - Several changes to one file go in one `edit` call as multiple entries in `edits`
-- [ ] Confirm the edit tool's real argument names against pi's own schema before writing the bullets: the failing trace shows `edits[].oldText` and the missing `path` (`grep -m1 '"Validation failed for tool' <builder raw_output.jsonl>` shows the received arguments). Don't document a field name the trace doesn't show
-- [ ] Add the identical section to `.claude/skills/sssf/templates/prompt_engineering/builder/system.md`
+- [x] Confirm the edit tool's real argument names against pi's own schema before writing the bullets: the failing trace shows `edits[].oldText` and the missing `path` (`grep -m1 '"Validation failed for tool' <builder raw_output.jsonl>` shows the received arguments). Don't document a field name the trace doesn't show
+- [x] Add the identical section to `.claude/skills/sssf/templates/prompt_engineering/builder/system.md`
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `just sbx manage trace-metrics gf-e2e-20260917-cbb166` — reproduces the baseline exactly: builder 128 calls / 20 errors (schema 18, not-found 1, no-op 1), planner 35 / 1, reviewer 60 / 0, test_designer 8 / 0
-- [ ] `just sbx manage trace-metrics no-such-run; test $? -eq 1` — missing traces handled with the hint
-- [ ] `uv run --with pydantic --with pyyaml --with python-dotenv --with rich python -c 'import sys; sys.path.insert(0,"adws"); from adw_modules import agents; c=agents.load_config("adws/adw_sssf_config/sssf.config.yaml"); agents.validate(c,[a.name for a in c.agents]); print("ok")'` — the prompt file still resolves and validates
-- [ ] `grep -c '^- ' adws/adw_data/prompt_engineering/builder/system.md` — at most 6 original bullets plus 8 new ones (the section stays short)
-- [ ] `diff <(sed -n '/^## Tool contracts/,$p' adws/adw_data/prompt_engineering/builder/system.md) <(sed -n '/^## Tool contracts/,$p' .claude/skills/sssf/templates/prompt_engineering/builder/system.md)` — no output
+- [x] `just sbx manage trace-metrics gf-e2e-20260917-cbb166` — reproduces the baseline exactly: builder 128 calls / 20 errors (schema 18, not-found 1, no-op 1), planner 35 / 1, reviewer 60 / 0, test_designer 8 / 0
+- [x] `just sbx manage trace-metrics no-such-run; test $? -eq 1` — missing traces handled with the hint
+- [x] `uv run --with pydantic --with pyyaml --with python-dotenv --with rich python -c 'import sys; sys.path.insert(0,"adws"); from adw_modules import agents; c=agents.load_config("adws/adw_sssf_config/sssf.config.yaml"); agents.validate(c,[a.name for a in c.agents]); print("ok")'` — the prompt file still resolves and validates
+- [x] `grep -c '^- ' adws/adw_data/prompt_engineering/builder/system.md` — at most 6 original bullets plus 8 new ones (the section stays short)
+- [x] `diff <(sed -n '/^## Tool contracts/,$p' adws/adw_data/prompt_engineering/builder/system.md) <(sed -n '/^## Tool contracts/,$p' .claude/skills/sssf/templates/prompt_engineering/builder/system.md)` — no output
 
 ### Phase 3: A typecheck gate that type-checks, and a render smoke
 
