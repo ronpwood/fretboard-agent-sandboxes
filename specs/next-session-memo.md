@@ -33,7 +33,7 @@ validated two factory fixes.
 
 | question | answer |
 |---|---|
-| Does the factory beat one generalist agent? | **No.** One 37-min turn scored 31/32 against the chain's best 32/32, for $4.28. Ron: the first result he would host and share, and he'd replace his own app with it. |
+| Does the factory beat one generalist agent? | **No.** One 37-min turn scored 31/32 against the chain's best 32/32, for $4.28 of Shelley credit (see the cost caveat below). Ron: the first result he would host and share, and he'd replace his own app with it. |
 | Is the agency gap harness or model? | **Harness.** Confirmed twice: the bare arm installed playwright unprompted; the factory builder, once *told*, reached for a tool 16 times against a control of 0-of-7. |
 | Does cutting the review loop cost real convergence? | **Yes.** fixval went 11/30 → 21/33 → **30/30 accepted**. Under the old code it stops at review_2, rejected. |
 
@@ -139,6 +139,17 @@ or replace it with the "would you use it?" judgement plus the mechanical gates.
 **Roster and model-family comparisons.** Still deferred, and the reason got stronger: within-condition
 spread has been 4× on cost, and we now know the outcome measure itself is unreliable. Fix the
 measurement before spending on a roster fan-out.
+
+**A cost caveat that has to be fixed before ANY cross-lane comparison.** The agent-mediated lane
+(`just sbx run agent`) bills the exe.dev **Shelley** allowance at exe.dev's `claude-opus-5` rate,
+which is in **none** of our rate tables — every roster and `models.json.tmpl` is `openrouter/<id>`.
+Nothing in this repo can compute or report it: pi never sees it, the tracer never records it, and
+`sbx manage list` shows only the OpenRouter key ($0.00075 for that arm). The bare arm's $4.28 is a
+**balance delta** read either side of the run, and that method only works while nothing else touches
+Shelley — so a fan-out on this lane has no per-run cost attribution at all, since the billing page
+aggregates by model per month. Same shape as the old `$0.0000` bug, one level out: **a lane whose
+spend our instruments cannot see.** Decide whether to teach the tooling this rate or to stop quoting
+the two lanes' costs side by side.
 
 **A clean re-run of the bare arm** with `adws/` moved aside, to settle the stop-rule contamination.
 Low value — it tests tooling access, and the capability question is answered.

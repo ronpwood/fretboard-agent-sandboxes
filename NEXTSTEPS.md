@@ -2388,3 +2388,17 @@ Ron's hypothesis, which the evidence supports: the aesthetic gap between bare-cc
 because **bare-cc screenshotted its own app and read the images back (10 of 81 tool calls), and
 fixval never did.** A working `render_smoke` would not have closed that gap either — it returns a
 verdict, not a picture. **The builder needs an instrument that hands it an IMAGE it can look at.**
+
+### Cost correction (2026-09-19, from Ron's billing page)
+
+The bare arm's **$4.28 is right but is not a number this repo computed.** That lane bills the
+exe.dev **Shelley** allowance at exe.dev's `claude-opus-5` rate, which appears in none of our rate
+tables — every roster and `models.json.tmpl` is `openrouter/<id>`. It is a balance delta:
+$10.64 → $6.36 left of $20. Cross-checked against the billing page's month-to-date for
+`claude-opus-5` ($13.64) and the remaining allowance ($20 − $13.64 = $6.36). Both agree.
+
+**The method only holds while nothing else spends Shelley in the window**, and every `run agent`
+turn does. There is no per-run attribution — the billing page aggregates by model per month — so a
+fan-out on this lane could not be costed at all. Same shape as the `$0.0000` bug, one level out: a
+lane whose spend our instruments cannot see. Either teach the tooling this rate or stop quoting the
+two lanes' costs side by side.

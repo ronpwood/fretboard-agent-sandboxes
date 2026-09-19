@@ -143,11 +143,41 @@ question is already answered.
 | model | `claude-opus-5` (141 assistant messages) |
 | tokens | 351,385 out · 21.8M cache read · 466,851 cache write · 282 in |
 | tool calls | 81 — 71 Bash, 10 Read (all screenshots) |
-| billed | **$4.28** (exe.dev Shelley credit, not the OpenRouter key, which moved $0.00075 for setup gates only) |
+| billed | **$4.28** (exe.dev **Shelley** credit for `claude-opus-5`, not the OpenRouter key, which moved $0.00075 for setup gates only) |
 | output | 4,358 insertions, 24 files, all under `apps/app/` |
 
 Cost is **not** comparable to the factory arms' $0.36–$1.43: different provider, different model
 tier, frontier vs cheap roster. Recorded as a dated fact, never ranked.
+
+**How that $4.28 was obtained, and why it is not a computed number.** This lane bills against the
+exe.dev **Shelley** allowance at exe.dev's own `claude-opus-5` rate. That rate is in **none** of our
+rate tables — `sandbox_mount/guest/models.json.tmpl` and every roster under
+`adws/adw_sssf_config/` are entirely `openrouter/<id>`. So nothing in this repo can compute, report
+or reconcile the cost of an agent-mediated run: pi never sees it, the tracer never records it, and
+`just sbx manage list` shows only the OpenRouter key's spend, which for this arm was $0.00075.
+
+The figure is a **balance delta**, read from the account either side of the run:
+
+```
+before   Allowance: $10.64 left of $20     ->  $9.36 used month-to-date
+after    Allowance:  $6.36 left of $20     -> $13.64 used month-to-date
+                                               ------
+                                               $4.28
+```
+
+Cross-checked 2026-09-19 against the billing page's own month-to-date line for `claude-opus-5`
+($13.64) and the remaining allowance ($6.36 = $20 − $13.64). Both agree.
+
+**The method's one precondition: nothing else may touch Shelley during the window.** Every
+`just sbx run agent` turn spends the same allowance, so two overlapping agent-mediated runs, or a
+fan-out using that lane, make the delta meaningless and there is no per-run attribution to fall back
+on — the billing page aggregates by model per month, not by run. A fan-out on this lane would need
+its costs reconciled some other way, or not at all.
+
+This is the same shape of hole as the `$0.0000` bug that logged a 463.6k-token run as free: a lane
+whose spend our instruments cannot see. It is smaller — the money is visible on the billing page
+rather than nowhere — but it means **cost comparisons drawn from our own tooling silently exclude
+the bare lane entirely.**
 
 ## The verdict the rubric could not produce
 
