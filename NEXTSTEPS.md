@@ -2197,3 +2197,11 @@ needed. It would have caught this in `test_1`.
   `raw_output.jsonl`, and a finished planner's file is stale by design. A monitor that always fires
   is worse than none — it trains you to ignore it. Fixed to track only the newest agent output.
 
+### Where to pick up
+
+`specs/next-session-memo.md` — ranked, with Ron's three questions developed against the evidence.
+Short version: **run the bare Claude Code control arm first** (one session, same prompt, no factory),
+**assert the silent channels** (audio was one), and **stop ranking arms on accept/reject**. Roster and
+model-family comparisons stay deferred until the measurement is fixed — within-condition spread is
+still 4x on cost with nothing varying.
+
