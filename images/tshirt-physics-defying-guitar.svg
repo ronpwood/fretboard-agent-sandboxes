@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 980" width="900" height="980" role="img" aria-labelledby="title desc">
+  <title id="title">As tempting as a physics-defying guitar is, I'm staying old school</title>
+  <desc id="desc">A guitar neck with B and C marked on the A string. Moving from C toward the nut should drop one semitone; an amber arrow shows it rising eleven instead. The line of code responsible sits underneath.</desc>
+
+  <style>
+    .ink   { fill: #f2e9dc; }
+    .muted { fill: #f2e9dc; opacity: .45; }
+    .amber { fill: #f59e0b; }
+    .head  { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 700; letter-spacing: .10em; }
+    .huge  { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 800; letter-spacing: .01em; }
+    .mono  { font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; }
+    .s-ink   { stroke: #f2e9dc; fill: none; }
+    .s-amber { stroke: #f59e0b; fill: none; }
+  </style>
+
+  <!-- Shirt backing. DELETE this rect to print on any garment colour. -->
+  <rect id="shirt" width="900" height="980" fill="#12100e"/>
+
+  <!-- ── headline ─────────────────────────────────────────────────── -->
+  <g class="head" text-anchor="middle">
+    <text class="muted" x="450" y="88"  font-size="30">AS TEMPTING AS A</text>
+    <text class="ink"   x="450" y="134" font-size="38">PHYSICS-DEFYING GUITAR IS</text>
+  </g>
+
+  <!-- ── the impossible interval, called out above the neck ───────── -->
+  <g text-anchor="middle">
+    <text class="mono muted" x="307" y="248" font-size="16">C &#8594; B, toward the nut</text>
+    <text class="huge amber" x="307" y="288" font-size="30">+11 SEMITONES</text>
+    <text class="mono muted" x="307" y="312" font-size="15">(should be &#8722;1)</text>
+  </g>
+
+  <!-- ── the neck ─────────────────────────────────────────────────── -->
+  <g id="neck">
+    <rect x="90" y="344" width="720" height="180" rx="4" fill="#1d1916"/>
+    <rect x="84" y="338" width="14" height="192" rx="3" class="ink"/>
+
+    <!-- frets: real spacing, d = L(1 - 2^(-n/12)), L = 2000 from the nut -->
+    <g class="s-ink" stroke-width="3" opacity=".5">
+      <line x1="202" y1="344" x2="202" y2="524"/>
+      <line x1="308" y1="344" x2="308" y2="524"/>
+      <line x1="408" y1="344" x2="408" y2="524"/>
+      <line x1="503" y1="344" x2="503" y2="524"/>
+      <line x1="592" y1="344" x2="592" y2="524"/>
+      <line x1="676" y1="344" x2="676" y2="524"/>
+      <line x1="755" y1="344" x2="755" y2="524"/>
+    </g>
+
+    <circle cx="358" cy="434" r="7" class="muted"/>
+    <circle cx="548" cy="434" r="7" class="muted"/>
+
+    <!-- strings: 1st (high E) top, 6th (low E) bottom -->
+    <g class="s-ink" stroke-linecap="round">
+      <line x1="90" y1="364" x2="810" y2="364" stroke-width="1.4" opacity=".7"/>
+      <line x1="90" y1="392" x2="810" y2="392" stroke-width="1.8" opacity=".7"/>
+      <line x1="90" y1="420" x2="810" y2="420" stroke-width="2.2" opacity=".7"/>
+      <line x1="90" y1="448" x2="810" y2="448" stroke-width="2.8" opacity=".7"/>
+      <line x1="90" y1="476" x2="810" y2="476" stroke-width="3.4" opacity="1"/>
+      <line x1="90" y1="504" x2="810" y2="504" stroke-width="4.2" opacity=".7"/>
+    </g>
+
+    <text class="mono muted" x="66" y="481" font-size="17" text-anchor="end">A</text>
+
+    <!-- the arc: C, up and to the LEFT, landing on B -->
+    <path d="M 356 452 C 338 392, 284 390, 264 444" class="s-amber" stroke-width="4.5" stroke-linecap="round"/>
+    <polygon points="262,462 251,438 274,441" class="amber"/>
+
+    <!-- the two notes, both on the 5th string -->
+    <circle cx="255" cy="476" r="20" class="amber"/>
+    <text class="huge" x="255" y="484" font-size="22" text-anchor="middle" fill="#12100e">B</text>
+    <circle cx="358" cy="476" r="20" stroke="#f2e9dc" stroke-width="2.5" fill="#12100e"/>
+    <text class="huge ink" x="358" y="484" font-size="22" text-anchor="middle">C</text>
+  </g>
+
+  <!-- direction rail -->
+  <g>
+    <line x1="120" y1="568" x2="780" y2="568" class="s-ink" stroke-width="1.5" opacity=".25"/>
+    <text class="mono muted" x="120" y="596" font-size="15" text-anchor="start">&#8592; toward the nut</text>
+    <text class="mono muted" x="780" y="596" font-size="15" text-anchor="end">toward the body &#8594;</text>
+  </g>
+
+  <!-- ── payoff ───────────────────────────────────────────────────── -->
+  <text class="huge ink"   x="450" y="710" font-size="72" text-anchor="middle">I'M STAYING</text>
+  <text class="huge amber" x="450" y="784" font-size="72" text-anchor="middle">OLD SCHOOL</text>
+
+  <!-- ── the culprit ──────────────────────────────────────────────── -->
+  <g>
+    <line x1="170" y1="846" x2="730" y2="846" class="s-amber" stroke-width="1.5" opacity=".45"/>
+    <text class="mono ink"   x="450" y="898" font-size="23" text-anchor="middle">return A4 * Math.pow(2, (pc &#8722; 9) / 12);</text>
+    <text class="mono muted" x="450" y="934" font-size="15" text-anchor="middle">pc is a pitch class. there is no octave in it.</text>
+  </g>
+</svg>
