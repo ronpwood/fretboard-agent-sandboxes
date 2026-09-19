@@ -2205,3 +2205,117 @@ Short version: **run the bare Claude Code control arm first** (one session, same
 model-family comparisons stay deferred until the measurement is fixed — within-condition spread is
 still 4x on cost with nothing varying.
 
+
+## 2026-09-19 — the bare Claude Code control arm: one turn, 31/32
+
+`bare-cc-20260919-ba3919`, greenfield, pin `59b1738`, **one `just sbx run agent` turn, 37 minutes,
+$4.28**, model `claude-opus-5` on exe.dev's gateway. No factory, no phases, no gates, no reviewer.
+Pre-registered in `specs/bare-claude-control-arm-preregistration.md` before it ran; full scorecard
+in `specs/bare-claude-control-arm-results.md`.
+
+**It scored 19 + 12 = 31/32 against the best factory arms' 32/32** — and the single lost point is
+structural (part A item 9 requires a red suite preceding the build, which this condition cannot
+have by construction). 4,358 lines, 24 files, all inside `apps/app/`. Every gate re-run by me
+rather than believed: 101 tests / 21,358 assertions, oxlint clean, the factory's exact typecheck
+argv clean, build 78 KB, and **zero console errors** through a full interaction pass.
+
+### The two findings that matter
+
+**1. It asserted the silent channel, unprompted — P3 falsified.** The suite computes
+`voicingMidis(...)`, the actual numbers handed to the audio engine, and asserts for every shape at
+every one of twelve roots that they sound the chord claimed with the root in the bass. Verified
+independently: C major emits `[48,52,55,60,64]` → C,E,G. **This is precisely the assertion whose
+absence let gf4-solo ship a chromatic cluster.** Nobody asked for it. Lift it into the brief.
+
+**2. The agency gap is harness, not model.** In one turn it wrote its own PEP-723 Playwright
+script, *installed playwright*, screenshotted its app, cropped the images and **read them back** —
+10 of 81 tool calls were image reads. It clipped the wheel caption out of the viewBox, saw it in a
+screenshot, fixed it, and added a test that fails if it recurs. Control: **0 of 7** factory arms
+ever mentioned a browser tool. Same models. The factory's `tools:` allowlist has no discovery tool
+in it, so a factory agent *cannot learn playwright exists*. This one could.
+
+### The stop rule fired — read before quoting the number
+
+Pre-registered: void as a control if it ran anything under `adws/`. **It ran
+`adws/adw_modules/render_smoke.py` and read `quality.py`.** So:
+
+- **Void** as a "no shared tooling" control — its render smoke is the factory's instrument.
+- **Not void** as "one generalist vs the chain": 0 Skill calls, no ADW, no roster, no delegated
+  phase; no factory file modified (it copied render_smoke.py to /tmp before patching).
+
+The contamination runs *against* the factory's interest — the bare agent used a gate the factory's
+own agents never invoke. A clean re-run with `adws/` moved aside tests tooling access, not
+capability.
+
+### Consequences
+
+- **The chain's marginal value is now an open question.** 31/32 in 37 minutes, one turn, no
+  reviewer, no revision loop, no red gate.
+- **Rubric saturation is acute.** Four arms now cluster at 31–32/32. Part B was added to break a
+  part A tie and has itself tied. The next fan-out needs real headroom or a different measure.
+- **Fix the agency gap cheaply:** give factory agents a discovery path and advertise the box.
+- Recipe fix this session: `just sbx run agent` now passes `-o ServerAliveInterval=30
+  -o ServerAliveCountMax=10`. `claude -p` buffers its whole reply, so a 37-minute turn is a silent
+  ssh connection and ssh's default keepalive is 0 — a NAT timeout would have killed it mid-build.
+
+**VM still up** for live review (app URL public on 4501). Teardown not run — Ron's call.
+
+## 2026-09-19b — fixed (4) the truncated review loop, and added the in-build verify step
+
+Both from `specs/what-the-bare-arm-actually-did.md`, which decomposed the factory's handicap into
+four parts. These are the two cheap ones. Not yet exercised on a live run.
+
+### (4) `MAX_REVISION_LOOPS` was a misleading name wrapped around a real cut-off
+
+The constant read like a revision budget and bounded **reviews**: `review_1 → revise_1 → review_2 →
+stop` gave exactly **one** revision, and review_2's findings were discarded in every run this repo
+has ever done. Renamed to say what it means, and raised:
+
+```python
+MAX_REVISIONS = 2                    # what the builder actually gets
+MAX_REVIEWS   = MAX_REVISIONS + 1    # the loop must END on a verdict
+```
+
+Now `review_1 → revise_1 → review_2 → revise_2 → review_3` — **2 revisions, was 1**. Verified by
+simulating each chain's loop: 3 reviews / 2 revisions in all three.
+
+Applied to `adw_tdd_sdlc.py`, `adw_simple_sdlc.py` **and** `adw_build_review.py`. The first two are
+the A/B pair and would be confounded if only one moved; build_review's behaviour is unchanged
+(it was already 3 reviews) and only its naming was wrong.
+
+**N reviews always yield N−1 revisions — that is inherent, not a bug.** The loop has to end on a
+verdict or it ships unexamined code. What was wrong was the budget being one, and the name hiding it.
+
+### The final review now audits the delivered app
+
+`FINAL_REVIEW_NOTES` rides the envelope into the **last** review only, via a new
+`agents.with_notes(envelope, notes)` helper (a copy, not a mutation — the original still gets
+committed). It tells the reviewer its verdict is final and to audit the delivered app rather than
+the most recent diff. gf3-6 was approved on a review scoped to a single-file fix and shipped a wheel
+whose controls were never wired; that is the case this closes.
+
+### (3) The in-build verify step — the builder may now look at its own work
+
+New section in `builder/system.md`. It says the box is a real Linux machine with chromium and
+network, that `uv run` installs a PEP-723 script's dependencies on demand, and — the load-bearing
+part — **that nothing downstream will show the builder what it built**: the reviewer is a different
+agent in a different session that cannot ask what was intended. It points at
+`./adws/adw_modules/render_smoke.py <app-dir> --json` (exit 0/1/2, 2 = skip), says reading
+`quality.py` is allowed, and gives three worked instrument patterns the bare arm actually used:
+a behavioural sweep of a pure module, a screenshot it reads back, and instrumenting a silent
+channel. Ends with: if what you find contradicts what you built, fix the build — deleting a feature
+you cannot make correct beats shipping it broken.
+
+Verified live on the still-running VM that the gate this points at actually works:
+`render_smoke.py apps/app` → **exit 0, 50 interactive elements, all reachable**. Telling builders to
+lean on a broken instrument would have been worse than saying nothing.
+
+`protected_files` gates **writes** only (permissions.py diffs change-sets), so the builder reading
+and executing `adws/adw_modules/` is allowed and always was.
+
+### Not done, deliberately
+
+- **Handicap (2), context discontinuity**, is untouched and is the one we still cannot price. The
+  continuity probe — build → review → revise as one *resumed* session — remains the deep experiment.
+- **These changes have NOT been synced to greenfield.** `just target sync greenfield --push` is
+  outward-facing and needs a human call before the next greenfield run.
