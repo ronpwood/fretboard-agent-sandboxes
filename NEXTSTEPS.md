@@ -2319,3 +2319,72 @@ and executing `adws/adw_modules/` is allowed and always was.
   continuity probe — build → review → revise as one *resumed* session — remains the deep experiment.
 - **These changes have NOT been synced to greenfield.** `just target sync greenfield --push` is
   outward-facing and needs a human call before the next greenfield run.
+
+## 2026-09-19c — fixval judged: the loop fix works, and the factory is still deaf and blind
+
+`fixval-20260919-250a64`, greenfield, TDD, pin `7e90258`. **19/19 phases, ACCEPTED, $2.99,
+33.5M tokens, 107 min.** Pre-registered in `specs/fix-validation-arm-preregistration.md`.
+
+### Fix (4) is validated — it converted a rejection into an acceptance
+
+| review | requirements met | blocking | verdict |
+|---|---|---|---|
+| review_1 | 11 of 30 | 10 | ✗ |
+| review_2 | 21 of 33 | 12 | ✗ |
+| **review_3** | **30 of 30** | **0** | **✓** |
+
+`revise_2` and `review_3` ran — phases that had never existed in this repo. **Under the old code
+this run stops at review_2, rejected, with 12 blocking findings discarded.** Clean convergence.
+Ron's instinct was right and the cost was one extra loop.
+
+### Fix (3) split: the instruction worked, the invocation did not
+
+The builder invoked `render_smoke.py` **16 times** — against a control of **0 of 7 arms, ever**. So
+telling a specialist IS enough to make it reach for a tool; the agency gap is harness, not model,
+and that is now confirmed twice.
+
+But it ran `python3 adws/adw_modules/render_smoke.py`, bypassing the `uv run` shebang that installs
+playwright, and got `SMOKE EXIT: 2` every time. **Exit 2 is a skip, which a fix loop ignores.** It
+believed it had checked its work sixteen times and never saw the page once.
+
+### The accepted app is visibly broken, and audibly broken
+
+**Blind:** all twelve wheel wedges carried `A 198 198 0 1 1` — large-arc-flag=1 on a 30° chord, so
+each swept 330° and painted over the whole wheel. It passed 31 fixed tests, 37 generated tests,
+typecheck, lint, build, `render_smoke` itself, and a reviewer who wrote *"every control wired and
+verified working end to end."*
+
+**Deaf:** Ron found by ear that B plays ABOVE C on the 5th string. Cause, `main.ts:150`:
+`freqOfPc(pc)` maps a pitch CLASS (0–11) to a frequency with no octave. C=261.63 Hz, B=493.88 Hz —
+**B is +11 semitones from C when it should be −1.** All four audio paths use it (fret clicks 324,
+strums 424/701, wheel 634), so the whole neck collapses into one octave: low E and high E emit
+identical frequencies, and every chord is a pitch-class cluster, not the voicing its own diagram
+draws correctly.
+
+**This is the third silent-channel defect in three runs**, and the second found by Ron's ear rather
+than by any instrument we own.
+
+### Both fixes applied and validated on live hardware (b6a135d, synced 2643f42)
+
+- **Assertion E** in `render_smoke.py`: ≥3 sibling arcs sharing a radius, each with large-arc-flag
+  set while spanning <90° the short way. Chord-length based, so it covers pie wedges AND annular
+  sectors. **Validated both directions: fails fixval (exit 1, exact diagnosis), passes bare-cc and
+  apps/fretboard.** Two bugs found in my own first attempt by testing it — the angle math computed
+  the geometric span instead of the drawn span, and the first version was inert on the annular form
+  the best app uses.
+- **The re-exec**: `render_smoke.py` now re-runs itself under `uv run` when playwright is missing.
+  The builder's exact wrong invocation now returns a real verdict. Prompt says `uv run` and warns
+  that exit 2 means check your command.
+- The **leak guard caught my own docstring** ("circle-of-fifths wheel") and refused the sync. Fixed
+  at the source, not allowlisted.
+
+### What this does NOT fix, and it is the important part
+
+Assertion E catches this geometry fault and its symmetric siblings. **It does not make the factory
+see.** The wheel was also mislabelled — Roman numerals colliding with key letters, overlapping text
+— and no gate notices, because no gate looks at a rendering.
+
+Ron's hypothesis, which the evidence supports: the aesthetic gap between bare-cc and fixval is
+because **bare-cc screenshotted its own app and read the images back (10 of 81 tool calls), and
+fixval never did.** A working `render_smoke` would not have closed that gap either — it returns a
+verdict, not a picture. **The builder needs an instrument that hands it an IMAGE it can look at.**

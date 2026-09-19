@@ -3,167 +3,157 @@ plan: next-session-memo
 created: 2026-09-18T17:10:00-07:00
 modified:
   - 2026-09-18T17:10:00-07:00
-commits: []
+  - 2026-09-19T11:10:00-07:00
+commits:
+  - 2bc8aad — review loop: say what you mean, and let the builder look at its own work
+  - b6a135d — render_smoke: catch symmetric sector breakage, and stop skipping silently
 agents:
   - claude-opus-5[1m]
 sessions:
   - dffee14d-ee4b-4c19-8efc-38460132110c
+  - 609c01b7-75ec-4c74-af00-45fa9d061fea
 back_refs:
-  - specs/greenfield-fanout-3-results.md — the N=6 scorecard
-  - specs/greenfield-fanout-3-preregistration.md — the predictions, committed before the run
-  - NEXTSTEPS.md — 2026-09-18d/e/f session entries
+  - specs/bare-claude-control-arm-results.md — the generalist control, 31/32
+  - specs/what-the-bare-arm-actually-did.md — the four-handicap decomposition
+  - specs/fix-validation-arm-preregistration.md — the predictions for fixval
+  - NEXTSTEPS.md — 2026-09-19, 2026-09-19b, 2026-09-19c
 forward_refs: []
 status: open
 ---
 
 # Memo: where to pick this up
 
-Written at the end of 2026-09-18, after fan-out 3 (N=6) and a solo validation run. Everything
-below is either unstarted or explicitly deferred — nothing here is in flight.
+Rewritten 2026-09-19, replacing the 2026-09-18 version (its three questions are all answered or
+actioned below). Two runs this session: the **bare Claude control arm** and **fixval**, the arm that
+validated two factory fixes.
 
 ## State of play
 
-**Fixed and proven today:** the render gate in `run_verify` (validated live, 12.5s, no false
-positives), the agent stall watchdog (`PI_STALL_SECONDS`, kills the process tree), `--frozen-lockfile`
-provisioning, the `just`-install retry, and gate C's busy-vs-broken distinction.
+**Answered this session:**
 
-**No VMs, no orphaned keys, everything harvested.** Seven greenfield arms and their traces are local.
+| question | answer |
+|---|---|
+| Does the factory beat one generalist agent? | **No.** One 37-min turn scored 31/32 against the chain's best 32/32, for $4.28. Ron: the first result he would host and share, and he'd replace his own app with it. |
+| Is the agency gap harness or model? | **Harness.** Confirmed twice: the bare arm installed playwright unprompted; the factory builder, once *told*, reached for a tool 16 times against a control of 0-of-7. |
+| Does cutting the review loop cost real convergence? | **Yes.** fixval went 11/30 → 21/33 → **30/30 accepted**. Under the old code it stops at review_2, rejected. |
 
-**The one result that should drive everything next:** accept/reject is *anti-correlated* with
-delivered quality. Two accepted arms ranked 4th and 6th of six; the solo run produced the best app of
-all seven and was rejected. Until that is fixed, no comparison that uses accept/reject as its outcome
-measure means anything.
+**Shipped and validated on hardware:** `MAX_REVISIONS = 2` (3 reviews / 2 revisions) across both
+SDLC chains and build_review · `FINAL_REVIEW_NOTES` into the last review only, via
+`agents.with_notes()` · the builder's in-build verify section · `render_smoke` assertion E
+(symmetric sector breakage) · `render_smoke` re-exec under `uv run` · ssh keepalives on
+`sbx run agent`.
 
----
+**Live state:** two VMs up (`bare-cc-20260919-ba3919`, `fixval-20260919-250a64`), nothing torn
+down, both runs harvested with traces. The bare arm's app is promoted to its own repo at
+`/Dev/circle-for-guitarists` (commit `4717fb7`). Greenfield synced at `2643f42`.
 
-## Ron's three questions, which are better than my follow-up list
-
-### 1. The reviewer is cut off mid-convergence — and the last review is always wasted
-
-**His instinct, and the code backs it harder than he put it.** `MAX_REVISION_LOOPS = 2` in
-`adw_tdd_sdlc.py:57` produces `review_1 → revise_1 → review_2 → stop`. The loop breaks at
-`i == MAX_REVISION_LOOPS` **before** revising, so **the final review's findings are never acted on,
-in any run, ever.** N reviews yield N−1 revisions.
-
-Evidence it is cutting off real convergence, not churn:
-
-| arm | review_1 | after revise_1 | outcome |
-|---|---|---|---|
-| gf3-3 | 11 blocking, 11/24 met | 8 blocking, **18/24 met** | rejected, 8 findings discarded |
-| gf3-1 | 10 blocking | **8 of 10 closed**, 2 left | rejected, both remaining findings small and localized — its own reviewer said so |
-
-gf3-1's reviewer wrote that the two survivors were *"both small, localized, and have existing
-engine/audio"* to build on. That is one more loop from acceptance.
-
-**The experiment:** same prompt, same roster, vary `MAX_REVISION_LOOPS` ∈ {2, 3, 4}. Cheap, one
-variable, and the outcome measure is delivered quality, not the verdict.
-
-**The caveat worth pre-registering:** more loops may just mean more churn against a *self-authored*
-spec — the anti-correlation mechanism. If arms converge on their own requirements while the app gets
-no better, that is a finding about the spec, not the loop count. Cost is real too: gf3-3's review_2
-alone burned 1.68M tokens.
-
-### 2. The agency gap — why VM agents don't behave like we do
-
-**The sharpest observation of the session**, and there is a concrete answer rather than a mystery.
-Across all six fan-out 3 arms plus the solo, **not one agent ever reached for a browser** — zero
-mentions of chromium, playwright, puppeteer, jsdom or selenium. None tried to install anything. Yet
-they clearly *wanted* runtime truth: one wrote a `setInterval` probe to test import timing, another
-grepped for click handlers to infer whether the UI responded.
-
-They were reconstructing by inference what they could have observed directly. Why:
-
-1. **`tools:` is an allowlist, and it has no discovery in it.** The builder gets read, bash, edit,
-   write, grep, find, ls. No web search, no fetch. **It cannot find out that playwright exists.** We
-   can, in a normal session — that is the single biggest difference.
-2. **Nothing advertises the box.** Chromium is installed now; no prompt says so. Nothing tells an
-   agent what is on the VM, that it has network, or that it may add a dependency.
-3. **No one to ask.** `pi -p` is one non-interactive shot per phase and `ask_question` is not in the
-   roster. There is no "should I install X?" path, so the safe read is "no".
-4. **The prompt reads as a prohibition.** Greenfield says *"no frameworks beyond what `bun build
-   --target=browser` bundles"*. Agents treated the other constraints literally; it is reasonable to
-   read that as "do not add dependencies."
-5. **No memory across phases.** Each phase is a fresh session handed an envelope. A wish accumulated
-   in `build` cannot motivate an install in `revise`.
-
-**The framing:** we built a factory of *specialists with fixed tools*, and specialists with fixed
-tools do not go shopping. A Claude Code session is a *generalist with discovery tools and a human to
-ask*. That is a design difference, not a model deficiency — and it is fixable at (1) and (2) cheaply.
-
-**Cheapest probe:** tell one arm, in one line, that chromium and `render_smoke.py` exist. See whether
-it uses them. That isolates "didn't know" from "wouldn't think to".
-
-### 3. The bare Claude Code control arm — run this FIRST
-
-**This is the highest-value experiment we have**, and it subsumes the plan-build idea. Mount a VM,
-hand the *identical* greenfield prompt to a single Claude Code session via `just sbx run agent`, no
-factory, no phases, no gates. Compare against the seven TDD arms on the same rubric.
-
-It directly tests Ron's "a simple plan-build session would probably produce better results," and it
-does so at the extreme: **one generalist agent with tools, versus the entire chain.**
-
-Why it is worth doing before any roster or chain comparison:
-
-- It is the **only** experiment that questions the premise rather than tuning inside it.
-- It needs no measurement fix — "does the app work" is scoreable regardless of what produced it.
-- It is one VM and roughly one arm's cost.
-- It also tests §2 directly: a Claude Code agent *does* install things and test in `/tmp`. If the
-  bare agent reaches for a browser unprompted while six factory arms never did, that isolates the
-  agency gap to harness and tooling rather than to the models.
-
-**Pre-register the outcome measure before running it**, and do not use accept/reject — there is no
-reviewer in this arm. Score both rubric parts plus the render gate, exactly as the fan-out arms were
-scored.
+**The one result that should drive everything next:** we have now shipped **three silent-channel
+defects in three runs**, and **two of the three were found by Ron's ear**, not by any instrument we
+own. Meanwhile the factory also shipped a wheel drawn 330° wrong past every gate including its own
+render smoke. **The factory is deaf and blind, and our gates are catching the classes we already
+know about, one at a time, after the fact.**
 
 ---
 
-## My open recommendations, re-ranked after today
+## The ranked list
 
-1. **Assert audio (or any silent channel).** `main.ts:88-92` played `root, root+1, root+2` — C major
-   emitted C–C♯–D. It survived 41 tests, typecheck, lint, the new render gate, the reviewer, and a
-   manual interaction pass. A unit test asserting the **emitted MIDI set** for a known chord would
-   have caught it in `test_1`. Generalised: **any output channel with no assertion is one where a
-   confident, well-typed, fully-tested wrong answer ships.** Audit for others — timing, animation,
-   focus order, keyboard nav, screen-reader output.
-2. **Stop ranking arms on accept/reject** (§State of play). Keep reviews as a findings source. The
-   deeper fix is grading every arm against the **brief** rather than its own plan, which is what
-   makes ambition self-penalising.
-3. **Run the render gate on revised code.** The retest phase sits *after* the review loop concludes,
-   so a rejected arm's final tree is never render-verified. Only accepted arms get checked.
-4. **The final review must audit the delivered app, not the last diff.** gf3-6 was approved on a
-   review scoped to a single-file fix; it never examined the app. That — not reviewer blindness — is
-   why its dead wheel shipped. A reviewer *can* catch unwired controls: the solo run's did,
-   unprompted.
-5. **Guard the `document` rebind in the test_designer prompt**, and protect the harness block of
-   `apps/*/app.test.ts` while leaving test bodies writable. Five of six test_designers already guard
-   correctly without being told; a blanket file protection would block gf3-3's genuinely good
-   behaviour (adding durable regression tests).
-6. **Re-examine the merged-edit advice.** `not-found` errors rose 3 → 16 fleet-wide. Plausibly the
-   "merge neighbouring changes into one larger entry" rule trading schema failures for match
-   failures. Unconfirmed, one run.
-7. **Retire the dead rubric items.** Part A items 2, 3, 6, 7, 9, 10 and part B item 14 scored 2 for
-   every arm. Part B needs headroom above 12 the way part A needed it above 20.
+### 1. Give the builder an instrument that returns a PICTURE — not another gate
 
-**Deferred on purpose:** roster and model-family comparisons. Ron's cohort hypothesis is interesting
-and has real supporting evidence (fan-out 2's frontier planner taxed the downstream flash
-test_designer 4× in tokens — a measured cross-family handoff cost, and the adversarial reviewer seat
-works *well* cross-family). But within-condition spread is currently 4× on cost and 5 points on part
-B with nothing varying. **Any roster effect has to clear that noise floor.** Fix the measurement
-first or we repeat fan-out 2.
+**This is the highest-value item and it follows directly from the aesthetic gap Ron identified.**
+
+bare-cc screenshotted its own app, cropped the images, and **read them back** — 10 of its 81 tool
+calls were image reads — then fixed a clipped caption and added a regression test for it. fixval
+never looked at anything. The visual difference between the two apps is not subtle, and neither is
+the explanation.
+
+A working `render_smoke` would **not** have closed that gap. It returns a verdict, not an image.
+Assertion E catches one geometry fault; nothing catches "the Roman numerals collide with the key
+letters", which is exactly what fixval also shipped.
+
+**Build `shoot.py` for the builder**: boot the app, screenshot it (full page + a couple of crops),
+write the PNGs to `/tmp`, and print the paths. Then say in the builder prompt: *run this and read
+the images before you report.* Pi's harness must be able to return an image to the model — **check
+that first**, because if it cannot, this item becomes "switch the builder seat to a harness that
+can", which is a much bigger and more interesting question.
+
+**Falsifiable:** if a builder that can see still ships a mislabelled wheel, the gap is not
+perception and I am wrong about the mechanism.
+
+### 2. Assert the silent channels in the BRIEF, not in the gates
+
+Three runs, three audio defects, each a different mechanism:
+
+| run | defect | survived |
+|---|---|---|
+| gf4-solo | chord played `root, root+1, root+2` — chromatic cluster | 41 tests, typecheck, lint, render gate, reviewer, my interaction pass |
+| bare-cc | **none** — it asserted `voicingMidis` at every root, unprompted | — |
+| fixval | `freqOfPc(pc)` has no octave: B is +11 semitones from C | 31+37 tests, all gates, render smoke, a 30/30 reviewer |
+
+The one arm that got it right is the one that **wrote the assertion itself**. So do not chase this
+with gates — a gate per defect class is a losing race. Put the requirement where it shapes the
+work: one line in `prompts/greenfield.md` to the effect of *"any output the user perceives but the
+DOM does not show — audio, timing, focus order — must be asserted by value in the durable suite."*
+
+The bare arm's test is the worked example to lift: it computes the MIDI set actually handed to the
+audio engine and asserts it equals the chord, at every root.
+
+**Cheap, and it tests the general claim** that agents are reliable where they have a strong prior
+OR an explicit assertion, and unreliable only in the gap between.
+
+### 3. Stop ranking arms on accept/reject — now with a sharper reason
+
+fixval is **accepted, 30/30, "verified working end to end"** — and ships a wheel drawn 330° wrong
+and a neck where B sounds above C. The extra revision loop did not make it correct; it made the
+reviewer satisfied.
+
+This does not undo item (4)'s validation — convergence was real, 11 → 21 → 30 requirements. It
+means **requirements-met is the wrong outcome variable**, because an arm grades against its own
+plan, and a plan can be fully satisfied by an artifact that does not work. Rank on delivered
+behaviour. Keep reviews as a findings source.
+
+Add **"would you use it?"** as a recorded first-class measure, before any scored item. It separated
+a field that the rubric called tied (four arms at 31–32/32) in under a minute.
+
+### 4. The continuity probe — the last unpriced handicap
+
+Of the four handicaps in `specs/what-the-bare-arm-actually-did.md`, three are addressed:
+(1) discovery — told, and it worked; (3) self-review before handoff — instrumented, if not yet
+working; (4) truncated loop — fixed and validated. **(2) context discontinuity is untouched.**
+
+Run the chain with build → review → revise as **one resumed session** instead of three fresh ones,
+everything else identical. That is the only way to price what the envelope handoff actually costs.
+It is also the most architecturally invasive change we have considered, so it deserves a real
+pre-registration.
+
+### 5. Retire the dead rubric items
+
+Four arms now sit at 31–32/32. Part A items 2, 3, 6, 9, 10 and part B item 14 score 2 for
+everything. The rubric cannot separate good from broken any more — it scored fixval 30/30 on
+requirements while the app's core object was mangled. Either rebuild it around delivered behaviour
+or replace it with the "would you use it?" judgement plus the mechanical gates.
+
+---
+
+## Deferred, on purpose
+
+**Roster and model-family comparisons.** Still deferred, and the reason got stronger: within-condition
+spread has been 4× on cost, and we now know the outcome measure itself is unreliable. Fix the
+measurement before spending on a roster fan-out.
+
+**A clean re-run of the bare arm** with `adws/` moved aside, to settle the stop-rule contamination.
+Low value — it tests tooling access, and the capability question is answered.
 
 ---
 
 ## The thing worth keeping in view
 
-The agents' **priors are good**. Every one of seven arms produced a genuinely well-designed app —
-dark theme, hierarchy, colour-coded functional roles, legends — with **zero pressure on aesthetics**:
-no gate, no test, no prompt, and a reviewer explicitly neutralised to say nothing about design.
-
-Set that against the chord bug. The pattern is not "agents are weak at X". It is:
+Unchanged from the last memo, and now better evidenced:
 
 > Agents are reliably good where they have a **strong learned prior** (taste) or an **explicit
 > assertion** (tested theory), and unreliable precisely in the **gap between them** — a channel with
 > no prior strong enough to carry it and no check to catch it.
 
-That argues for a **cheaper chain plus targeted assertions**, not a longer chain. Which is the same
-place Ron's instinct pointed, arrived at from the other direction.
+Every arm produced a well-designed dark-themed app with zero pressure on aesthetics — strong prior.
+Every arm with an audio assertion got audio right; every arm without one shipped it wrong — explicit
+assertion, or its absence. The bare arm is the existence proof that **one agent that can look at its
+own work closes the gap by itself**, which is why item 1 is first.
