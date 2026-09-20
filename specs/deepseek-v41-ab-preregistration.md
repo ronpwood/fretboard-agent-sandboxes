@@ -177,3 +177,62 @@ completion rather than killed. The third arm is a separate decision.
 `plan`, identical model and prompt, took 356s on the control and 263s on the
 treatment, a 26% spread. At n=1 per arm, single-phase differences below roughly
 that magnitude are not evidence of anything.
+
+---
+
+## Amendment 2, 2026-09-20T07:55 — the sighted arm died in `plan`, and the error names the wrong owner
+
+`dsv41s` arm 1 (`adw_id a55c0249`) failed at phase 02 after 101s / 34,401 tokens
+/ $0.0285. The run log says:
+
+    ⟳ planner retry 1/2 — same session · invalid PlanOutput JSON: no JSON object found in the response
+    ⟳ planner retry 2/2 — same session · invalid PlanOutput JSON: no JSON object found in the response
+    ✗ plan 101.0s  planner never produced valid PlanOutput JSON
+
+**That message is wrong about what happened.** The raw pi stream shows the real
+cause on every failed turn:
+
+    "stopReason": "error", "errorMessage": "Corrupted thought signature."
+
+gemini-3.8-flash returns `thinkingSignature` blocks with
+`format: "google-gemini-v1"` — encrypted reasoning that must round-trip
+verbatim. When the provider rejects the signature the turn returns **empty
+content**, `_extract_json(result.text)` finds nothing, and `agents.py:276`
+reports it as the model failing to emit JSON. A provider/transport fault is
+being attributed to the model's formatting. Same class of mis-ownership that
+`trace_metrics.py` already separates for `model-format` vs `schema`.
+
+### It is arm-specific, and new
+
+| arm | planner | "Corrupted thought signature" |
+|---|---|---|
+| `dsctl` (0731) | gemini-3.8-flash | **0** |
+| `dsv41` (v4.1 blind) | gemini-3.8-flash | **0** |
+| `dsv41s` (v4.1 sighted) | gemini-3.8-flash | **9** |
+
+The planner is the SAME model and the SAME prompt in all three arms, and it is
+untouched by the modality fix. This is not the model swap and not the config
+change. It has never been recorded in this repo before.
+
+### The retry cannot work, by construction
+
+The retry is **same session** — it replays the conversation, including the
+corrupted signature, so all three attempts were doomed before they were made.
+A retry that re-sends the poisoned history is not a retry. Candidate fixes, in
+order of cheapness:
+
+1. Classify `stopReason == "error"` separately from a parse failure, and say
+   the provider's own message instead of "no JSON object found".
+2. On a signature/transport error, retry in a **fresh session** rather than the
+   same one.
+3. Strip prior `thinkingSignature` blocks when rebuilding history after such an
+   error.
+
+None of these are in scope for this experiment; recorded so the next run does
+not rediscover it. The arm was simply relaunched on the same VM (fresh
+`adw_id`, fresh session).
+
+**Scoring note:** `dsv41s` starts ~50 min behind the other two arms and its
+wall-clock total includes no part of the dead attempt. Phase-level comparisons
+are unaffected; end-to-end wall clock for this arm should be measured from its
+second launch.
