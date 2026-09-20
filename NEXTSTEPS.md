@@ -3254,19 +3254,12 @@ untouched on purpose.
 
 Ordered by value. Nothing here is started.
 
-### 0. FIRST COMMAND: push the roster change, or the next VM runs the old model
+### 0. DONE — the roster change is pushed
 
-The v4.1 promotion is committed **here** but not in the clean room. A greenfield
-VM clones `greenfield-sandboxes` and runs *the factory in the repo it cloned* —
-so until this runs, every mounted arm still uses `0731` and the config in this
-repo quietly lies:
-
-```
-just target sync greenfield --dry-run && just target sync greenfield --push
-```
-
-Held back on purpose: `--push` is outward-facing to a public repo and was not
-authorised in the session that made the change.
+`just target sync greenfield --push` ran clean: leak check clean, four gates
+green, target `601d880`, `pushed: true`. Verified on the remote —
+`origin/main:adws/adw_sssf_config/sssf.config.yaml:16` reads
+`openrouter/deepseek/deepseek-v4.1-flash`. **The next greenfield VM runs v4.1.**
 
 ### 1. Make the render smoke hit-test CONTENT, not just controls
 
