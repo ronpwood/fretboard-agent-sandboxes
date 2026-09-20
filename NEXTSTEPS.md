@@ -2969,3 +2969,63 @@ ignorance of its own harness. A six-arm fan-out would have cost more and
 **hidden all four**, because every arm would have paid the same tax and the
 variance would have read as model noise. **Settle the design question at small N
 before spending on breadth.**
+
+## CURRENT STATE — DeepSeek V4.1 is HALF LOADED, on purpose
+
+**Read this before touching a roster or the model registry.** As of 2026-09-20
+the repo is deliberately in a partial-rollout state. It is not drift and it is
+not half-finished work.
+
+### Registered globally, used by exactly one roster
+
+`sandbox_mount/guest/models.json.tmpl` carries **both** flash models:
+
+| id | input | $/M in/out |
+|---|---|---|
+| `deepseek/deepseek-v4-flash-0731` | `["text"]` | 0.14 / 0.28 *(registry; live is 0.04/0.08 — see drift below)* |
+| `deepseek/deepseek-v4.1-flash` | **`["text","image"]`** | 0.15 / 0.60 *(matches live exactly)* |
+
+So **every roster CAN reach v4.1**, but only one DOES:
+
+| roster | defaults.model |
+|---|---|
+| **`sssf.dsflash41.config.yaml`** | **`deepseek-v4.1-flash`** ← the only one |
+| `sssf.config.yaml` (default) | `deepseek-v4-flash-0731` |
+| `sssf.asymmetric` / `deepestseek` / `inverse` / `open-weights` / `top-speed` | `deepseek-v4-flash-0731` |
+| `sssf.frontier` | `claude-opus-5` |
+| `sssf.gemniflash` | `gemini-3.8-flash` |
+
+### Why it is deliberately stopped here
+
+The 2026-09-20 A/B did **not** clear v4.1 for general use. P1 (speed) was inside
+the noise floor, P2 (tool errors) was directional only, and P3 split — better
+aesthetics, **measurably broken audio and fret geometry**. Promoting it into the
+other six rosters on that evidence would be exactly the "swap on catalog
+authority" mistake this command exists to prevent.
+
+`sssf.dsflash41.config.yaml` is the **test harness for the model**, not a
+production roster. It exists so v4.1 can be exercised without disturbing any
+roster that other work depends on.
+
+### What would justify rolling it out further
+
+Not another A/B on the same brief. **Fix the harness first** (the six queued
+items above, especially `tests_red` and `?durable-suite`), then re-run — because
+today's run could not separate "the model is worse" from "the model spent 1.14M
+tokens fighting the harness." Once a builder actually gets to build, the model
+question becomes answerable. Only then promote, one roster at a time, starting
+with `sssf.config.yaml`.
+
+### Do NOT "tidy" these
+
+- **`0731` stays registered** even after any promotion — a swap must be
+  revertible without re-provisioning. Same rule that kept `glm-5.2` and
+  `gemini-3.6-flash` on 2026-09-15.
+- **The `input` fields differ on purpose.** `0731` is genuinely text-only; v4.1
+  is genuinely multimodal. Making them match would re-introduce the bug that
+  blinded the 2026-09-20 treatment arm.
+- **Registry rate drift is known and deliberate**, not stale: `check_rates.py`
+  flags `0731` (0.14/0.28 vs live 0.04/0.08), `kimi-k3`, `glm-5.2` and `glm-5.3`.
+  The deepseek keep-catalog-vs-use-measured decision is still open from
+  2026-09-07g. **Do not `--fix` it casually** — it changes what every historical
+  run's cost means. The v4.1 entry needs no such decision; it matches live.
