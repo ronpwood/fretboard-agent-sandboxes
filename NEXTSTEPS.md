@@ -3077,6 +3077,157 @@ commit `4d9af3e` (with `apps/app/test-dom.ts` and `apps/app/tests/generated/`)
 and the factory sync that brings the new gate and the corrected designer prompt.
 A VM mounted from here gets both fixes.
 
+## 2026-09-20d — the harness fixes, validated live: both worked, and the app is still wrong
+
+`hfix-20260920-062b46`, greenfield, default roster (deepseek `0731`) — the same
+brief and the same seats as the `dsctl` control arm, so the harness is the only
+changed variable. 12/12 phases, 29.8M tokens, **$2.3187**, final review **18/21,
+not approved**, so nothing was committed past the red suite.
+
+### Fix 1 and Fix 2 both worked, measured
+
+| | dsctl (old) | dsv41s (old) | **hfix (new)** |
+|---|---|---|---|
+| first product write | call 6 of 34 | **call 35 of 38** | **call 7 of 94** |
+| …in later builder sessions | — | — | call 7 of 95, call 3 of 19 |
+| `tests_red` | 4 checks, exit code | same | **6 checks, per file** |
+| designer reached the harness | n/a | n/a | **read `test-dom.ts` at call 5** |
+| guard weakened | — | flipped `configurable` | **never touched** |
+
+The gate's own evidence, first attempt, no retry:
+
+```
+runs — 27 test(s) reported under `bun test apps/app/app.test.ts apps/app/tests/generated/8e793901.test.ts`
+RED  — 27/27 generated test(s) fail on the pre-build tree
+fixed suite green — 2 test(s) in apps/app/app.test.ts still pass alongside it
+```
+
+The test_designer's path is the one the fixes were built for: read `app.test.ts`
+(4), read `test-dom.ts` (5), read `tests/generated/README.md` (10), write (11),
+then verify on calls 13/14/19 with **the grading command** — the corrected prompt's
+instruction, followed exactly. Call 20 ran the file alone as the secondary check.
+
+By `revise_1` the durable suite held **29 tests** and the generated suite 27,
+running in one process, one module registry: **56 pass, 0 fail**. That is the
+original trap's failure mode at 28× scale, not firing. `test-dom.ts` ended the
+run byte-identical to `4d9af3e`.
+
+**Queued item 4 is settled empirically for this shape**: once a harness exists,
+nothing needs to weaken the guard. The 2026-09-20 blind arm flipped
+`configurable` because it had no other way to get a DOM; this builder ported 27
+tests INTO the guarded file and never reached for it.
+
+### The rejection is correct, and the loop earned it
+
+11/21 → 20/22 → 18/21. The dip is the point: **`revise_2`'s fix introduced a
+regression and `review_3` caught it** — wiring `BARRE_SHAPES` into `voicingFor`
+double-applied the transpose, so every barre chord rendered at the wrong fret.
+Without the 2026-09-19 `MAX_REVISIONS=2` change, that ships.
+
+Sharpest finding of the run, from `review_3`: the builder had written **three
+durable assertions that pin the broken output** (`app.test.ts:423-436`). A grown,
+green, permanent suite that guarantees a defect. "A render test that cannot fail
+is worse than none" arrived at from a new direction — this time the test could
+fail, and asserted the wrong answer.
+
+### The reviewer is now the sharpest seat in the factory
+
+Three findings it reached without being told to look for any of them:
+
+- **The silent synth, by grep.** "no module in the app ever calls it — grep for
+  `pluckNote`/`strumChord`/`audio/synth` across `src/ui`, `src/state`, `main.ts`
+  returns nothing." Four audio defects in four runs; **this is the first caught
+  inside the loop** rather than by Ron's ear.
+- **vii° wrong in all 12 keys**, by auditing root pitches with a scratch script —
+  `voicingFor` matched by root and ignored quality, so "F#m" got the F *major*
+  barre shape.
+- **The durable-suite norm**, argued from `app.test.ts`'s own header comment. The
+  comment written to teach the test designer is now an enforcement standard the
+  reviewer cites. Unplanned, and the strongest argument yet for putting knowledge
+  where the agent will read it.
+
+`review_3` alone cost 1.33M tokens / $0.4945.
+
+### The builder asked to SEE, and could not — but the asking paid
+
+It ran the three quality commands itself, then **discovered and ran
+`render_smoke.py` unprompted** (`ls adws/adw_modules/render_smoke.py && uv run …`
+→ passed, 102 controls). That **revises the 2026-09-19 agency-gap finding**: a
+factory agent did discover a VM capability it was never told about.
+
+Then it tried four times to take a screenshot and failed every time, because it
+does not know the factory already serves the app — it hand-rolled an http.server
+and a playwright script instead. **The failure was worth more than a screenshot.**
+Attempt two returned:
+
+```
+- attempting click action
+  - <text class="label" ...>G</text> intercepts pointer events
+  58 × waiting for element to be visible, enabled and stable
+```
+
+The wheel's key labels were swallowing clicks on their own segments. The builder
+read that, grepped `pointer-events`, and shipped a correct SVG fix
+(`pointer-events: none` on labels and numerals, `all` on the hub).
+**`render_smoke.py` had already passed on that same tree** — `controlCount: 102`,
+no `click_failures`. The wheel was unclickable and the gate said green.
+
+### And then Ron looked at the delivered app
+
+Two defects nothing in the chain caught. Found by eye in seconds, then localised
+by hit-testing the rendering in four calls.
+
+**1. Every note badge is the same colour.** All 96 compute to
+`rgb(148,163,184)`, whatever their role.
+
+```
+fretboard.ts:120   "data-role": cell.role, fill: cell.color,     <- SVG presentation attribute
+styles.ts:171      .note-badge { … fill: var(--text-muted); }    <- CSS rule, and CSS wins
+```
+
+The app computes the right colour per scale degree, writes it, and the
+stylesheet discards all of it. The legend advertises five colours
+(Root/3rd/5th/7th/Other) the fretboard never paints. **No scale shape is visible
+on the fretboard — pentatonic or otherwise.** That is exactly what Ron reported.
+
+**2. The role assignment lights both qualities of every interval.** In C major
+(scale: C D E F G A B) the fretboard marks **nine** pitch classes:
+
+| role | rendered | |
+|---|---|---|
+| third | **D#**, E | D# is the minor third — not in C major |
+| seventh | **A#**, B | A# is the minor seventh — not in C major |
+
+Same on C minor pentatonic: D#(Eb) **and** E, A#(Bb) **and** B. A five-note
+scale therefore reads almost identically to the major — the visible symptom, if
+any colour were visible at all.
+
+**This is the same root cause as the reviewer's blocker #1** — matching by pitch
+distance while ignoring quality. The same mistake appears twice in one app; the
+reviewer caught one instance and marked the other requirement met.
+
+### What this run bought, in order
+
+1. **No gate looks at a rendering, and this is the third proof.** The render
+   smoke passed a wheel whose segments could not be clicked, and passed a
+   fretboard where every note is one colour. It drives *controls*; it does not
+   hit-test *content*. Extending it to assert per-role fills and wheel-segment
+   clickability would have caught both of today's defects and fixval's 330° wheel.
+2. **Tell the builder how to get a rendering.** It asked, twice, and burned four
+   calls hand-rolling a server the factory already runs. One line in the prompt.
+3. **The quality-vs-distance bug class deserves its own check.** It appeared
+   twice in one app, in unrelated modules.
+4. Queued items 3, 5 and 6 from 2026-09-20b still stand. Item 4 is settled
+   (above); items 1 and 2 are done and now validated live.
+
+### Preserved
+
+2 commits (plan + red suite) at `refs/sandbox/hfix-20260920-062b46` in
+`../greenfield-sandboxes`; all 24 uncommitted source files at
+`.sandbox/traces/hfix-20260920-062b46/uncommitted_build/build.tar.gz`; full
+traces; and `delivered-app.png`, the first full-page screenshot of a factory
+build this repo holds.
+
 ## CURRENT STATE — DeepSeek V4.1 is HALF LOADED, on purpose
 
 **Read this before touching a roster or the model registry.** As of 2026-09-20
@@ -3122,14 +3273,13 @@ model spent 1.14M tokens fighting the harness." Once a builder actually gets to
 build, the model question becomes answerable. Only then promote, one roster at a
 time, starting with `sssf.config.yaml`.
 
-**Queued items 1 and 2 are done and pushed** (2026-09-20c): the red gate now
-runs the command that grades the build and judges it per file, and the clean
-room ships a shared test DOM instead of the trap. Target is at `a7e31d0`, so a
-mounted VM gets both. Items 3–6 remain.
-
-Neither has been exercised by a real TDD chain on a VM — they were verified
-against a local copy of the shell, with the gates' own code. The first
-greenfield run is the live test.
+**Queued items 1 and 2 are done, pushed, and validated live** (2026-09-20c/d):
+the red gate now runs the command that grades the build and judges it per file,
+and the clean room ships a shared test DOM instead of the trap. Target is at
+`a7e31d0`. `hfix-20260920-062b46` exercised both through a full TDD chain — the
+gate passed first attempt with per-file evidence, the designer used the harness,
+and the builder wrote product code on call 7 instead of call 35. Item 4 is
+settled by that run; items 3, 5 and 6 remain, and 2026-09-20d adds three more.
 
 ### Do NOT "tidy" these
 
