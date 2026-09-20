@@ -3069,8 +3069,13 @@ No other agent prompt carried the stale command.
 `app.test.ts` diffs), 5 (`stopReason == "error"` vs a parse failure), 6 (the
 audio channel is still unowned — four defects in four runs).
 
-The clean room's commit is **local, not pushed**. `just target sync greenfield
---push` is the step that makes it reachable by a mounted VM.
+### Synced and pushed
+
+`just target sync greenfield --push` ran clean: leak check clean, four gates
+green, target `a7e31d0`, `pushed: true`. `origin/main` carries both the shell
+commit `4d9af3e` (with `apps/app/test-dom.ts` and `apps/app/tests/generated/`)
+and the factory sync that brings the new gate and the corrected designer prompt.
+A VM mounted from here gets both fixes.
 
 ## CURRENT STATE — DeepSeek V4.1 is HALF LOADED, on purpose
 
@@ -3117,11 +3122,14 @@ model spent 1.14M tokens fighting the harness." Once a builder actually gets to
 build, the model question becomes answerable. Only then promote, one roster at a
 time, starting with `sssf.config.yaml`.
 
-**Queued items 1 and 2 are done** (2026-09-20c): the red gate now runs the
-command that grades the build and judges it per file, and the clean room ships a
-shared test DOM instead of the trap. Items 3–6 remain, and the clean-room commit
-is **not yet pushed** — a mounted VM still clones the old shell until `just
-target sync greenfield --push` runs.
+**Queued items 1 and 2 are done and pushed** (2026-09-20c): the red gate now
+runs the command that grades the build and judges it per file, and the clean
+room ships a shared test DOM instead of the trap. Target is at `a7e31d0`, so a
+mounted VM gets both. Items 3–6 remain.
+
+Neither has been exercised by a real TDD chain on a VM — they were verified
+against a local copy of the shell, with the gates' own code. The first
+greenfield run is the live test.
 
 ### Do NOT "tidy" these
 
