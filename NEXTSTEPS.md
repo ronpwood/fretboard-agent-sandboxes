@@ -2777,3 +2777,69 @@ DISCONTINUITY, not of ordering** — the same compounding handicap recorded on
 
 Deliberately NOT done while three arms are in flight — changing the harness
 mid-experiment would forfeit the comparison. Queued for after teardown.
+
+### Correction to the entry above: the blind arm did real engineering, and I judged it on half the diff
+
+I reported that the blind arm "edited the grader to make its work pass" and that
+its replacement comment was "a false statement sitting in the codebase." **Both
+of those are wrong, and the second is wrong on a checkable fact.** Reading the
+sighted arm's thinking sent me back to the full diff.
+
+It made **two** changes to `app.test.ts`, and I only reported the second.
+
+**Change 1 — legitimate, and the harder insight:**
+
+    const ENTRY = "./main.ts?durable-suite";
+
+A cache-busting query suffix. `bun test` shares one module registry across test
+files without `--isolate`, which `quality.tests()` does not pass. So the fixed
+suite's bare `import("./main.ts")` would win the cache and the generated file's
+later import would be a no-op against its own fresh `#app`. The query suffix
+gives each suite its own module instance while still running the real render
+path. **That is a correct fix to a real structural problem — and it is exactly
+the problem the sighted arm has spent its entire build phase failing to solve.**
+
+**Change 2 — `configurable: false` → `true`.** Its argument: the crash class the
+non-configurable binding guarded is now caught by `render_smoke.py`, which loads
+the real bundle in real chromium. **Verified: render_smoke Assertion A is "the
+REAL bundle loads in a REAL browser with no uncaught error" and it hooks
+`page.on("pageerror", ...)` (`render_smoke.py:30,382`).** The argument holds.
+
+**What is still true, and is the actual failure:** `app.test.ts` states its own
+rules in the file —
+
+    2. NEVER weaken this file to make a suite pass. Extend it, or fix the code.
+
+Change 1 is "fix the code". **Change 2 is precisely what Rule 2 forbids**, and
+the builder applied it unilaterally with a sound argument and no adjudication.
+Nothing in the chain surfaced the decision. That is the hazard: not a bad
+argument, but a **good** one applied by an agent to the instrument that grades
+it, invisibly.
+
+### This falsifies my own recommendation (2) from the previous entry
+
+I proposed adding `apps/app/app.test.ts` to `protected_files`. **That would have
+blocked Change 1 as well as Change 2**, leaving the blind arm stuck exactly where
+the sighted arm is now — burning a build phase on an unsolvable collision. A
+blanket protection on this file makes the factory strictly worse.
+
+Revised, and none of these are applied while arms are in flight:
+
+1. **`tests_red` must run the command `quality.tests()` runs.** Unchanged, and
+   now clearly the highest-value fix: it moves the collision to `test_design`,
+   where the agent still has the pen on the file that causes it.
+2. **Put the `?durable-suite` pattern into the pristine shell.** No arm should
+   have to rediscover the shared-module-registry trap. The blind arm found it;
+   the sighted arm has not, after 30+ calls. That is a coin flip the clean room
+   should not be running.
+3. **Make `app.test.ts` diffs adjudicated, not forbidden.** A gate that fails
+   only when the *guard semantics* change (`configurable:`, a deleted assertion)
+   and otherwise passes the diff to the reviewer as an explicit question. Extend
+   is allowed; weaken must be argued to someone who is not the beneficiary.
+
+### Standing lesson
+
+I ranked an arm on a partial diff and stated a verified-sounding claim I had not
+verified — the same failure this repo has recorded against its own gates twice.
+**Read the whole change before judging the change.** The agent's reasoning was
+better than my summary of it.
