@@ -52,7 +52,18 @@ target:
   # 2026-09-18b: bumped from 4d6e63bd to add apps/app/declarations.d.ts, so an
   # `import "./styles.css"` passes the typecheck gate instead of failing TS2882
   # on code that builds and runs. Both ways of adding styles now pass.
-  pristine: 4a6dfc8312a163aa16745b12b75f0bdad6e73996
+  # 2026-09-20: bumped from 4a6dfc83 to add apps/app/test-dom.ts (a shared test
+  # DOM) and move app.test.ts onto it. The grading command runs the fixed and
+  # generated suites in ONE process with ONE module registry, and the shell was
+  # shipping two traps into that gap: app.test.ts demonstrated a happy-dom
+  # install that throws at module load when a generated suite copies it, and a
+  # bare `import` of the entry from the second file is a cache hit that renders
+  # nothing. An arm paid 1.14M tokens for the first on 2026-09-20 and never
+  # wrote product code; another solved it by weakening `configurable`. The
+  # harness installs the DOM once and hands out fresh app instances, so neither
+  # trap is reachable and no guard was relaxed. This is what the escape hatch is
+  # for: the shell itself is meant to change.
+  pristine: 4d9af3e64916e1bb257d072b4abd17705bc0f872
   pristine_paths:
     - apps
   leak_patterns:                      # extra, target-specific; app names are derived, never listed
