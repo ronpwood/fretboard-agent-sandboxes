@@ -3220,13 +3220,97 @@ reviewer caught one instance and marked the other requirement met.
 4. Queued items 3, 5 and 6 from 2026-09-20b still stand. Item 4 is settled
    (above); items 1 and 2 are done and now validated live.
 
-### Preserved
+### Preserved, then torn down
 
-2 commits (plan + red suite) at `refs/sandbox/hfix-20260920-062b46` in
-`../greenfield-sandboxes`; all 24 uncommitted source files at
-`.sandbox/traces/hfix-20260920-062b46/uncommitted_build/build.tar.gz`; full
-traces; and `delivered-app.png`, the first full-page screenshot of a factory
-build this repo holds.
+Teardown **refused** on the dirty tree — the rejected build was uncommitted, and
+the guard would not destroy it. That is the guard working, and it pointed at the
+recipe: `just sbx manage snapshot`, which commits the work to
+`sbx/<run-id>` with an `UNAPPROVED snapshot:` message. I had already hand-rolled
+a tarball; the recipe is the right tool and the tarball is redundant. **Use the
+recipe.**
+
+3 commits at `refs/sandbox/hfix-20260920-062b46` in `../greenfield-sandboxes`
+(plan, red suite, and the snapshot of the delivered app); full traces;
+`delivered-app.png`, the first full-page screenshot of a factory build this repo
+holds; and `.sandbox/runs/hfix-20260920-062b46-artifacts`.
+
+VM destroyed, key revoked and verified absent from `/api/v1/keys`, no orphans.
+**Final spend $1.933.**
+
+### `sssf.config.yaml` now runs `deepseek-v4.1-flash`
+
+Ron's call, and it satisfies the condition this file set on 2026-09-20b: the
+A/B's blocker was "fix the harness first, then re-run", not "the model is worse".
+The harness is fixed and validated, so the newest model is the one worth testing
+against from here. `0731` stays registered in the guest template — reverting is a
+one-word edit, no re-provisioning.
+
+**Consequence to know about: `0731` now has no roster,** so there is no control
+arm for a v4.1-vs-0731 comparison without adding one.
+`sssf.dsflash41.config.yaml` is now a duplicate of the default and was left
+untouched on purpose.
+
+## NEXT STEPS — read this first next session
+
+Ordered by value. Nothing here is started.
+
+### 1. Make the render smoke hit-test CONTENT, not just controls
+
+The single highest-value item, because it is the third run in a row where the
+smoke passed something visibly broken. It drives controls; it never asks what was
+*painted*. Two concrete assertions, both of which would have caught a real
+2026-09-20 defect:
+
+- **computed fill diversity** — if a legend advertises N role colours, assert the
+  rendered nodes actually resolve to more than one `getComputedStyle().fill`.
+  Catches the `styles.ts` CSS-beats-presentation-attribute bug outright.
+- **segment clickability** — hit-test that clicking a wheel segment's centre
+  reaches the segment, not a label on top of it. Catches the `pointer-events`
+  bug, which the builder found only by accident.
+
+Add them as *measurements reported*, not just pass/fail, so the next defect in
+this class is visible even when it does not trip a threshold.
+
+### 2. Tell the builder the app is already served
+
+It asked to see the app **twice**, discovered `render_smoke.py` by itself, then
+burned four tool calls hand-rolling an `http.server` + playwright script and gave
+up with `echo "skip - need server"`. One line in the builder prompt naming the
+dev server and how to screenshot it. This is the *advertise the box* half of the
+agency gap, and 2026-09-20 showed the discovery half is less broken than recorded.
+
+### 3. A check for "matched by distance, ignored quality"
+
+This exact bug appeared **twice in one app**, in unrelated modules: `voicingFor`
+gave F#m the F *major* barre shape, and the fretboard lit both the minor and
+major third of every scale. The reviewer caught one and marked the other met. It
+is a named, recognisable class — worth a line in the reviewer prompt at minimum.
+
+### 4. Still open from 2026-09-20b
+
+- **(3)** put the verification command in the **builder's** prompt — done for the
+  test_designer on 2026-09-20c, never done for the builder.
+- **(5)** classify `stopReason == "error"` apart from a parse failure, and print
+  the provider's message instead of blaming the model for bad JSON.
+- **(6)** the audio channel: four defects in four runs. The 09-20 reviewer caught
+  the fourth **by grep** ("nothing calls this"), which is new — but wiring is
+  greppable and *values* still are not. The brief-level requirement stands: any
+  output the user perceives but the DOM does not show must be asserted by value
+  in the durable suite.
+
+### 5. Nothing enforces the durable suite growing
+
+`tests_red` forbids the test_designer from touching `app.test.ts` — correctly, it
+is the guard. The **builder** is supposed to grow it, and only the reviewer
+noticed when it did not, twice. Today the builder then wrote **three durable
+assertions that pin a defect**. So the open question is not only "did it grow"
+but "did it grow *correctly*", and a mechanical check can answer the first
+cheaply: did `app.test.ts` gain tests in a run that added behaviour?
+
+### 6. A 0731 control roster, if any A/B is wanted
+
+See above — the default now runs v4.1 and nothing runs `0731`.
+
 
 ## CURRENT STATE — DeepSeek V4.1 is HALF LOADED, on purpose
 
