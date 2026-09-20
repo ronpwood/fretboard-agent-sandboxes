@@ -2901,3 +2901,71 @@ Better discipline than the blind arm, bought at 1.14M tokens.
 
 The live prediction resolves toward "one-off, not model behaviour" — which makes
 revised fix (3) (adjudicate the diff) right and blanket protection wrong, again.
+
+### Session closed: three arms torn down, $2.74, and the model question is the least of it
+
+All three VMs destroyed, keys revoked and verified absent from
+`/api/v1/keys`. Preserved first: traces for all three (including
+`a55c0249`, the planner session that died on the thought signature), commit
+bundles, and the sighted arm's five untracked source files under
+`.sandbox/traces/dsv41s-20260920-5aaea3/partial_build/` — the only copy of what
+it built after its detour.
+
+| arm | spend | outcome |
+|---|---|---|
+| `dsctl` (0731) | $1.1202 | 17 phases, ACCEPTED, audio correct |
+| `dsv41` (v4.1 blind) | $1.1517 | 15 phases, ACCEPTED, audio broken, better-looking |
+| `dsv41s` (v4.1 sighted) | $0.4670 | abandoned in `build` |
+
+### The model verdict: no promotion
+
+| prediction | result |
+|---|---|
+| P1 speed | **not established** — 14.4% faster, inside a 26% internal-control spread |
+| P2 tool competence | **directional, not decisive** — builder 1.4% vs 4.2%, all-agent 2.6% vs 7.7%, but the *same* planner scored 11.6% on one arm and 4.4% on the other |
+| P3 quality | **split** — better aesthetics (Ron's eye), worse audio (measured), worse fret geometry |
+
+So `deepseek-v4.1-flash` stays **registered and available** — the entry is
+verified correct, matches live rates, and costs nothing sitting there — and
+`sssf.dsflash41.config.yaml` stays as the way to run it. **`sssf.config.yaml`
+keeps `0731`.** Nothing earned a promotion at n=1 with a noise floor this wide.
+
+### What the run actually bought, and the queued fixes
+
+None applied yet; the harness stayed frozen while arms were in flight. In order
+of value:
+
+1. **`tests_red` must run the command `quality.tests()` runs.** The gate that
+   certifies the red suite does not run the command that grades the build, so a
+   generated suite that collides with `app.test.ts` passes it and detonates in
+   `build`, where no agent has the authority to fix the cause.
+2. **Ship the `?durable-suite` cache-busting pattern in the pristine shell.**
+   `bun test` shares a module registry without `--isolate`, which
+   `quality.tests()` does not pass. The blind arm discovered this and solved it;
+   the sighted arm burned **1.14M tokens and 34 of 35 tool calls** failing to.
+   That is a coin flip the clean room should not be running.
+3. **Put the verification command in the builder's prompt.** `quality.py`
+   already records that an agent rediscovering `bun test` cost ~1M tokens. The
+   same toll was just paid again for the command's *semantics*.
+4. **Adjudicate `app.test.ts` diffs rather than forbidding them** — fail only on
+   changed guard semantics, otherwise surface the diff to the reviewer. Blanket
+   protection would have blocked the blind arm's legitimate fix.
+5. Classify `stopReason == "error"` apart from a parse failure, and print the
+   provider's message (`Corrupted thought signature`) instead of blaming the
+   model for bad JSON.
+6. The audio channel is still unowned. **Four defects in four runs, three caught
+   by Ron's ear.** The v4.1 fault was a hard-coded `"4"` where fixval's was
+   `freqOfPc` — a grep for one finds neither. Nothing here will be fixed by a
+   better model.
+
+### Ron's meta-lesson, which is the real one
+
+> We could have done a full fan-out and deeper spend and been puzzled why we're
+> not getting better results.
+
+Three arms at **$2.74** found a gate asymmetry, a trap the clean room ships by
+default, an unadjudicated grader edit, and a measured price tag on the builder's
+ignorance of its own harness. A six-arm fan-out would have cost more and
+**hidden all four**, because every arm would have paid the same tax and the
+variance would have read as model noise. **Settle the design question at small N
+before spending on breadth.**
