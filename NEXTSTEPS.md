@@ -2402,3 +2402,84 @@ turn does. There is no per-run attribution — the billing page aggregates by mo
 fan-out on this lane could not be costed at all. Same shape as the `$0.0000` bug, one level out: a
 lane whose spend our instruments cannot see. Either teach the tooling this rate or stop quoting the
 two lanes' costs side by side.
+
+## 2026-09-20 — model refresh: DeepSeek V4.1 Flash registered, and a two-arm A/B is in flight
+
+Ron's read: the flash seat is slow and its output is mediocre, and DeepSeek has shipped a successor.
+Checked before acting — the read is measurable. On `fixval-20260919-250a64` the three deepseek seats
+(`test_designer`, `builder`, `scout`) owned **88 of 107 minutes**:
+
+| phase | owner | model | mins |
+|---|---|---|---|
+| test_design | test_designer | **deepseek** | **40** |
+| build + fix_1 + revise_1 + revise_2 | builder | **deepseek** | **48** |
+| plan | planner | gemini-3.8-flash | 3 |
+| review_1/2/3 | reviewer | glm-5.3 | 10 |
+| document | documenter | gpt-5.6-luna | 0 |
+
+### `deepseek/deepseek-v4.1-flash` is a genuine drop-in, and that was verified rather than assumed
+
+Released **2026-09-09**. DeepSeek has already repointed its own `deepseek-flash` alias at it, so
+`0731` is the trailing generation.
+
+| | 0731 | v4.1-flash |
+|---|---|---|
+| $/M in/out/cacheRead (published) | 0.04/0.08/0.016 | **0.15/0.60/0.003** |
+| context | 1,048,576 | 1,048,576 |
+| pi compat block | `thinkingFormat: openrouter`, `requiresReasoningContentOnAssistantMessages` | **identical** |
+| thinkingLevelMap | `medium→null, high→"high"` | **identical** |
+| ZDR | yes | **yes** |
+
+The thinkingLevelMap match is the load-bearing part: `thinking: medium` degrades to no reasoning pin
+on **both** models, so the swap changes no agent's reasoning behaviour by accident. No prompt or
+harness change is implied.
+
+ZDR was proved twice, not read off a table: a gate-C-shaped ping from the host answered from
+Parasail, and then **gate C inside the VM passed on the real roster** — pi resolved the id and the
+rate table loaded (`pi reports cost $0.000069 on a live call`).
+
+`maxTokens` is registered at **65536, not the catalog's 384000** — the value `0731` already carries,
+so the two arms differ in the model id and nothing else. Endpoint floor is BaseTen at 32768, the
+same exposure `0731` already runs with via Venice.
+
+### The swap is a sibling roster, not an edit to the default
+
+`adws/adw_sssf_config/sssf.dsflash41.config.yaml` — a copy of the default roster with one line
+changed. A single-variable A/B needs both pins to exist at once, and promotion into
+`sssf.config.yaml` waits on the result. `diff` from `defaults:` onward returns exactly one line.
+
+### Why fixval is NOT the control
+
+`2bc8aad` and `b6a135d` landed after fixval. Its builder called `render_smoke.py` 16 times and got
+the silent `EXIT 2` skip every time; today's factory returns a real verdict. **One arm against
+fixval would measure model + harness fix with no way to separate them.** So the control was re-run
+from scratch today on the same factory pin.
+
+| arm | run id | deepseek seats |
+|---|---|---|
+| control | `dsctl-20260920-ff9573` | `deepseek-v4-flash-0731` |
+| treatment | `dsv41-20260920-8233d1` | `deepseek-v4.1-flash` |
+
+Same brief, ADW, target, pin (`8a83bd83`), limit and toolchain. planner/reviewer/documenter are
+identical in both and serve as an internal control — if their numbers move, something other than the
+model moved. Pre-registered in `specs/deepseek-v41-ab-preregistration.md` before either arm produced
+a phase result.
+
+### A cost confound to report rather than silently fix
+
+`check_rates.py` flags four pre-existing drifts, and one lands on this experiment: the registry
+prices `0731` at `0.14/0.28` against a live `0.04/0.08`, while the new v4.1 entry matches live
+exactly. **The control arm's recorded cost is inflated ~3.5x on the input leg relative to the
+treatment's**, so a naive arm-to-arm cost comparison is invalid; generation-id reconciliation
+(2026-09-07g) is the authoritative path. Left uncorrected on purpose — the deepseek
+keep-catalog-vs-use-measured decision is still open and is not this run's to settle.
+
+Also still drifted and untouched: `kimi-k3` (3.0/15.0 vs live 1.7/8.5), `glm-5.2`, `glm-5.3`
+(1.4/4.4 vs live 0.89/2.81).
+
+### Open
+
+- Both arms in flight at the time of writing. Results go in a `2026-09-20b` entry.
+- A win promotes v4.1 into `sssf.config.yaml` only. The other five rosters still carry `0731`
+  and each is its own decision.
+- `data_types.py:327,347` still defaults to `google/gemini-3.6-flash`, a model no roster uses.
