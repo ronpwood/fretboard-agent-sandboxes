@@ -2970,6 +2970,108 @@ ignorance of its own harness. A six-arm fan-out would have cost more and
 variance would have read as model noise. **Settle the design question at small N
 before spending on breadth.**
 
+## 2026-09-20c — queued fixes 1 and 2: the gate now grades, and the shell stops trapping
+
+Two of the six fixes the three-arm session bought. Nothing was run in a sandbox
+for this; both were reproduced, built and verified on a local copy of the clean
+room.
+
+### The trap, reproduced before anything was touched
+
+On a copy of the pristine shell, with a generated suite written the way the
+fixed suite visibly demonstrates — `new Window(...)` plus
+`Object.defineProperty(globalThis, "document", { configurable: false })`:
+
+| command | result |
+|---|---|
+| `bun test <generated>` — what `tests_red` ran | exit 1, one honest assertion failure. **Gate green.** |
+| `bun test <fixed> <generated>` — what `quality.tests()` runs | `TypeError: Attempting to change value of a readonly property` at module load. **Not one generated test executes.** |
+
+And the second half, with a suite that installs nothing and just imports the
+entry: alone it fails on a missing `document`; combined it fails because
+`await import("./main.ts")` is a **cache hit**, so the module-scope render never
+re-runs and `#app` stays empty. Both are invisible from the file alone.
+
+### Fix 1 — the red gate runs the grading command
+
+`quality.tests_argv()` is now the single definition of that command, and
+`gates.tests_red` **calls** it rather than assembling a copy. The drift between
+those two strings was the entire bug, so the fix is structural, not textual.
+
+The gate runs it with `--reporter=junit` and judges per FILE, which an exit code
+cannot do. Three checks replace the old exit-code `RED`:
+
+| check | what it refutes |
+|---|---|
+| `runs` | the generated file produced results **at all** — a module-load death produces none and is otherwise indistinguishable from red |
+| `RED` | ≥ 1 **generated** testcase failed — vacuity is measured on the generated file, not on the process exit |
+| `fixed suite green` | the fixed suite still passes in that same process |
+
+Verified against four shapes on the clean-room shell: the collision now fails
+`runs` (it passed the old gate); a vacuous suite and a suite asserting
+already-true behaviour fail `RED`; a legitimately red suite passes all six.
+
+### Fix 2 — the shell ships the answer instead of the trap
+
+`apps/app/test-dom.ts` installs the DOM **once** and hands out fresh app
+instances through `loadApp()` (a query-suffix specifier, so module scope runs
+again). `app.test.ts` imports it instead of demonstrating the install.
+`tests/generated/README.md` states the pattern where the designer writes.
+
+**Nothing was weakened to make this work.** `configurable: false` stays. The
+blind arm's second change — flipping it to `true` so a generated suite could
+install its own DOM — is not needed once no suite needs its own DOM. That
+disposes of the adjudication question for this specific edit, though queued fix
+4 still stands for the general case.
+
+The harness also installs the browser globals a suite needs to dispatch a real
+event (`MouseEvent` and friends — the only way to click an SVG node, which has
+no `.click()`). That is fidelity, not convenience: every name is a real browser
+global, so Rule 1 gets *stricter*.
+
+Verified end to end on a copy: naive suite → fails `runs`; `loadApp()` suite
+with the feature unbuilt → passes all six checks, red; **same suite after a
+minimal build → the grading command goes green.** Lint (4 files) and typecheck
+exit 0; `main.ts` untouched.
+
+Pristine bumped 4a6dfc83 → 4d9af3e6, the fifth deliberate bump, rationale
+inline. `--check-pristine` passes and the sync dry run's four gates are green.
+
+### The prompt was telling the agent to do the wrong thing
+
+`test_designer/system.md` said: *"Run `bun test <your file>` and confirm a
+NON-zero exit before reporting. Judge by the exit status alone."* That is the
+wrong command **and** the wrong reading — an agent following it exactly produces
+the failure this session fixed. It now names the grading command, says to read
+per-file results because a file that never loaded also exits non-zero, and says
+to look for a harness the fixed suite already provides. The general
+judge-by-exit-status rule is qualified rather than left to contradict it.
+
+No other agent prompt carried the stale command.
+
+### What these two do NOT fix, stated plainly
+
+- **A suite that is red only because of a bare-import cache hit still passes the
+  gate.** It is red, and nothing available pre-build distinguishes that from
+  red-because-unimplemented. Fix 2 is what removes the shape; Fix 1 does not
+  catch it. Measured, not assumed.
+- After Fix 2 the remaining cache hit is **within** a generated file (two bare
+  `import("../../main.ts")` calls in one suite). That one is visible when the
+  agent runs its own file, and it is the agent's own file to fix — the
+  legitimate-inconsistency category, not the trap category.
+- The `/sssf install` templates under `.claude/skills/sssf/templates/` were left
+  alone: that snapshot predates the TDD chain, has no `adw_tdd_sdlc.py`, and so
+  has no `tests_red` to fix. It is stale on a larger axis than this.
+
+### Still queued
+
+3 (verification command in the **builder's** prompt), 4 (adjudicate
+`app.test.ts` diffs), 5 (`stopReason == "error"` vs a parse failure), 6 (the
+audio channel is still unowned — four defects in four runs).
+
+The clean room's commit is **local, not pushed**. `just target sync greenfield
+--push` is the step that makes it reachable by a mounted VM.
+
 ## CURRENT STATE — DeepSeek V4.1 is HALF LOADED, on purpose
 
 **Read this before touching a roster or the model registry.** As of 2026-09-20
@@ -3009,12 +3111,17 @@ roster that other work depends on.
 
 ### What would justify rolling it out further
 
-Not another A/B on the same brief. **Fix the harness first** (the six queued
-items above, especially `tests_red` and `?durable-suite`), then re-run — because
-today's run could not separate "the model is worse" from "the model spent 1.14M
-tokens fighting the harness." Once a builder actually gets to build, the model
-question becomes answerable. Only then promote, one roster at a time, starting
-with `sssf.config.yaml`.
+Not another A/B on the same brief. **Fix the harness first**, then re-run —
+because the 2026-09-20 run could not separate "the model is worse" from "the
+model spent 1.14M tokens fighting the harness." Once a builder actually gets to
+build, the model question becomes answerable. Only then promote, one roster at a
+time, starting with `sssf.config.yaml`.
+
+**Queued items 1 and 2 are done** (2026-09-20c): the red gate now runs the
+command that grades the build and judges it per file, and the clean room ships a
+shared test DOM instead of the trap. Items 3–6 remain, and the clean-room commit
+is **not yet pushed** — a mounted VM still clones the old shell until `just
+target sync greenfield --push` runs.
 
 ### Do NOT "tidy" these
 
