@@ -3,6 +3,7 @@ plan: deepseek-v41-ab-preregistration
 created: 2026-09-20T06:50:00-07:00
 modified:
   - 2026-09-20T06:50:00-07:00
+  - 2026-09-20T07:25:00-07:00 — amended mid-run: the treatment arm was blinded by a registry error
 commits:
   - b5f136b — Model refresh: register deepseek-v4.1-flash and add the A/B roster
 agents:
@@ -112,3 +113,67 @@ A win on P1+P2 authorizes promoting `deepseek-v4.1-flash` into
 `sssf.config.yaml`'s `defaults.model` and retiring the sibling roster. It does
 **not** authorize the other five rosters — those still carry 0731 and each one
 is its own decision.
+
+
+---
+
+## Amendment, 2026-09-20T07:25 — the treatment arm is running BLINDED, by my error
+
+Observed live in obs by Ron, then measured off both arms' `raw_output.jsonl`:
+
+| builder tool calls | control (0731) | treatment (v4.1) |
+|---|---|---|
+| total | 36 | 64 |
+| bash | 13 | 42 |
+| `render_smoke` refs | 2 | 7 |
+| **chromium / playwright / screenshot / .png** | **0** | **5 / 3 / 1 / 3** |
+
+**The v4.1 builder wrote its own Playwright driver** (`/tmp/shot.py`, with a `uv`
+inline-dependency header), installed playwright itself, and produced two real
+PNGs (386KB, 368KB). The 0731 builder, on the **identical prompt with the same
+in-build verify section from `b6a135d`**, did none of it. That separates model
+from harness cleanly: the instruction is in both arms; only v4.1 acts on it.
+
+This is the agency gap closing **from the model side** — the behaviour
+`specs/what-the-bare-arm-actually-did.md` recorded for bare Claude and that no
+factory arm has ever shown.
+
+Then it reached for the image and got:
+
+    [Current model does not support images. The image will be omitted from this request.]
+
+**That refusal is a bug in `models.json.tmpl`, not a property of the model.**
+`deepseek/deepseek-v4.1-flash` is multimodal — `["text","image"]` per pi's
+openrouter catalog, pi's deepseek catalog, and OpenRouter's own
+`architecture.input_modalities`. `0731` is text-only, and the new entry was
+written by copying 0731's `"input": ["text"]` line. pi MERGES its built-in
+catalog with `~/.pi/agent/models.json`, so our entry overrode a correct
+built-in and suppressed the capability.
+
+Fixed in the template. The running arm cannot be fixed in place — the template
+is installed at provision time.
+
+### What this does to the experiment
+
+P1 (speed) is now partly confounded for the treatment arm: its build took 1229s
+vs the control's 660s, and part of that was spent constructing an instrument the
+harness then refused to let it use. It did adapt rather than loop — it pivoted to
+a DOM-interrogation script (`/tmp/interact.py`, `highlighted: ['G','G','G']
+errors: []`), which is a programmatic assertion, not a look.
+
+The two running arms are NOT wasted. They now answer a sharper question than the
+one pre-registered:
+
+| arm | question it answers |
+|---|---|
+| `dsctl` (0731) | baseline |
+| `dsv41` (v4.1, **text-only**) | does v4.1 improve *on its own*, without vision? |
+| a third arm (v4.1, **sighted**) | what does adopting v4.1 actually buy? |
+
+Both running arms are past the expensive phases, so they are carried to
+completion rather than killed. The third arm is a separate decision.
+
+**Standing caution for scoring:** the internal control moved between arms —
+`plan`, identical model and prompt, took 356s on the control and 263s on the
+treatment, a 26% spread. At n=1 per arm, single-phase differences below roughly
+that magnitude are not evidence of anything.
