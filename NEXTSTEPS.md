@@ -2574,3 +2574,49 @@ accept/reject carries no quality information.
 - The sighted arm is the one that matters now: v4.1 demonstrably *builds* the
   instrument. Whether being able to LOOK at the output changes what it ships is
   the question this experiment exists to answer.
+
+### Aesthetics: Ron judges v4.1's app the better-looking one, and it never saw it
+
+Ron's judgment, on the live URLs, is the finding. **No gate in this repo looks
+at a rendering, so a human eye remains the only instrument we own for this** —
+recording it as a judgment rather than dressing it up as a measurement.
+
+Mechanical correlates, which support the judgment without being it:
+
+| stylesheet | v4.1 blind | control 0731 |
+|---|---|---|
+| lines | **434** | 103 |
+| CSS custom properties | **58** | **0** |
+| gradients | 2 | 0 |
+| `@media` queries | 1 | 0 |
+| transitions | 3 | 0 |
+| box-shadow | 1 | 0 |
+
+v4.1 built a design-token system and a responsive breakpoint; 0731 hard-coded a
+flat sheet. That is a different way of working, not just more of it.
+
+### This weakens the standing vision hypothesis
+
+2026-09-19c proposed that bare-cc's aesthetic edge over fixval came from it
+**screenshotting its own app and reading the images back** (10 of 81 tool calls),
+which fixval never did.
+
+**`dsv41` never saw its output either — my registry error guaranteed it — and
+still produced the app Ron prefers.** So looking is *not necessary* for the
+aesthetic gap, at least not this one. The likelier explanation is plain model
+capability: better default taste in layout and color, independent of feedback.
+
+That sharpens the third arm rather than dulling it. `dsv41s` differs from
+`dsv41` by exactly one line — the image modality. So:
+
+- **blind vs control** = what v4.1 brings on its own (aesthetics: yes; audio
+  correctness: no; speed: not established).
+- **sighted vs blind** = what *looking* is worth, isolated, with model held
+  constant.
+
+**Prediction to hold before the sighted arm lands:** if looking matters, its
+gain should show up in the faults a render reveals — the linear fret spacing and
+the visual layout — and **not** in the audio, which no screenshot can expose.
+The factory is still deaf; a camera does not fix that. If the sighted arm ships
+the same octave-4 bug, that is the cleanest statement yet that **the silent
+channel needs an instrument of its own, not a better model and not a picture.**
