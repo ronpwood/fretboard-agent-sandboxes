@@ -2703,3 +2703,77 @@ That is genuinely the intended behaviour. It is also precisely what produced the
 trap: the builder took the generated suite as immutable (correct) and inferred
 the fixed suite was therefore negotiable (wrong). **The comprehension is working;
 the file's standing is what is unclear.**
+
+### Ron's question: is test-first costing us the builder's runway?
+
+Watching `dsv41s` spend its whole build phase reasoning about the suite rather
+than writing code, Ron asked whether coding first — the bare Claude order —
+keeps the goal in sight, and whether the builder can even know these tests were
+handed over on purpose.
+
+**Measured, first, because the premise is checkable.** Tool calls before the
+first line of PRODUCTION code:
+
+| arm | calls before first production write |
+|---|---|
+| control (0731) | **5 of 36** |
+| v4.1 blind | **8 of 64** |
+| **v4.1 sighted** | **30+, none yet — all bash** |
+
+So the upfront cost is **not inherent to test-first**. Two arms ran the identical
+TDD chain and were writing code by call 5-8. The sighted arm is an outlier, and
+the reason is a specific pathology, not the ordering.
+
+**Does the builder know why the tests exist?** Mostly yes — more than the
+transcript suggests. `previous_envelope` in the builder's `user.md` carries all
+8 `cases[]` with a natural-language `requirement` each, plus a
+`notes_for_next_agent` that names every failure and its cause ("Cannot find
+module '../../theory' (Requirement 1)…") and says outright: *"Builder must make
+these exactly pass without weakening them."*
+
+**But that sentence is scoped to the generated suite and says nothing about
+`app.test.ts`.** That is exactly the inversion the blind arm fell into. The
+handoff names one file as sacred and leaves the actual grader unmentioned.
+
+### Root cause, verified in the source rather than taken from the agent
+
+| | command |
+|---|---|
+| `tests_red` (`gates.py:155`) | `[BUN, "test", test_file]` — **generated ALONE** |
+| `quality.tests()` (`quality.py:237`) | `[BUN, "test", TEST_FILE, *extra_files]` — **fixed + generated** |
+
+`quality.py`'s own docstring: *"the green bar always means fixed + generated
+together."* **The gate that certifies the red suite does not run the command
+that will judge it.** A generated suite whose DOM install is unguarded passes
+`tests_red` and only breaks later, when both files share one process.
+
+The builder then has no legitimate move. It cannot edit the generated suite (it
+is the spec) and it was never told the fixed suite is off-limits. So it either
+reverse-engineers the grader — **7 of the sighted arm's 30 calls are reading
+`quality.py`, `gates.py`, `adw_tdd_sdlc.py` and `render_smoke.py`** — or it
+edits the grader, which is what the blind arm did.
+
+### Where Ron is right, precisely
+
+Not that test-first is wrong. That **a builder which did not write the tests
+cannot distinguish "this spec is hard" from "this spec is broken."** Bare Claude
+never met that ambiguity because it authored both sides, so an inconsistency was
+always its own to fix. The handoff converts a one-line authoring slip in
+`test_design` into a comprehension crisis in `build`. **That is a cost of
+DISCONTINUITY, not of ordering** — the same compounding handicap recorded on
+2026-09-19.
+
+### Three cheap fixes, none of which is "stop doing TDD"
+
+1. **Make `tests_red` run the same command `quality.tests()` runs.** One change,
+   and this entire class is caught at `test_design` where it belongs — by the
+   agent that can actually fix it.
+2. **Add `apps/app/app.test.ts` to `protected_files`.** A builder editing its own
+   grader is the hazard class we already closed for `app.manifest.yaml`.
+3. **Put the verification command in the builder's prompt.** It is a known
+   string; `quality.py` already argues that an agent rediscovering `bun test`
+   cost ~1M tokens. The builder is currently paying that cost to discover what
+   will grade it.
+
+Deliberately NOT done while three arms are in flight — changing the harness
+mid-experiment would forfeit the comparison. Queued for after teardown.
