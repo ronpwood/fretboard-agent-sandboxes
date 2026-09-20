@@ -2843,3 +2843,61 @@ I ranked an arm on a partial diff and stated a verified-sounding claim I had not
 verified — the same failure this repo has recorded against its own gates twice.
 **Read the whole change before judging the change.** The agent's reasoning was
 better than my summary of it.
+
+### "The model never really gets to be a builder" — quantified
+
+Ron, watching the sighted arm 8 minutes into its build phase: *"Out of the gate
+it starts with a challenge beyond the plan, which is not something I would give
+to you in a chat session. We plan and build."*
+
+Measured on `dsv41s` at the moment its first line of product code landed:
+
+| | control | blind | **sighted** |
+|---|---|---|---|
+| first production write | call **5** of 36 | call **8** of 64 | call **34 of 35** |
+| calls reading factory source | 0 | 0 | **8** |
+| calls building `/tmp` repros | 0 | 0 | **4** |
+| **tokens before first product line** | — | — | **1,140,719** |
+
+**1.14M tokens and 34 of 35 tool calls spent before writing one line of the
+thing it was asked to build.** Not on the Circle of Fifths. On discovering
+whether `bun test` shares a module registry across files, and what command will
+grade it.
+
+`quality.py`'s own docstring already carries this exact lesson:
+
+> An agent rediscovering `bun test` on every run cost ~1M tokens and 85s; this
+> costs nothing and takes milliseconds.
+
+The factory learned that once, wrote the command down in code, and **did not
+generalize the principle**. The builder just paid the same ~1M-token toll for a
+different unknown — this time the *semantics* of the command rather than its
+spelling.
+
+### The structural claim, stated precisely
+
+The plan describes an app. The environment contains a trap the plan does not
+mention and the builder cannot see from its prompt. So the builder's first job
+is not building — it is **forensics on an artifact it did not author, to
+distinguish "this spec is hard" from "this harness is broken."**
+
+Bare Claude never paid this because it wrote code first and tests second: every
+inconsistency it met was its own, and therefore always legitimately fixable. The
+TDD handoff converts a one-line omission in `test_design` (the missing
+`typeof document` guard) into an unbounded investigation in `build`.
+
+**This is not an argument against test-first.** The control ran the identical
+chain and was building by call 5. It is an argument that **the builder is
+exposed to a class of failure it has no authority to fix and no information to
+diagnose** — and that exposure is a property of the handoff, not of the ordering.
+
+### It did not weaken the grader
+
+`git diff --stat -- apps/app/app.test.ts` is empty at call 35. The sighted arm
+reasoned its way to the same doorway as the blind arm, considered flipping
+`configurable` explicitly in its thinking, weighed it against Rule 2, and
+**chose not to** — then went and built a minimal reproduction in `/tmp` instead.
+Better discipline than the blind arm, bought at 1.14M tokens.
+
+The live prediction resolves toward "one-off, not model behaviour" — which makes
+revised fix (3) (adjudicate the diff) right and blanket protection wrong, again.
