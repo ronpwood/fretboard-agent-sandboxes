@@ -2483,3 +2483,94 @@ Also still drifted and untouched: `kimi-k3` (3.0/15.0 vs live 1.7/8.5), `glm-5.2
 - A win promotes v4.1 into `sssf.config.yaml` only. The other five rosters still carry `0731`
   and each is its own decision.
 - `data_types.py:327,347` still defaults to `google/gemini-3.6-flash`, a model no roster uses.
+
+## 2026-09-20b — two arms judged: the newer model shows more agency and shipped the worse app
+
+`dsctl-20260920-ff9573` (0731) and `dsv41-20260920-8233d1` (v4.1, **text-only —
+blinded by my registry error, see 2026-09-20**). Both ACCEPTED. Third arm
+(v4.1 sighted) still running.
+
+| | control (0731) | v4.1 blind |
+|---|---|---|
+| phases | 17, success | 15, success |
+| revisions to accept | **2** (accepted at review_3) | **1** (accepted at review_2) |
+| tokens | 7,978,159 | **9,737,257** |
+| deepseek-seat wall clock | 2496s | **2136s** |
+| builder tool calls | 36 | 64 |
+| built its own browser instrument | **no** | **yes** |
+
+### P1 (speed) is NOT established
+
+v4.1's deepseek seats were 14.4% faster. **The internal control — `plan`, same
+gemini-3.8-flash, same prompt — spread 26% between these two arms (356s vs
+263s).** A 14% difference inside a 26% noise floor at n=1 is not a result. It
+also used 22% MORE tokens. Ron's original read (the flash seat is slow) is
+confirmed as a *share* problem — the deepseek seats are still ~2/3 of the run —
+but v4.1 does not fix it.
+
+### P2 (agency) is the real finding, and it is large
+
+The v4.1 builder wrote `/tmp/shot.py`, a Playwright driver with a `uv` inline
+dependency header, installed playwright itself, and produced two real PNGs. The
+0731 builder, **same prompt, same in-build verify section**, never reached for a
+browser. 0 vs 8 instrument calls. That is the agency gap closing from the model
+side. Then the harness told it `[Current model does not support images]`,
+because of my `"input": ["text"]` line, and it fell back to a DOM assertion.
+
+### P3 (quality) — measured, and it inverts the ranking
+
+Ron found the audio fault by ear, for the **fourth run running**. Measured
+against equal temperament rather than trusted:
+
+**v4.1 — `main.ts:174` is `playNote(`${note}4`)`. Octave 4 is hard-coded for
+every fret click.**
+
+| string | fret | plays | correct | error |
+|---|---|---|---|---|
+| low E | 0 | 329.63 Hz | 82.41 Hz | **+2400¢** |
+| low E | 7 | 493.88 Hz | 123.47 Hz | +2400¢ |
+| low E | 8 | **261.63 Hz** | 130.81 Hz | +1200¢ |
+| high E | 12 | 329.63 Hz | 659.26 Hz | −1200¢ |
+
+Low E open and high E open are bit-identical at 329.63 Hz. Walking the low E
+string the pitch climbs to B4 then **falls an octave** at the B→C wrap. The neck
+collapses into one octave. Only the 1st string at frets 0-7 is ever right.
+
+**The control got it exactly right: 0 of 18 sampled positions wrong, low/high E
+ratio exactly 4.00, zero drops.**
+
+**This is fixval's defect in a completely different implementation.** fixval used
+`freqOfPc(pc)`; this hard-codes a `"4"` suffix. **A grep for the old bug would
+not have found this one** — more evidence for "gates catch known classes, one at
+a time".
+
+And the app already contained the right answer: `audio.ts:playChord` computes a
+real octave from `STRING_OCTAVES`/`STRING_OPEN_PC` and is **0 cents off on all
+six strings of an open E**. The builder knew how. The click path was never
+listened to.
+
+**Fret geometry.** v4.1 draws an SVG neck with `xForFret = LEFT + fret*fretSpan`
+— linear. Real frets go as `L(1 − 2^(−n/12))`.
+
+| fret | drawn | true | off |
+|---|---|---|---|
+| 5 | 33.3% | 43.3% | −9.9pp |
+| **7** | 46.7% | 57.4% | **−10.7pp** |
+| 12 | 80.0% | 86.3% | −6.3pp |
+
+The control renders an equal-cell HTML grid, which is a diagram convention and
+makes no claim to physical scale. v4.1's SVG *looks* like a neck, which is what
+makes the linear spacing read as wrong. That is a fair distinction, not a tie.
+
+### The verdict field remains worthless as a ranking signal
+
+Both arms ACCEPTED. One ships a neck that sounds two octaves high and measures
+its frets wrong; the other is correct on both. Fifth run in a row where
+accept/reject carries no quality information.
+
+### Open
+
+- Scored on audio + geometry only. Full rubric scoring waits for the third arm.
+- The sighted arm is the one that matters now: v4.1 demonstrably *builds* the
+  instrument. Whether being able to LOOK at the output changes what it ships is
+  the question this experiment exists to answer.
