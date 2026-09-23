@@ -5,10 +5,13 @@ modified:
   - 2026-09-23T08:33:36-07:00
   - 2026-09-23T09:05:00-07:00
   - 2026-09-23T09:40:00-07:00
+  - 2026-09-23T10:20:00-07:00
 commits:
   - 45ac892
   - 7d0b92c
   - 8494357
+  - 109ca75
+  - 266486c
 agents:
   - claude-opus-5-5
 sessions:
@@ -165,7 +168,7 @@ later change is a diff against a measured baseline.
 
 - [x] Re-run the corpus: `hfix-nopointer` shows a `deadTextRings` entry with `fault: true` naming `text.label` — proves G catches the reference defect
 - [x] `hfix` shows an F entry with `fault: true` for the note-badge group, `attrDistinct ≥ 5`, `computedDistinct == 1` — proves F catches the reference defect
-- [ ] `fail` `hfix-nopointer` shows `click_blocked` non-empty with an `occluder` — proves the discarded evidence is now kept — blocked by D's stale-handle defect (see amendment 09:40): the wheel clicks never happen, so nothing can be intercepted. Evidence capture is in place and verified by code path; it becomes observable once D re-probes (proposed Phase 2b)
+- [x] `hfix-nopointer` shows `click_blocked` non-empty with an `occluder` — proves the discarded evidence is now kept — (was `fail`, blocked by D's stale-handle defect; CLOSED by Phase 2b: 15 blocked clicks each name the key label) (see amendment 09:40): the wheel clicks never happen, so nothing can be intercepted. Evidence capture is in place and verified by code path; it becomes observable once D re-probes (proposed Phase 2b)
 - [x] **Every other row: zero `fault: true` for G and F.** RESULT: F zero hits. G fired on 4 'passing' apps, and all 4 were adjudicated as REAL by click measurement, not false positives (see Notes) Any hit gets a `--screenshot` plus a computed-style read before being called a false positive or a newly found real bug. Record each in Notes
 - [x] `passed` is unchanged for every row versus the Phase 1 baseline — proves nothing is wired into the verdict yet
 
@@ -185,6 +188,26 @@ false positive stays report-only, and the reason is written into the docstring.
 
 - [x] Corpus: `hfix-nopointer` and `hfix` now `passed: false`; every previously-passing good app still `passed: true` (RESULT: the 4 G-adjudicated apps gf-3, gf2-3, gf3-4, gf4-solo also flip to false, which is correct since each is a click-verified real defect; all 12 remaining passing apps unchanged) — proves precision on the corpus
 - [x] `uv run adws/adw_modules/render_smoke.py <hfix>/apps/app; echo $?` prints `1` and a readable G/F message — proves the builder-facing text, not just the JSON
+
+### Phase 2b: D exercises every control (added 2026-09-23, approved by Ron)
+
+Found while building Phase 2 (amendment 09:40): apps that re-render on click wiped D's handles, so
+7 of 18 apps landed exactly one click.
+
+#### 1. Re-find, then reload
+
+- [x] When a control's `data-smoke-id` stamp is gone, re-run `PROBE_JS` and find it again by signature (group + label + ordinal among the same group/label, `_signatures`)
+- [x] If it is absent from the current state (an earlier click navigated away), reload to the starting state and look there; only a control absent even from a fresh load counts as `click_stale`
+- [x] Snapshot the error count AFTER any reload, just before the click, so replayed load-time console output is never blamed on a click
+- [x] Report `reprobes` and `reloads` alongside `clicked N of M`
+
+#### Validation — Phase 2b
+
+> **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
+
+- [x] Fixed hfix: `clicked` 25/25 (was 1/25), `click_failures` empty — proves coverage without new noise on the reference app
+- [x] `hfix-nopointer`: `click_blocked` names `<text class="label">…</text>` for the wheel segments (15 of them) — proves the interception evidence now reaches the report (closes the Phase 2 `fail` box)
+- [x] Corpus: `clicked` rises across the board; every NEW `click_failures` entry is adjudicated (reproduced by hand: a real uncaught error thrown by a click handler, or an artefact of the smoke) before this is committed
 
 ### Phase 4: Builder can see, and knows how it is graded
 
@@ -358,6 +381,22 @@ detectable controls. gf3-6 itself stays out of scope, as the docstring says.
 exactly one click**: dsctl, dsv41, gf2-3, gf3-1, gf3-3, gf3-5 and hfix. Only 4 landed every click
 (bare-cc, gf-1, gf3-6, and gf2-2 at 22/25). So "survives interaction" was effectively untested on
 most of the recent factory runs. See amendment 09:40.
+
+**Phase 2b corpus, 2026-09-23.** Clicks landed, before → after re-find: hfix 1→25, dsctl 1→16
+(all), dsv41 1→25, gf3-3 1→25, gf-3 4→16 (all), gf-e2e 8→15 (all), gf3-5 1→21, gf2-3 1→13,
+gf4-solo 5→11, gf3-4 3→10, gf3-2 7→9, gf3-1 1→1.
+
+- **One new click failure, reproduced by hand and real:** gf4-solo, one click on the "D#m" sector on
+  a fresh page throws `Unknown note name: E#` (`notes.ts:47`: `PITCH_CLASS_MAP` has no E#, which is
+  in the correctly spelled D# minor scale). No verdict flipped, because gf4-solo already failed on G.
+- **Remaining low coverage is the smoke's reach, not app errors** (blocked clicks are report-only):
+  gf3-1's first click opens a help modal the smoke never dismisses (24 clicks land on
+  `modal-backdrop`); gf3-2's wedge buttons have box centres over the hub button (the geometry the
+  docstring already records), so Playwright's centre click is intercepted by `wheel-hub`. Candidate
+  follow-ups, not built: press Escape when a click is blocked by a `*modal*` backdrop, and click at
+  the probe's known-reaching grid point instead of the box centre.
+- G-flagged apps (gf2-3, gf3-4, gf4-solo, hfix-nopointer) stay partial because their wheel clicks are
+  intercepted by the labels. That is correct, and now named per click.
 
 **Deferred.** A per-role colour legend cross-check (read the legend's swatches and match them to
 fretboard fills) is more precise than the `data-role` measurement, but it is payload-shaped. Revisit

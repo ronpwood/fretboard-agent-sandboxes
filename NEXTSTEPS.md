@@ -3299,13 +3299,28 @@ every harvested app (21 refs + an hfix mutation fixture). The full tables are in
   proposed as Phase 2b and not built.
 - Still report-only: nothing's verdict changed. Next is Phase 3 (promote G and F), then 2b if approved.
 
+## 2026-09-23c — G and F promoted; D now clicks everything, and found an E# crash
+
+- **Phase 3:** G and F fail the gate. On the corpus, the rows that flipped are exactly the
+  click-verified defects (hfix both variants, gf-3, gf2-3, gf3-4, gf4-solo). Every other verdict is
+  unchanged. Commit `266486c`.
+- **Phase 2b:** D re-finds each control by group + label + ordinal after a re-render, and reloads if
+  an earlier click navigated away. Coverage went from 1 click to every click on hfix, dsctl, dsv41
+  and gf3-3. `click_blocked` now names the hfix wheel labels (15 clicks), the exact message the
+  09-20 builder saw.
+- **New real defect from D:** gf4-solo throws `Unknown note name: E#` on one click of its D#m
+  sector. It is the same family as hfix's quality-vs-distance bugs: theory code that cannot handle
+  the correct spelling. That makes the reviewer's lossy-key item (Phase 5) more pressing.
+- Remaining coverage gaps are the smoke's reach (an undismissed modal in gf3-1, a centre click
+  landing on gf3-2's hub). They are recorded in the spec, and not built.
+
 ## NEXT STEPS — read this first next session
 
 Ordered by value. Each spec carries its own phases, loop gates and validation commands.
 
 ### 1. `specs/render-content-and-prompt-gaps.md` — closes items 1, 2, 3 and 4(3)
 
-**In progress: Phases 1–2 done (2026-09-23b).** Next: Phase 3 promotes G and F; Phase 2b (D re-probe) awaits a decision.
+**In progress: Phases 1, 2, 2b and 3 done (2026-09-23b/c).** G and F now fail the gate; D re-finds controls after a re-render. Next: Phase 4 (builder `--screenshot` + prompt), then Phase 5 (reviewer + sync).
 
 - A calibration corpus first: every harvested app in `../greenfield-sandboxes`
   `refs/sandbox/*`, plus two known-bad fixtures from hfix. New smoke signals land **report-only**

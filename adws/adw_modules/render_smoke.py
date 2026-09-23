@@ -63,6 +63,14 @@ it fails fixval, and passes the two apps known to be correct.
 Assertion D is new signal outright: every gate we have is load-time, and part B
 item 11 ("survives interaction") has until now been a manual judgement.
 
+Until 2026-09-23, D clicked exactly ONE control on any app that re-renders on
+click (7 of 18 harvested apps): the first click wiped every data-smoke-id
+stamp and each later click timed out silently. It now re-finds each control by
+group + label + ordinal, reloading to the starting state if an earlier click
+navigated away. First corpus result: coverage 1/25 -> 25/25 on hfix, dsctl,
+dsv41 and gf3-3, and one real defect nothing had seen -- gf4-solo throws
+`Unknown note name: E#` on a single click of its D#m sector.
+
 FALSE POSITIVES ARE THE FAILURE MODE TO FEAR. `typescript/no-explicit-any` was
 measured and REJECTED for `run_verify` because it failed working code; the same
 bar applies here. Two deliberate concessions:
@@ -483,6 +491,19 @@ def dead_text_rings(controls: list[dict]) -> list[dict]:
     return rings
 
 
+def _signatures(controls: list[dict]) -> dict[str, tuple]:
+    """{control id: signature}. A signature is what survives a re-render --
+    group, label, and ordinal among controls sharing both -- so a control can
+    be found again after the app has rebuilt its DOM (see the D loop)."""
+    seen: dict[tuple, int] = {}
+    out = {}
+    for c in controls:
+        base = (c.get("group", ""), c.get("label", ""))
+        out[c["id"]] = (*base, seen.get(base, 0))
+        seen[base] = seen.get(base, 0) + 1
+    return out
+
+
 def run(app_dir: str, max_clicks: int) -> dict:
     try:
         from playwright.sync_api import sync_playwright
@@ -557,19 +578,45 @@ def run(app_dir: str, max_clicks: int) -> dict:
             report["clickable"] = len(clickable)
             report["clicked"] = 0
             report["click_stale"] = 0
+            report["reprobes"] = 0
+            wanted = _signatures(probe["controls"])
+            report["reloads"] = 0
+
+            def refind(c: dict) -> str | None:
+                fresh = page.evaluate(PROBE_JS)["controls"]
+                sigs = _signatures(fresh)
+                found = {sigs[f["id"]]: f for f in fresh if f["reachable"]}
+                match = found.get(wanted[c["id"]])
+                return f'[data-smoke-id="{match["id"]}"]' if match else None
+
             for c in clickable:
-                before = len(report["errors"]) + len(report["console"])
                 # MEASURED 2026-09-23 on hfix: an app that re-renders on click
                 # wipes every data-smoke-id stamp (41 -> 0 after the first
-                # click), so each later click timed out on a selector that no
-                # longer exists. D has been clicking ONE control on such apps.
-                # Count those apart from genuine blocking, and report how many
-                # clicks actually landed, so the coverage gap is visible.
-                if page.locator(f'[data-smoke-id="{c["id"]}"]').count() == 0:
-                    report["click_stale"] += 1
-                    continue
+                # click), so every later click timed out on a selector that no
+                # longer existed -- and D clicked exactly ONE control on 7 of 18
+                # harvested apps. So when a stamp is gone, re-probe and find the
+                # same control again by what a user would recognise it by
+                # (group + label + ordinal). If an earlier click navigated away
+                # from it (hfix: the tab buttons come before the wheel, and the
+                # Quiz tab has no wheel), reload to the starting state and look
+                # there. Only a control absent even from a fresh load is stale.
+                sel = f'[data-smoke-id="{c["id"]}"]'
+                if page.locator(sel).count() == 0:
+                    report["reprobes"] += 1
+                    sel = refind(c)
+                    if sel is None:
+                        report["reloads"] += 1
+                        page.goto(page.url, wait_until="load", timeout=30_000)
+                        page.wait_for_timeout(600)
+                        sel = refind(c)
+                    if sel is None:
+                        report["click_stale"] += 1
+                        continue
+                # Counted HERE, after any reload: a reload replays load-time
+                # console output, which must not be blamed on this click.
+                before = len(report["errors"]) + len(report["console"])
                 try:
-                    page.click(f'[data-smoke-id="{c["id"]}"]',
+                    page.click(sel,
                                timeout=1500, force=False, no_wait_after=True)
                     page.wait_for_timeout(60)
                     report["clicked"] += 1
