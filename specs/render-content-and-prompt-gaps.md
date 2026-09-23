@@ -3,8 +3,10 @@ plan: render-content-and-prompt-gaps
 created: 2026-09-23T08:33:36-07:00
 modified:
   - 2026-09-23T08:33:36-07:00
+  - 2026-09-23T09:05:00-07:00
 commits:
   - 45ac892
+  - 7d0b92c
 agents:
   - claude-opus-5-5
 sessions:
@@ -12,7 +14,7 @@ sessions:
 back_refs: []
 forward_refs:
   - specs/context-rot-and-self-compact.md — its baseline arm runs on the harness this plan delivers
-status: draft
+status: building
 ---
 
 # Plan: Render smoke sees content, and the prompts close the gaps hfix exposed
@@ -103,7 +105,7 @@ mechanism, not guitars.
 - none
 
 ### New
-- `adws/adw_modules/render_smoke_corpus.sh` — extracts each harvested app from `../greenfield-sandboxes` `refs/sandbox/*` into the scratchpad, runs the smoke with `--json`, and prints one row per app. It is the calibration instrument, and it is kept so future assertions are calibrated the same way
+- `sandbox_mount/host/render_smoke_corpus.sh` — extracts each harvested app from `../greenfield-sandboxes` `refs/sandbox/*` into the scratchpad, runs the smoke with `--json`, and prints one row per app. It is the calibration instrument, and it is kept so future assertions are calibrated the same way
 
 ## Implementation Phases
 
@@ -116,26 +118,26 @@ later change is a diff against a measured baseline.
 
 #### 1. Corpus script
 
-- [ ] Write `adws/adw_modules/render_smoke_corpus.sh <out_dir> [ref...]`. For each ref (default: all `refs/sandbox/*` in `../greenfield-sandboxes`), `git -C ../greenfield-sandboxes archive <ref> | tar -x -C <out_dir>/<id>`, run `bun install --frozen-lockfile` if a lockfile exists, run `uv run adws/adw_modules/render_smoke.py <out_dir>/<id>/apps/app --json > <out_dir>/<id>.json`, and print `id  passed  controls  unreachable  sectorFaults` (plus new fields as they land)
-- [ ] Confirm the app dir per ref: greenfield payloads live at `apps/app`; skip and print any ref where `apps/app/index.html` is absent rather than failing
+- [x] Write `sandbox_mount/host/render_smoke_corpus.sh <repo> <out_dir> [ref...]`. For each ref (default: all `refs/sandbox/*` in `<repo>`), `git -C ../greenfield-sandboxes archive <ref> | tar -x -C <out_dir>/<id>`, run `bun install --frozen-lockfile` if a lockfile exists, run `uv run adws/adw_modules/render_smoke.py <out_dir>/<id>/apps/app --json > <out_dir>/<id>.json`, and print `id  passed  controls  unreachable  sectorFaults` (plus new fields as they land)
+- [x] Confirm the app dir per ref: greenfield payloads live at `apps/app`; skip and print any ref where `apps/app/index.html` is absent rather than failing
 
 #### 2. Known-bad fixtures
 
-- [ ] `hfix-nopointer`: the hfix tree with the builder's `pointer-events` fix reverted. Locate it with `rg -n "pointer-events" apps/app/src`, remove the `none` on labels/numerals, and save the patch as `<out_dir>/hfix-nopointer.patch` so the mutation is reproducible
-- [ ] `hfix` as delivered is the F fixture (the badges are one colour in the delivered snapshot)
-- [ ] Existing references stay in: `fixval` (E must still fire), `gf3-5` (C must still fire)
+- [x] `hfix-nopointer`: the hfix tree with the builder's `pointer-events` fix reverted. Locate it with `rg -n "pointer-events" apps/app/src`, remove the `none` on labels/numerals, and save the patch as `<out_dir>/hfix-nopointer.patch` so the mutation is reproducible
+- [x] `hfix` as delivered is the F fixture (the badges are one colour in the delivered snapshot)
+- [x] Existing references stay in: `fixval` (E must still fire), `gf3-5` (C must still fire)
 
 #### 3. Baseline
 
-- [ ] Run the corpus on current `render_smoke.py`; save the table into this plan's Notes via sync. Expected: fixval and gf3-5 fail, everything else passes, including both hfix variants. That is the gap on record
+- [x] Run the corpus on current `render_smoke.py`; save the table into this plan's Notes via sync. Expected: fixval and gf3-5 fail, everything else passes, including both hfix variants. That is the gap on record
 
 #### Validation — Phase 1
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `bash adws/adw_modules/render_smoke_corpus.sh $SCRATCH/corpus` — exits 0 and prints one row per ref; proves the harness runs end to end locally (bun + uv + chromium on macOS)
-- [ ] fixval row shows `sectorFaults` ≥1 and gf3-5 shows `unreachable` ≥1 — proves the harness reproduces known verdicts, so it can be trusted for new ones
-- [ ] `hfix-nopointer` and `hfix` rows both `passed: true` — proves the baseline reproduces the gap
+- [x] `sandbox_mount/host/render_smoke_corpus.sh ../greenfield-sandboxes $SCRATCH/corpus` — exits 0 and prints one row per ref; proves the harness runs end to end locally (bun + uv + chromium on macOS)
+- [x] fixval row shows `sectorFaults` ≥1 and gf3-5 shows `unreachable` ≥1 — proves the harness reproduces known verdicts, so it can be trusted for new ones
+- [x] `hfix-nopointer` and `hfix` rows both `passed: true` — proves the baseline reproduces the gap
 
 ### Phase 2: New measurements (report-only)
 
@@ -227,7 +229,7 @@ false positive stays report-only, and the reason is written into the docstring.
 
 ## Global Validation
 
-- [ ] `bash adws/adw_modules/render_smoke_corpus.sh $SCRATCH/corpus-final` — final table: known-bad fixtures fail on the intended assertion; every other row matches the Phase 1 baseline verdict
+- [ ] `sandbox_mount/host/render_smoke_corpus.sh ../greenfield-sandboxes $SCRATCH/corpus-final` — final table: known-bad fixtures fail on the intended assertion; every other row matches the Phase 1 baseline verdict
 - [ ] `git diff 45ac892 --stat` touches only the files listed in Relevant Files
 - [ ] NEXTSTEPS "NEXT STEPS" section reflects which items this plan closed
 
@@ -267,6 +269,45 @@ builder finding it by accident.
 (2026-09-20d, and memory `agency-gap-on-vm`) is wrong: the prompt named it from 2026-09-19. The
 agency finding shrinks to "it followed the instruction". The real gap was a missing *how to serve*.
 
+**Phase 1 baseline, 2026-09-23 (current `render_smoke.py`, local macOS chromium, 1280×900).**
+22 rows: 21 harvested refs plus the `hfix-nopointer` mutation fixture.
+
+| id | passed | ctrls | unreach | sector | why it fails |
+|---|---|---|---|---|---|
+| bare-cc-20260919 | true | 50 | 0 | 0 | |
+| dsctl-20260920 | true | 16 | 0 | 0 | |
+| dsv41-20260920 | true | 45 | 0 | 0 | |
+| **dsv41s-20260920** | false | 0 | 0 | 0 | B: 22 chars drawn |
+| **fixval-20260919** | false | 99 | 0 | **1** | E (reference) |
+| gf-1-20260828 | true | 32 | 0 | 0 | |
+| **gf-2-20260828** | false | 0 | 0 | 0 | A: `relativeMinor2 is not a function` |
+| gf-3-20260828 | true | 16 | 0 | 0 | |
+| gf-e2e-20260917 | true | 15 | 0 | 0 | |
+| **gf2-1-20260918** | false | 123 | 123 | 0 | A: crash in `route()`; unreachable = `bun-hmr` overlay |
+| gf2-2-20260918 | true | 30 | 0 | 0 | |
+| gf2-3-20260918 | true | 40 | 0 | 0 | |
+| **gf2-4-20260918** | false | 42 | 42 | 0 | A: `Cannot redefine property: document`; unreachable = `bun-hmr` |
+| gf3-1-20260918 | true | 77 | 0 | 0 | |
+| gf3-2-20260918 | true | 62 | 0 | 0 | |
+| gf3-3-20260918 | true | 31 | 0 | 0 | |
+| gf3-4-20260918 | true | 22 | 0 | 0 | |
+| **gf3-5-20260918** | false | 86 | **8** | 2 | C (reference), and E fires too |
+| gf3-6-20260918 | true | 12 | 0 | 0 | out of scope by design (docstring) |
+| gf4-solo-20260918 | true | 39 | 0 | 0 | |
+| **hfix-20260920** | **true** | 41 | 0 | 0 | the F gap on record |
+| **hfix-nopointer** | **true** | 41 | 0 | 0 | the G gap on record |
+
+- The prediction "everything else passes" was wrong. Four more apps fail, and all four are
+  genuine load-time crashes caught by A/B, so none is a false positive. That leaves **14
+  known-passing apps** as the precision set for G and F, plus the two hfix fixtures as the recall set.
+- **Design input for G:** a crashed app is covered by bun's `bun-hmr` error overlay (the occluder
+  for all 123/42 "unreachable" controls above). G must exclude `bun-hmr` (and descendants), or
+  every crashed app double-reports as a dead-text ring. C already double-reports this way. That
+  is harmless because A fires first, but worth a one-line docstring note.
+- hfix shows 41 controls locally versus 102 in the VM trace (a builder-run smoke after its own
+  edits, maybe another tab state). Not investigated. The fixtures compare against each other, so it
+  does not affect calibration.
+
 **Deferred.** A per-role colour legend cross-check (read the legend's swatches and match them to
 fretboard fills) is more precise than the `data-role` measurement, but it is payload-shaped. Revisit
 only if F plus the role measurement miss something real.
@@ -274,7 +315,17 @@ only if F plus the role measurement miss something real.
 ## Amendments
 
 <details>
-<summary>— no amendments yet</summary>
+<summary>2026-09-23T09:05:00-07:00 — corpus script moved to sandbox_mount/host/, repo is an argument</summary>
 
-Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+Both `adws/` and `sandbox_mount/` are target sync paths, so either location ships to the public
+greenfield repo. `sandbox_mount/host/` is where host tooling that reads harvested refs already
+lives (`target_sync.py`). The script takes the refs repo as its first argument instead of
+hardcoding `../greenfield-sandboxes`, which keeps it generic and leak-free. It reads the app dir
+from each ref's `app.manifest.yaml`, and it reuses an existing extracted dir, which is how the
+`hfix-nopointer` mutation fixture (patch at `$SCRATCH/corpus/hfix-nopointer.patch`: deletes
+`.label`/`.numeral { pointer-events: none; }` from `styles.ts:151,153`) survives re-runs.
+
+Verified during fixture build: in hfix the wheel's `<text class="label">` is a SIBLING of its
+`<path class="segment">` (`wheel.ts:85-89`), not a child. The `.segment text.label` CSS rule matches
+nothing. So G's "not a descendant of the control" condition holds for the reference defect.
 </details>
