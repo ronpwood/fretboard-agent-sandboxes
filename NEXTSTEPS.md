@@ -3320,7 +3320,7 @@ Ordered by value. Each spec carries its own phases, loop gates and validation co
 
 ### 1. `specs/render-content-and-prompt-gaps.md` — closes items 1, 2, 3 and 4(3)
 
-**In progress: Phases 1, 2, 2b and 3 done (2026-09-23b/c).** G and F now fail the gate; D re-finds controls after a re-render. Next: Phase 4 (builder `--screenshot` + prompt), then Phase 5 (reviewer + sync).
+**In progress: Phases 1–4 and 2b done (2026-09-23b/c).** G and F fail the gate; D re-finds controls after a re-render; `render_smoke.py --screenshot`, and the builder prompt names it, the serving rule, the grading command and spec-derived durable tests (`772bb26`). Next: Phase 5 (reviewer lossy-key + sibling sweep, then `target sync --dry-run`; `--push` needs Ron).
 
 - A calibration corpus first: every harvested app in `../greenfield-sandboxes`
   `refs/sandbox/*`, plus two known-bad fixtures from hfix. New smoke signals land **report-only**
