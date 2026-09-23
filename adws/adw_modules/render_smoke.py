@@ -36,7 +36,7 @@ So the honest scope is seven things nothing else in the chain checks:
   G  a ring of sibling controls is not covered, every one, by text that eats the click
 
 F and G were added 2026-09-23, after `hfix-20260920-062b46` PASSED this gate
-with 96 fretboard badges that all painted one grey (a `.note-badge { fill }`
+with 96 badges that all painted one grey (a `.note-badge { fill }`
 rule beat six per-role `fill` attributes) and, before its builder noticed by
 accident, a wheel whose key labels swallowed every click. Both are stated as
 SIBLING signatures, like E -- a whole group must show the fault -- so a lone
@@ -288,7 +288,7 @@ PROBE_JS = r"""
   });
 
   // F: a colour the author wrote that never reaches the screen. MEASURED on
-  // hfix-20260920-062b46: 96 fretboard badges each carried a per-role `fill`
+  // hfix-20260920-062b46: 96 note badges each carried a per-role `fill`
   // presentation ATTRIBUTE, and one stylesheet rule (`.note-badge { fill: ... }`)
   // beat all of them -- CSS outranks presentation attributes -- so every badge
   // computed to the same grey and no scale shape was visible. Group by tag +
