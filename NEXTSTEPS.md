@@ -3460,6 +3460,13 @@ v4.1 default roster, hfix's brief. Compare with hfix on defects found by hit-tes
 acceptance, the review trajectory, whether G/F fire *inside* the loop, and builder calls spent on
 servers/screenshots.
 
+### 3b. Two small harness fixes from harn2 (cheap, do first next session)
+
+- **`render_smoke.py --screenshot` should reach a state first**, e.g. `--click "F#"` (repeatable) before
+  capturing. The harn2 builder noticed on its own that the initial state hides most of a multi-mode app.
+- **`execute` must refuse a `*.md` PROMPT that is absent from the target.** Today it silently becomes
+  the brief: dsctl, dsv41 and dsv41s all ran on a 36-character filename (2026-09-23d).
+
 ### 4. Still open, not in a spec
 
 - **(6) the audio channel**: four defects in four runs. It needs a brief-level requirement and an
