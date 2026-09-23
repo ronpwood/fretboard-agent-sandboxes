@@ -3354,6 +3354,12 @@ nothing to the harness that a model change could explain.
 Recorded, never scored: tokens, dollars (reconcile generation ids before teardown), wall clock,
 review trajectory, and whether the final review approves. Accept/reject is not a quality ranking.
 
+**Mounted as `harn2-20260923-f50552`** (pinned `777d62f`, brief confirmed present on the VM, pid 1698).
+**Second confound, visible at mount:** the exe.dev image now ships **pi 0.87.1** (also uv 0.12.18,
+claude 2.1.280). hfix and dsv41 ran pi 0.85.1. `toolchain.lock` keeps pi in `image` mode by design
+(09-07), so this is the policy working, not an error. But any behaviour change in how agents run is
+now attributable to harness **or** pi. Setup's gate passed through 0.87.1 (pings and non-zero cost).
+
 ## NEXT STEPS — read this first next session
 
 Ordered by value. Each spec carries its own phases, loop gates and validation commands.
