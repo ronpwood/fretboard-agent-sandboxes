@@ -121,8 +121,13 @@ adws/adw_modules/     agents.py (roster + validation), agent_pi.py / agent_cc.py
   render_smoke.py     the fourth block in run_verify: boots the dev server, loads the app in a
                       REAL chromium, and fails on what only a browser sees — an uncaught error,
                       a blank page, an interactive element NOTHING can click, or a control that
-                      throws when clicked. happy-dom closed crash-on-load but does no layout and
-                      no hit-testing. Exit 2 (no browser) is a SKIP, never a failure.
+                      throws when clicked (every control, re-found after re-renders), labels that
+                      eat a whole ring's clicks (G), SVG colours one CSS rule overrides (F), or a
+                      sector ring drawn the long way (E). happy-dom closed crash-on-load but does
+                      no layout and no hit-testing. `--screenshot /tmp/x.png` gives agents a
+                      picture. Exit 2 (no browser) is a SKIP, never a failure.
+  (host) sandbox_mount/host/render_smoke_corpus.sh — calibrates the smoke over every harvested app;
+                      run it before promoting any new assertion.
 adws/adw_sssf_config/ sssf.config.yaml (cheap roster) and sssf.frontier.config.yaml.
                       Every model is `openrouter/<id>`; the first slash splits provider
                       from model id.

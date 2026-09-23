@@ -213,21 +213,21 @@ Found while building Phase 2 (amendment 09:40): apps that re-render on click wip
 
 #### 1. `--screenshot`
 
-- [ ] Add `--screenshot <path>` to `render_smoke.py`: after load and settle, before the click pass, `page.screenshot(path=…, full_page=True)`. It is written even when the verdict fails, because a failing app is when a picture helps most. Refuse a path inside the repo working tree (exit 2 with a message), consistent with the scratch-goes-to-`/tmp` rule
+- [x] Add `--screenshot <path>` to `render_smoke.py`: after load and settle, before the click pass, `page.screenshot(path=…, full_page=True)`. It is written even when the verdict fails, because a failing app is when a picture helps most. Refuse a path inside the repo working tree (exit 2 with a message), consistent with the scratch-goes-to-`/tmp` rule
 
 #### 2. Builder prompt
 
-- [ ] Replace the "a screenshot you actually read — Playwright to `page.screenshot()`" bullet with: `uv run adws/adw_modules/render_smoke.py <app-dir> --screenshot /tmp/app.png`, then read the image. Add one sentence: the app is served by `bun index.html` from its directory; `python -m http.server` cannot serve it, so never hand-roll a server
-- [ ] Add under Instructions: when `previous_envelope` names a generated test file, the build is graded by **one** process, `bun test <app.test_file from app.manifest.yaml> <that file>`. Run exactly that before reporting and read the per-file results, not just the exit code (same reasoning as the test_designer's line 16)
-- [ ] Add: a durable test you add must assert the answer the **spec** requires, derived independently of your code. A test that captures what your code currently returns can freeze a defect in place (hfix: `app.test.ts:423-436`)
+- [x] Replace the "a screenshot you actually read — Playwright to `page.screenshot()`" bullet with: `uv run adws/adw_modules/render_smoke.py <app-dir> --screenshot /tmp/app.png`, then read the image. Add one sentence: the app is served by `bun index.html` from its directory; `python -m http.server` cannot serve it, so never hand-roll a server
+- [x] Add under Instructions: when `previous_envelope` names a generated test file, the build is graded by **one** process, `bun test <app.test_file from app.manifest.yaml> <that file>`. Run exactly that before reporting and read the per-file results, not just the exit code (same reasoning as the test_designer's line 16)
+- [x] Add: a durable test you add must assert the answer the **spec** requires, derived independently of your code. A test that captures what your code currently returns can freeze a defect in place (hfix: `app.test.ts:423-436`)
 
 #### Validation — Phase 4
 
 > **Loop gate.** Do not start Phase 5 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `uv run adws/adw_modules/render_smoke.py $SCRATCH/corpus/hfix-20260920-062b46/apps/app --screenshot $SCRATCH/hfix.png` then Read the PNG — proves the screenshot shows the rendered app, not a blank page
-- [ ] `--screenshot apps/app/x.png` from the repo root exits 2 — proves the scratch rule is enforced
-- [ ] `rg -n 'http.server|--screenshot|app.test_file' adws/adw_data/prompt_engineering/builder/system.md` shows all three — proves the prompt edits landed
+- [x] `uv run adws/adw_modules/render_smoke.py $SCRATCH/corpus/hfix-20260920-062b46/apps/app --screenshot $SCRATCH/hfix.png` then Read the PNG — proves the screenshot shows the rendered app, not a blank page
+- [x] `--screenshot apps/app/x.png` from the repo root exits 2 — proves the scratch rule is enforced
+- [x] `rg -n 'http.server|--screenshot|app.test_file' adws/adw_data/prompt_engineering/builder/system.md` shows all three — proves the prompt edits landed
 
 ### Phase 5: Reviewer lossy-key check, then sync
 
@@ -397,6 +397,13 @@ gf4-solo 5→11, gf3-4 3→10, gf3-2 7→9, gf3-1 1→1.
   the probe's known-reaching grid point instead of the box centre.
 - G-flagged apps (gf2-3, gf3-4, gf4-solo, hfix-nopointer) stay partial because their wheel clicks are
   intercepted by the labels. That is correct, and now named per click.
+
+**Phase 4, 2026-09-23.** `--screenshot` works in either argument order, writes even when a check
+fails (hfix exits 1 on F and still saves the PNG), and refuses an in-repo path with exit 2, writing
+nothing. The hfix screenshot, read back, shows the value of the picture directly: every fretboard
+note grey under a five-colour legend. A builder looking at it would have seen the F defect. The
+grading command in the builder prompt was checked against `quality.tests_argv` (`[bun, "test",
+TEST_FILE, *extra]`) rather than copied from the test_designer prompt.
 
 **Deferred.** A per-role colour legend cross-check (read the legend's swatches and match them to
 fretboard fills) is more precise than the `data-role` measurement, but it is payload-shaped. Revisit

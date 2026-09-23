@@ -83,7 +83,13 @@ bar applies here. Two deliberate concessions:
     `cursor: pointer`. Anything vaguer produces noise.
 
 Usage:
-    ./render_smoke.py <app_dir> [--json] [--max-clicks N]      # or: uv run render_smoke.py ...
+    ./render_smoke.py <app_dir> [--json] [--max-clicks N] [--screenshot /tmp/app.png]
+                                                               # or: uv run render_smoke.py ...
+
+--screenshot saves a full-page PNG of the app as it first renders (before any
+click), from the same dev server and browser the checks use. It is written even
+when a check fails -- that is when a picture helps most. The path must be
+OUTSIDE the repo (scratch goes to /tmp); a path inside the working tree exits 2.
 
 Do NOT run it as `python3 render_smoke.py`: the shebang is `uv run`, which is
 what installs the PEP-723 dependencies, and a bare interpreter skips that. It
@@ -504,7 +510,7 @@ def _signatures(controls: list[dict]) -> dict[str, tuple]:
     return out
 
 
-def run(app_dir: str, max_clicks: int) -> dict:
+def run(app_dir: str, max_clicks: int, screenshot: str | None = None) -> dict:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
@@ -552,6 +558,9 @@ def run(app_dir: str, max_clicks: int) -> dict:
 
             page.goto(f"http://localhost:{port}/", wait_until="load", timeout=30_000)
             page.wait_for_timeout(600)      # let a rAF/microtask render settle
+            if screenshot:
+                page.screenshot(path=screenshot, full_page=True)
+                report["screenshot"] = screenshot
 
             probe = page.evaluate(PROBE_JS)
             # Freeze what happened BEFORE any click. Without this an error raised
@@ -703,17 +712,41 @@ def verdict(r: dict) -> tuple[bool, list[str]]:
     return (not failures), failures
 
 
+def _inside_repo(path: str) -> bool:
+    """Is `path` inside the git working tree we were run from? Scratch output
+    in the repo is an out-of-scope write the chain undoes -- refuse it early."""
+    try:
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True,
+                             text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    target = Path(path).expanduser().resolve()
+    return target == Path(top).resolve() or Path(top).resolve() in target.parents
+
+
 def main() -> int:
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    argv = sys.argv[1:]
+    screenshot = None
+    for i, a in enumerate(argv):
+        if a.startswith("--screenshot="):
+            screenshot = a.split("=", 1)[1]
+        elif a == "--screenshot" and i + 1 < len(argv):
+            screenshot = argv[i + 1]
+    args = [a for i, a in enumerate(argv)
+            if not a.startswith("--") and not (i > 0 and argv[i - 1] == "--screenshot")]
     if not args:
         print(__doc__, file=sys.stderr)
         return 2
+    if screenshot and _inside_repo(screenshot):
+        print(f"render_smoke: --screenshot {screenshot} is inside the repo; "
+              f"write it to /tmp instead (e.g. /tmp/app.png).", file=sys.stderr)
+        return 2
     max_clicks = DEFAULT_MAX_CLICKS
-    for a in sys.argv[1:]:
+    for a in argv:
         if a.startswith("--max-clicks"):
             max_clicks = int(a.split("=", 1)[1]) if "=" in a else max_clicks
 
-    report = run(args[0], max_clicks)
+    report = run(args[0], max_clicks, screenshot)
     ok, failures = verdict(report)
 
     if "--json" in sys.argv:
@@ -721,13 +754,15 @@ def main() -> int:
     else:
         print(f"render_smoke: {report.get('controlCount', 0)} interactive element(s), "
               f"{report.get('textLength', 0)} chars rendered")
+        if report.get("screenshot"):
+            print(f"render_smoke: screenshot saved to {report['screenshot']} -- read it")
         # Measurements, reported whether or not they fail anything, so the next
         # defect in these classes is visible even below a threshold.
         blocked = report.get("click_blocked", [])
         rings = [g for g in report.get("deadTextRings", []) if g["fault"]]
         colour = [g for g in report.get("colourGroups", []) if g["fault"]]
         print(f"render_smoke: measured — clicked {report.get('clicked', 0)} of "
-              f"{report.get('clickable', 0)} ({report.get('click_stale', 0)} lost to a re-render), "
+              f"{report.get('clickable', 0)} ({report.get('click_stale', 0)} not found even after a reload), "
               f"{len(blocked)} click(s) blocked, "
               f"{len(rings)} control ring(s) under dead text, "
               f"{len(colour)} colour group(s) overridden by CSS")
