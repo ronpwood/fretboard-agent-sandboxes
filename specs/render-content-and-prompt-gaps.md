@@ -233,13 +233,13 @@ Found while building Phase 2 (amendment 09:40): apps that re-render on click wip
 
 #### 1. Reviewer prompt
 
-- [ ] Add a payload-neutral item under Instructions: **Lookups that drop a distinguishing attribute.** When code selects an entry by one property (a distance, an offset, an index, a name prefix), list the inputs that share that property and confirm each gets its own correct answer. The failure is a table keyed on one attribute that silently returns another variant's entry
-- [ ] Add a **sibling sweep**: when you find a defect, search the codebase for the same mechanism before ruling any other requirement met. One app here had the same mistake in two unrelated modules; the review caught one and approved the other
+- [x] Add a payload-neutral item under Instructions: **Lookups that drop a distinguishing attribute.** When code selects an entry by one property (a distance, an offset, an index, a name prefix), list the inputs that share that property and confirm each gets its own correct answer. The failure is a table keyed on one attribute that silently returns another variant's entry
+- [x] Add a **sibling sweep**: when you find a defect, search the codebase for the same mechanism before ruling any other requirement met. One app here had the same mistake in two unrelated modules; the review caught one and approved the other
 
 #### 2. Sync to the greenfield target
 
-- [ ] `just target sync greenfield --dry-run` passes the leak check and all four gates
-- [ ] **Ask Ron** before `--push`: it is outward-facing (public repo)
+- [x] `just target sync greenfield --dry-run` passes the leak check and all four gates
+- [ ] `wip` **Ask Ron** before `--push`: it is outward-facing (public repo). Dry run green at `f9c3587`; asked 2026-09-23
 
 #### 3. Record
 
@@ -249,8 +249,8 @@ Found while building Phase 2 (amendment 09:40): apps that re-render on click wip
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `just target sync greenfield --dry-run; echo $?` prints `0` — proves the new wording is leak-free and the gates pass inside the target
-- [ ] `rg -n -i 'guitar|chord|fret|scale' adws/adw_data/prompt_engineering/reviewer/system.md` returns nothing — proves the reviewer text stayed payload-neutral (belt and braces over the leak check)
+- [x] `just target sync greenfield --dry-run; echo $?` prints `0` — proves the new wording is leak-free and the gates pass inside the target
+- [x] `rg -n -i 'guitar|chord|fret|scale' adws/adw_data/prompt_engineering/reviewer/system.md` returns nothing — proves the reviewer text stayed payload-neutral (belt and braces over the leak check)
 
 ## Global Validation
 
@@ -404,6 +404,13 @@ nothing. The hfix screenshot, read back, shows the value of the picture directly
 note grey under a five-colour legend. A builder looking at it would have seen the F defect. The
 grading command in the builder prompt was checked against `quality.tests_argv` (`[bun, "test",
 TEST_FILE, *extra]`) rather than copied from the test_designer prompt.
+
+**Phase 5, 2026-09-23.** The first dry run failed the **leak check**: "fretboard" (the host app's
+name) appeared twice in F's docstring and comment. Fixed at the source (`f9c3587`), so the check
+worked as designed. The second failed the **roster gate** on every model. The cause was environmental:
+`pi` (0.85.1) is installed under nvm's node **v22.21.0**, and the Claude Code shell defaulted to
+v24.21.0, which has no `pi`, so `pi --list-models` returned nothing. With v22's bin on PATH for the
+one command, all four gates pass. Nothing in the repo needed changing for that.
 
 **Deferred.** A per-role colour legend cross-check (read the legend's swatches and match them to
 fretboard fills) is more precise than the `data-role` measurement, but it is payload-shaped. Revisit
