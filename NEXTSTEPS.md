@@ -3314,6 +3314,46 @@ every harvested app (21 refs + an hfix mutation fixture). The full tables are in
 - Remaining coverage gaps are the smoke's reach (an undismissed modal in gf3-1, a centre click
   landing on gf3-2's hub). They are recorded in the spec, and not built.
 
+## 2026-09-23d — PRE-REGISTRATION: one live greenfield arm on the new harness
+
+Written **before** mounting. Default roster (`deepseek-v4.1-flash` builder/test_designer), `tdd`
+ADW, greenfield target at `777d62f`, brief `prompts/greenfield.md`.
+
+### The comparator problem, found while setting this up
+
+`resolve_prompt` reads a prompt path only if the file exists on the VM. **dsctl, dsv41 and dsv41s
+were executed with `prompts/10-circle-of-fifths-wheel.md`, which exists only in the host repo.**
+Their recorded request is that 36-char filename, and their planners built an app from a filename
+(and whatever they found in the greenfield checkout). hfix and fixval got `prompts/greenfield.md`'s
+text. So the 09-20 model A/B and hfix did not share an effective brief. A missing prompt path fails
+silently: that is a harness defect. `execute` should refuse a `*.md` PROMPT absent from the target.
+Queued, not fixed.
+
+Consequence: there is no single clean comparator. **hfix** has the same brief but model `0731`.
+**dsv41** has the same model, a filename brief and the old harness. Report against both, and attribute
+nothing to the harness that a model change could explain.
+
+### Predictions (judge each; a miss is a result)
+
+1. **The builder looks at the app:** it runs `render_smoke.py … --screenshot /tmp/…` at least once
+   and never hand-rolls a server (`http.server`, a custom bun server, a playwright script against a
+   server it started). hfix: 0 screenshots, 4 calls on `http.server`.
+2. **The builder runs the grading command** `bun test apps/app/app.test.ts apps/app/tests/generated/<id>.test.ts`
+   in at least one builder phase before it reports.
+3. **The new gates are live in the loop:** every render smoke in the trace reports `clicked N of M`
+   with N/M ≥ 0.8. If a G-, F- or D-class defect is written, it fails `test_i`/`retest`, and it is
+   fixed before the final review. Null result allowed: the defect may simply not occur.
+4. **The reviewer uses the new items:** at least one review enumerates the inputs of a lookup, or
+   sweeps for a sibling after a finding, in its own words or tool calls.
+5. **Primary: defects found after acceptance** by measurement (the smoke over the harvested tree,
+   click hit-tests, computed style, a pure-function sweep of the theory module over all 12 keys ×
+   both qualities). hfix: 2 found by eye after acceptance (one-colour board, both-qualities roles),
+   and the app was not approved at 18/21. Prediction: fewer, and none of the G/F/D classes.
+6. **No durable test pins wrong output** (the reviewer or my sweep finds none).
+
+Recorded, never scored: tokens, dollars (reconcile generation ids before teardown), wall clock,
+review trajectory, and whether the final review approves. Accept/reject is not a quality ranking.
+
 ## NEXT STEPS — read this first next session
 
 Ordered by value. Each spec carries its own phases, loop gates and validation commands.
