@@ -11,7 +11,7 @@ sessions:
 back_refs:
   - specs/bare-claude-control-arm-results.md — the scorecard
   - specs/next-session-memo.md — §1 review loop, §2 agency gap
-  - NEXTSTEPS.md — 2026-09-19
+  - CHANGELOG.md — 2026-09-19
 forward_refs: []
 status: open
 ---

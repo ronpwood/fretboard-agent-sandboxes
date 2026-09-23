@@ -449,7 +449,7 @@ and bumps pristine for a much larger surface.
 - **Phase 1's hypothesis could be wrong.** The mechanism check (task 1.2) is ordered before the fix so
   a wrong diagnosis stops the phase instead of shipping a no-op change that looks right.
 - **Kimi-k3 on the builder seat is the priciest arm.** 12.0M builder tokens at 3.0/15.0 per M (cache
-  reads cheaper) could reach tens of dollars; `--limit 30` is the hard stop. NEXTSTEPS 2026-09-15 also
+  reads cheaper) could reach tens of dollars; `--limit 30` is the hard stop. CHANGELOG 2026-09-15 also
   flags a dropped maxTokens floor for kimi-k3 via one provider (16384 vs the registry's 65535). A
   builder `write` of a large file could truncate. If the inverse arm's trace shows truncated writes,
   note it as a provider limit, not a model verdict.

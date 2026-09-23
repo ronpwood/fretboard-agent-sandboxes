@@ -12,7 +12,7 @@ back_refs:
   - specs/next-session-memo.md — §3 named this the highest-value experiment and said run it FIRST
   - specs/greenfield-cof-experiment.md — the hidden rubric (part A frozen, part B added 2026-09-18)
   - specs/greenfield-fanout-3-results.md — the six factory arms this controls against
-  - NEXTSTEPS.md — 2026-09-18f, the solo arm and the chord bug
+  - CHANGELOG.md — 2026-09-18f, the solo arm and the chord bug
 forward_refs: []
 status: open
 ---

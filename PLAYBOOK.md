@@ -4,7 +4,7 @@ The happy path, command by command, for mounting one VM, watching it build a rea
 feature, fixing a bug it introduced, and bringing the result home. This is the same
 sequence run in the first end-to-end smoke test (`triad-playback`), with the detours
 (a missing SSH `known_hosts` entry, a stale `origin` remote) left out — those are
-recorded in `NEXTSTEPS.md` if you want the debugging story. Replace `<run-id>` with
+recorded in `CHANGELOG.md` if you want the debugging story. Replace `<run-id>` with
 whatever name you pick; it becomes the VM's hostname and public URL.
 
 ## 1. Mount a VM

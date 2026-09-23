@@ -53,7 +53,7 @@ Third run in a row where the smoke passed a visibly broken app (gf3-6 swallowed 
 2. **Every note badge computes to `rgb(148,163,184)`.** `fretboard.ts:120` writes a per-role
    `fill` presentation attribute, and `styles.ts:171` `.note-badge { fill: var(--text-muted) }`
    overrides it, because CSS beats presentation attributes. Nothing measures computed style.
-3. **The builder could not get a rendering.** Correcting NEXTSTEPS 2026-09-20d: the builder did
+3. **The builder could not get a rendering.** Correcting CHANGELOG 2026-09-20d: the builder did
    *not* discover `render_smoke.py` unprompted. `builder/system.md` has advertised it since
    `2bc8aad` (2026-09-19), along with "a screenshot you actually read — Playwright to
    `page.screenshot()`". What the prompt never says is how the app is **served**. The builder

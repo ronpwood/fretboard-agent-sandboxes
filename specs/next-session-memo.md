@@ -16,7 +16,7 @@ back_refs:
   - specs/bare-claude-control-arm-results.md — the generalist control, 31/32
   - specs/what-the-bare-arm-actually-did.md — the four-handicap decomposition
   - specs/fix-validation-arm-preregistration.md — the predictions for fixval
-  - NEXTSTEPS.md — 2026-09-19, 2026-09-19b, 2026-09-19c
+  - CHANGELOG.md — 2026-09-19, 2026-09-19b, 2026-09-19c
 forward_refs: []
 status: open
 ---

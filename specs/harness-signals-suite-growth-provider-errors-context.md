@@ -22,7 +22,7 @@ status: draft
 Add three signals the trace does not record today. None changes what an agent does. Each makes a
 run's outcome **explainable** instead of guessed at:
 
-- did the builder grow the durable suite (NEXTSTEPS item 5)
+- did the builder grow the durable suite (CHANGELOG 2026-09-20b item 5)
 - did an agent fail because the *provider* errored, not because the model wrote bad JSON (open item 2026-09-20b (5))
 - how did each agent's context occupancy evolve turn by turn (the prerequisite for any context-rot experiment)
 
@@ -73,7 +73,7 @@ run's outcome **explainable** instead of guessed at:
 - `adws/adw_modules/gates.py` — `durable_suite_growth` gate (report-only), reusing `_junit_tally`
 - `adws/adw_tdd_sdlc.py` — add the growth gate to the `build`, `fix_i` and `revise_i` phases; capture the baseline count after `commit_tests`
 - `just/` traces recipe (locate with `rg -n 'traces' justfile just/`) — add a `context-curve <adw_id>` query
-- `NEXTSTEPS.md` — result entry
+- `CHANGELOG.md` — result entry
 
 ### Existing — deleted
 - none
@@ -145,7 +145,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 - [ ] A local short ADW run (cheapest roster, trivial request) produces `agent_message` events with `context_tokens` that rise monotonically within a phase — proves the stamp works on a real pi stream
 - [ ] `just traces context-curve <that adw_id>` prints the curve; its last builder value equals `agent_sessions.context_tokens` — proves the curve and the existing summary agree
 - [ ] `just target sync greenfield --dry-run; echo $?` prints `0`, then **ask Ron** before `--push`
-- [ ] NEXTSTEPS entry recording all three signals and item 5 / 4(5) closed
+- [ ] CHANGELOG entry recording all three signals and item 5 / 4(5) closed
 
 ## Global Validation
 

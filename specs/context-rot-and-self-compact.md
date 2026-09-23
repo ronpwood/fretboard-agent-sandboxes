@@ -82,7 +82,7 @@ Sketched, not final. Three stages, each able to stop the plan:
 - `adws/adw_sssf_config/sssf.selfcompact.config.yaml` — *new sibling roster* (see New), never an edit to the default, same rule as `sssf.dsflash41`
 - `adws/adw_modules/agent_pi.py` / `agents.py` — only if the spike needs a resume-on-pending-handoff adapter
 - `sandbox_mount/guest/` — only if the extension's runtime needs anything the guest lacks (it claims no npm deps; pi's loader supplies them)
-- `NEXTSTEPS.md` — result entry per stage
+- `CHANGELOG.md` — result entry per stage
 
 ### Existing — deleted
 - none
@@ -107,7 +107,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] A NEXTSTEPS entry with the occupancy-at-defect table exists — proves the decision to continue (or stop) rests on measurement
+- [ ] A CHANGELOG entry with the occupancy-at-defect table exists — proves the decision to continue (or stop) rests on measurement
 - [ ] If there is no concentration: mark the remaining phases `fail — no rot signal at our session lengths`, set status to `abandoned` only on Ron's word, and stop
 
 ### Phase 2: Feasibility spike (host-local, no VM)
@@ -130,7 +130,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 #### 1. Pre-register
 
-- [ ] Write the arm definitions and predictions into NEXTSTEPS **before** mounting (the fixval pre-registration pattern). Primary outcome: defects found by hit-test after acceptance. Secondary: review-score trajectory, regressions introduced in revise phases, total tokens, builder turns. Qualitative: the `note_to_self` texts, read in full
+- [ ] Write the arm definitions and predictions into CHANGELOG.md **before** mounting (the fixval pre-registration pattern). Primary outcome: defects found by hit-test after acceptance. Secondary: review-score trajectory, regressions introduced in revise phases, total tokens, builder turns. Qualitative: the `note_to_self` texts, read in full
 
 #### 2. Run and judge
 
@@ -142,11 +142,11 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
 - [ ] The treatment arm's curve shows at least one compaction cycle in the builder, and the control's shows none — proves the manipulation actually happened (an arm that never crossed a threshold is a void run, not a result)
-- [ ] NEXTSTEPS result entry with the pre-registered outcomes filled in, including the verdict on the discontinuity tension
+- [ ] CHANGELOG result entry with the pre-registered outcomes filled in, including the verdict on the discontinuity tension
 
 ## Global Validation
 
-- [ ] Every stage's decision (continue / stop / blocked) is written in NEXTSTEPS with its evidence
+- [ ] Every stage's decision (continue / stop / blocked) is written in CHANGELOG.md with its evidence
 - [ ] The default roster `sssf.config.yaml` is byte-identical to its pre-plan state unless Ron promotes the extension explicitly
 
 ## Notes

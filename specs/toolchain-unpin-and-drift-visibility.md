@@ -41,7 +41,7 @@ it happens, instead of as a mystery 403 three phases later or as a pin nobody ha
 
 ## Problem
 
-NEXTSTEPS `Session (2026-08-21b)` left this open. The pin fixed the day; the class is untouched:
+CHANGELOG `Session (2026-08-21b)` left this open. The pin fixed the day; the class is untouched:
 
 - **The pin is debt with a date on it.** 1.3.14 is already superseded (1.4.0, 2026-08-20). Every
   mount runs a bun that receives no fixes, and nothing in the repo will ever tell anyone that. The
