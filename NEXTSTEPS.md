@@ -3250,82 +3250,96 @@ arm for a v4.1-vs-0731 comparison without adding one.
 `sssf.dsflash41.config.yaml` is now a duplicate of the default and was left
 untouched on purpose.
 
+## 2026-09-23 — planning session: three specs, two corrections, and no compaction anywhere
+
+A planning pass only. Nothing was built or run. The ordered queue below now points at
+three specs instead of free-standing bullets.
+
+### Two corrections to the record, both verified in the source
+
+- **The builder did NOT discover `render_smoke.py` unprompted** (2026-09-20d said it did).
+  `builder/system.md` has named it, with a `uv run` command and a "Playwright to
+  `page.screenshot()`" example, since `2bc8aad` on 2026-09-19, the day before hfix. The builder
+  followed an instruction. The gap it hit is narrower: nothing tells it **how the app is served**
+  (`bun index.html` from the app dir), so it hand-rolled `http.server`, which cannot serve the TS
+  bundle. The 2026-09-19 agency-gap finding stands as originally recorded.
+- **The smoke did see the wheel defect, and threw it away.** `render_smoke.py:410-416` catches
+  click timeouts with a bare `continue`, and Playwright's timeout carried the
+  answer (`<text class="label">G</text> intercepts pointer events`). The skip is deliberate
+  (animations, transient overlays), and so is assertion C's any-grid-point tolerance: centre-only
+  reachability was measured and rejected because it flagged gf3-2, which works. So the fix is a
+  new, narrower signal, not a tighter C. See the spec.
+
+### Context occupancy: nothing has ever compacted
+
+Checked across all 15 greenfield runs since 2026-09-17 (`agent_sessions` in each `sssf.db`).
+Builder peak 100–200k typically, **276k (26.4%) at most** (fixval). Reviewer at most 153k. Pi's
+reactive compaction fires near the 1M window, and no trace holds a compaction event. The builder
+figure is a true peak, because `_agent_session_id` rejoins one session across build → revise_1 →
+revise_2 (the reviewer's also spans review_1..3). So **overflow is not a problem, and rot might
+be**: the self-compact extension's default 20% warning would already have fired in fixval, gf2-3
+and hfix, which are the runs where a late revise pass broke earlier work. That is a suggestion, not
+evidence. It is queued as a gated experiment (item 7).
+
 ## NEXT STEPS — read this first next session
 
-Ordered by value. Nothing here is started.
+Ordered by value. Each spec carries its own phases, loop gates and validation commands.
 
-### 0. DONE — the roster change is pushed
+### 1. `specs/render-content-and-prompt-gaps.md` — closes items 1, 2, 3 and 4(3)
 
-`just target sync greenfield --push` ran clean: leak check clean, four gates
-green, target `601d880`, `pushed: true`. Verified on the remote —
-`origin/main:adws/adw_sssf_config/sssf.config.yaml:16` reads
-`openrouter/deepseek/deepseek-v4.1-flash`. **The next greenfield VM runs v4.1.**
+- A calibration corpus first: every harvested app in `../greenfield-sandboxes`
+  `refs/sandbox/*`, plus two known-bad fixtures from hfix. New smoke signals land **report-only**
+  and are promoted to failures only if the corpus is clean.
+- **G**: dead text covering a whole ring of sibling controls (the hfix wheel). **F**: an SVG
+  `fill`/`stroke` attribute with ≥2 distinct values whose computed style collapses to 1 (the
+  96 one-colour badges). **`click_blocked`**: keep the evidence the timeout already carries.
+- `render_smoke.py --screenshot <path>`, so the builder gets a rendering from the server that
+  already works. Builder prompt: how the app is served, the grading command, and "durable tests
+  encode the spec, not your output".
+- Reviewer prompt, payload-neutral: lookups that drop a distinguishing attribute, and a sibling
+  sweep after any defect.
+- Host-local and free until the `--push` sync, which needs Ron's go-ahead.
 
-### 1. Make the render smoke hit-test CONTENT, not just controls
+### 2. `specs/harness-signals-suite-growth-provider-errors-context.md` — closes items 5 and 4(5)
 
-The single highest-value item, because it is the third run in a row where the
-smoke passed something visibly broken. It drives controls; it never asks what was
-*painted*. Two concrete assertions, both of which would have caught a real
-2026-09-20 defect:
+- `stopReason: "error"` is classified as `provider_error: <errorMessage>` and never sent into
+  JSON-retry. The shape was verified against a real local 401 turn.
+- The durable-suite growth count, **report-only on purpose**: a "must grow" gate rewards pinning
+  whatever the code returns, which is exactly hfix's `app.test.ts:423-436`.
+- A per-turn context curve stamped on `agent_message` events, plus `just traces context-curve`.
 
-- **computed fill diversity** — if a legend advertises N role colours, assert the
-  rendered nodes actually resolve to more than one `getComputedStyle().fill`.
-  Catches the `styles.ts` CSS-beats-presentation-attribute bug outright.
-- **segment clickability** — hit-test that clicking a wheel segment's centre
-  reaches the segment, not a label on top of it. Catches the `pointer-events`
-  bug, which the builder found only by accident.
+### 3. One baseline greenfield arm on the result
 
-Add them as *measurements reported*, not just pass/fail, so the next defect in
-this class is visible even when it does not trip a threshold.
+v4.1 default roster, hfix's brief. Compare with hfix on defects found by hit-test after
+acceptance, the review trajectory, whether G/F fire *inside* the loop, and builder calls spent on
+servers/screenshots.
 
-### 2. Tell the builder the app is already served
+### 4. Still open, not in a spec
 
-It asked to see the app **twice**, discovered `render_smoke.py` by itself, then
-burned four tool calls hand-rolling an `http.server` + playwright script and gave
-up with `echo "skip - need server"`. One line in the builder prompt naming the
-dev server and how to screenshot it. This is the *advertise the box* half of the
-agency gap, and 2026-09-20 showed the discovery half is less broken than recorded.
+- **(6) the audio channel**: four defects in four runs. It needs a brief-level requirement and an
+  `AudioContext` value spy in `test-dom.ts`. That is a design task, so do it after 1–3.
 
-### 3. A check for "matched by distance, ignored quality"
+### 5. A 0731 control roster, if any A/B is wanted
 
-This exact bug appeared **twice in one app**, in unrelated modules: `voicingFor`
-gave F#m the F *major* barre shape, and the fretboard lit both the minor and
-major third of every scale. The reviewer caught one and marked the other met. It
-is a named, recognisable class — worth a line in the reviewer prompt at minimum.
+The default runs v4.1 and nothing runs `0731`. Build one only when an A/B needs it.
 
-### 4. Still open from 2026-09-20b
+### 6. `specs/context-rot-and-self-compact.md` — a later experiment, gated
 
-- **(3)** put the verification command in the **builder's** prompt — done for the
-  test_designer on 2026-09-20c, never done for the builder.
-- **(5)** classify `stopReason == "error"` apart from a parse failure, and print
-  the provider's message instead of blaming the model for bad JSON.
-- **(6)** the audio channel: four defects in four runs. The 09-20 reviewer caught
-  the fourth **by grep** ("nothing calls this"), which is new — but wiring is
-  greppable and *values* still are not. The brief-level requirement stands: any
-  output the user perceives but the DOM does not show must be asserted by value
-  in the durable suite.
-
-### 5. Nothing enforces the durable suite growing
-
-`tests_red` forbids the test_designer from touching `app.test.ts` — correctly, it
-is the guard. The **builder** is supposed to grow it, and only the reviewer
-noticed when it did not, twice. Today the builder then wrote **three durable
-assertions that pin a defect**. So the open question is not only "did it grow"
-but "did it grow *correctly*", and a mechanical check can answer the first
-cheaply: did `app.test.ts` gain tests in a run that added behaviour?
-
-### 6. A 0731 control roster, if any A/B is wanted
-
-See above — the default now runs v4.1 and nothing runs `0731`.
+A stub. Stage 1 reads the context curves: do defects concentrate at high occupancy? If not, stop.
+Stage 2 is a host-local spike: the self-compact extension is tested only under pi **RPC** mode,
+while the factory runs `pi -p --mode json`, which exits at idle. So its handoff (compaction once
+idle, note returned as the next turn) may never complete in print mode. Stage 3 is a two-arm
+A/B, builder seat only. Needs 1–3 done first.
 
 
-## CURRENT STATE — DeepSeek V4.1 is HALF LOADED, on purpose
+## CURRENT STATE — DeepSeek V4.1 is the default; the other rosters are still on 0731
 
-**Read this before touching a roster or the model registry.** As of 2026-09-20
-the repo is deliberately in a partial-rollout state. It is not drift and it is
-not half-finished work.
+**Read this before touching a roster or the model registry.** Updated 2026-09-23: the
+default roster was promoted to v4.1 on 2026-09-20 (Ron's call, after the harness fixes were
+validated). The sections below this table are the 2026-09-20 reasoning for the partial
+rollout; their "only one roster" wording predates the promotion.
 
-### Registered globally, used by exactly one roster
+### Registered globally; the default and one sibling use v4.1
 
 `sandbox_mount/guest/models.json.tmpl` carries **both** flash models:
 
@@ -3334,12 +3348,10 @@ not half-finished work.
 | `deepseek/deepseek-v4-flash-0731` | `["text"]` | 0.14 / 0.28 *(registry; live is 0.04/0.08 — see drift below)* |
 | `deepseek/deepseek-v4.1-flash` | **`["text","image"]`** | 0.15 / 0.60 *(matches live exactly)* |
 
-So **every roster CAN reach v4.1**, but only one DOES:
-
 | roster | defaults.model |
 |---|---|
-| **`sssf.dsflash41.config.yaml`** | **`deepseek-v4.1-flash`** ← the only one |
-| `sssf.config.yaml` (default) | `deepseek-v4-flash-0731` |
+| **`sssf.config.yaml` (default)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) |
+| `sssf.dsflash41.config.yaml` | `deepseek-v4.1-flash` (now a duplicate of the default, left on purpose) |
 | `sssf.asymmetric` / `deepestseek` / `inverse` / `open-weights` / `top-speed` | `deepseek-v4-flash-0731` |
 | `sssf.frontier` | `claude-opus-5` |
 | `sssf.gemniflash` | `gemini-3.8-flash` |
