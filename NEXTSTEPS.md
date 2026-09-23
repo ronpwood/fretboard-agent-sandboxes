@@ -3398,6 +3398,31 @@ Re-checked against the call sites before re-running.
    what the UI reaches. That is arguably right for "is the request met". A dead-code path with wrong
    data is not a UI defect, so no change is proposed. It is recorded as the limit of review-by-probing.
 
+### Torn down, and the token question answered with the same-model run
+
+Teardown clean: **billed $1.364** (pi estimate $1.179, 1.16×), key revoked and verified absent,
+VM destroyed, tree clean. Artifacts at `.sandbox/runs/harn2-20260923-f50552-artifacts`.
+
+Ron's read was that the upgrades cut tokens and minutes by ending the thrash. Tested against
+**dsv41**, the one run with the same model (v4.1) on the old harness:
+
+| run | min | tokens | tool calls | failed | biggest phase |
+|---|---|---|---|---|---|
+| dsv41 (v4.1, old harness) | 44.9 | **9.7M** | 203 | 5 | plan 3.59M (a planner searching for a brief it was never given) |
+| hfix (0731, 09-20 fixes) | 64.4 | 29.8M | 335 | 14 | **revise_1 14.97M**, plus a third review round |
+| harn2 (v4.1, all fixes) | 35.5 | **9.0M** | 184 | 3 | revise_1 3.47M |
+
+- **Against the same model, tokens barely moved** (9.7M → 9.0M), and the builder spent slightly MORE
+  in harn2 (build+revise 5.9M vs 5.1M), because it was now screenshotting, grading and re-checking.
+  The 3× drop against hfix is mostly the model (0731's revise_1 alone was 15M) and one fewer review round.
+- **The thrash Ron remembers was real, and it was fixed earlier:** the 09-20 blind arm's test designer
+  spent 1.14M tokens and 34 of 35 calls fighting the test-DOM trap. Fixes 1 and 2 (09-20c) removed it,
+  and hfix already had them.
+- **Where today's harness DID pay is outcome, not tokens:** dsv41 shipped measurably broken audio and
+  fret geometry (09-20b). harn2's reviewer caught three theory defects in-loop, and the delivered app
+  passed a full independent sweep. Same model, same token budget, a correct app. Still N=1 per arm,
+  and dsv41's brief was a filename.
+
 ## NEXT STEPS — read this first next session
 
 Ordered by value. Each spec carries its own phases, loop gates and validation commands.
