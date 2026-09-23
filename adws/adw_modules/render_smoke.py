@@ -26,12 +26,27 @@ typecheck and every test green, and two of them did not work:
          and the reviewer are for. Do not "fix" this by widening the interactive
          heuristic to every SVG path — that trades a real signal for noise.
 
-So the honest scope is five things nothing else in the chain checks:
+So the honest scope is seven things nothing else in the chain checks:
   A  the REAL bundle loads in a REAL browser with no uncaught error
   B  it renders something
   C  no interactive element is completely unreachable (occlusion)
   D  clicking the controls throws nothing and does not blank the page
   E  a ring of pie/annular sectors is not drawn the long way round
+  F  colours written as SVG attributes are not all overridden by one CSS rule
+  G  a ring of sibling controls is not covered, every one, by text that eats the click
+
+F and G were added 2026-09-23, after `hfix-20260920-062b46` PASSED this gate
+with 96 fretboard badges that all painted one grey (a `.note-badge { fill }`
+rule beat six per-role `fill` attributes) and, before its builder noticed by
+accident, a wheel whose key labels swallowed every click. Both are stated as
+SIBLING signatures, like E -- a whole group must show the fault -- so a lone
+tooltip or one recoloured icon never fires. Calibrated on 22 harvested apps
+(`sandbox_mount/host/render_smoke_corpus.sh`): F hit hfix only. G hit hfix's
+wheel and FOUR apps that had passed every gate and the fan-out judging (gf-3,
+gf2-3, gf3-4, gf4-solo). Each was confirmed by clicking: the bare segment
+changes the app, the label on it does nothing, 4/4 per ring. Zero false
+positives. This is the gf3-6 class above, caught wherever the sectors ARE
+detectable controls; gf3-6 itself stays out of scope for the reason given.
 
 Assertion E was added after `fixval-20260919-250a64` PASSED this gate and
 shipped a twelve-slice radial wheel whose wedges each swept 330 degrees
@@ -619,6 +634,25 @@ def verdict(r: dict) -> tuple[bool, list[str]]:
             f"({g['degreesDrawn']}deg in total, and a circle is 360). Every slice is "
             f"painting over the whole ring. Set the flag to 0 for any sector under 180deg "
             f"— e.g. `const large = Math.abs(to - from) > 180 ? 1 : 0`.")
+    for g in r.get("deadTextRings", []):
+        if not g["fault"]:
+            continue
+        failures.append(
+            f"All {g['controls']} `{g['group']}` controls have text drawn on top of them that "
+            f"does not take the click (e.g. {g['occluder']}). A user clicks the label -- the "
+            f"obvious target -- and nothing happens; only the bare edge of each control works. "
+            f"Give the labels `pointer-events: none` (CSS or attribute) so clicks fall through "
+            f"to the control, or put each label inside its control so the click bubbles to it.")
+    for g in r.get("colourGroups", []):
+        if not g["fault"]:
+            continue
+        failures.append(
+            f"{g['n']} `{g['group']}` elements set {g['attrDistinct']} different `{g['prop']}` "
+            f"colours as SVG attributes, but every one of them paints {g['computed'][0]}. Some "
+            f"stylesheet rule matching these elements sets `{g['prop']}`, and CSS beats presentation "
+            f"attributes, so the per-element colours never reach the screen. Find that rule (grep "
+            f"your styles for `{g['prop']}:`), and remove `{g['prop']}` from it or set the colour "
+            f"with an inline `style` instead of the attribute.")
     return (not failures), failures
 
 

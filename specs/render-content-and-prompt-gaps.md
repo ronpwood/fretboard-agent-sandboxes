@@ -176,15 +176,15 @@ false positive stays report-only, and the reason is written into the docstring.
 
 #### 1. Verdict wiring
 
-- [ ] Add G and F faults to `verdict()`, each with a fix-oriented message in the style of E's: say what was measured, why it is wrong, and the one-line fix (`pointer-events: none` on the overlay; move the colour to an inline `style` or drop the CSS `fill` rule)
-- [ ] Update the docstring's scope list (A–E → A–G) and add a paragraph on G and F with the corpus numbers, matching how E was recorded ("Validated both ways…")
+- [x] Add G and F faults to `verdict()`, each with a fix-oriented message in the style of E's: say what was measured, why it is wrong, and the one-line fix (`pointer-events: none` on the overlay; move the colour to an inline `style` or drop the CSS `fill` rule)
+- [x] Update the docstring's scope list (A–E → A–G) and add a paragraph on G and F with the corpus numbers, matching how E was recorded ("Validated both ways…")
 
 #### Validation — Phase 3
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Corpus: `hfix-nopointer` and `hfix` now `passed: false`; every previously-passing good app still `passed: true` — proves precision on the corpus
-- [ ] `uv run adws/adw_modules/render_smoke.py <hfix>/apps/app; echo $?` prints `1` and a readable G/F message — proves the builder-facing text, not just the JSON
+- [x] Corpus: `hfix-nopointer` and `hfix` now `passed: false`; every previously-passing good app still `passed: true` (RESULT: the 4 G-adjudicated apps gf-3, gf2-3, gf3-4, gf4-solo also flip to false, which is correct since each is a click-verified real defect; all 12 remaining passing apps unchanged) — proves precision on the corpus
+- [x] `uv run adws/adw_modules/render_smoke.py <hfix>/apps/app; echo $?` prints `1` and a readable G/F message — proves the builder-facing text, not just the JSON
 
 ### Phase 4: Builder can see, and knows how it is graded
 

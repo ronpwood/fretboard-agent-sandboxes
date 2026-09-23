@@ -19,7 +19,7 @@
 set -uo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
-smoke="$here/../../adws/adw_modules/render_smoke.py"
+smoke="${RENDER_SMOKE:-$here/../../adws/adw_modules/render_smoke.py}"   # override to calibrate a candidate copy
 repo="${1:?usage: render_smoke_corpus.sh <repo> <out_dir> [ref ...]}"
 out="${2:?usage: render_smoke_corpus.sh <repo> <out_dir> [ref ...]}"
 shift 2
