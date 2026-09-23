@@ -4,9 +4,11 @@ created: 2026-09-23T08:33:36-07:00
 modified:
   - 2026-09-23T08:33:36-07:00
   - 2026-09-23T09:05:00-07:00
+  - 2026-09-23T09:40:00-07:00
 commits:
   - 45ac892
   - 7d0b92c
+  - 8494357
 agents:
   - claude-opus-5-5
 sessions:
@@ -143,29 +145,29 @@ later change is a diff against a measured baseline.
 
 #### 1. `click_blocked`
 
-- [ ] In the click loop, replace the bare `continue` with an append to `report["click_blocked"]`: `{control, occluder}`, where `occluder` is parsed from Playwright's `(.+?) intercepts pointer events` when present, else `null`. Keep `continue`, because this is not a failure
-- [ ] Print a count in the human summary line; the full list only under `--json`
+- [x] In the click loop, replace the bare `continue` with an append to `report["click_blocked"]`: `{control, occluder}`, where `occluder` is parsed from Playwright's `(.+?) intercepts pointer events` when present, else `null`. Keep `continue`, because this is not a failure
+- [x] Print a count in the human summary line; the full list only under `--json`
 
 #### 2. Assertion G — dead text over a control ring
 
-- [ ] In `PROBE_JS`'s `probe()`, for each grid point whose hit is not `el`/descendant, classify the hit as *dead text*: it is (or is inside) an SVG `text`/`tspan`, or an HTML element with non-empty own text; it has no interactive ancestor (reuse `isInteractive` up the chain); and it has computed `pointer-events` ≠ `none`. Count such points per control as `deadTextPoints` and record the first occluder descriptor
-- [ ] Probe the **full grid** for this count even when the control is already reachable. Today `probe()` returns on the first reaching point; G needs the whole grid. Split the function so C keeps its early exit
-- [ ] Aggregate: group controls by `tag + first class`. Emit `deadTextRings: [{group, controls, withOverlay, occluder}]` for groups with ≥3 members; mark `fault: true` when `withOverlay == controls`
+- [x] In `PROBE_JS`'s `probe()`, for each grid point whose hit is not `el`/descendant, classify the hit as *dead text*: it is (or is inside) an SVG `text`/`tspan`, or an HTML element with non-empty own text; it has no interactive ancestor (reuse `isInteractive` up the chain); and it has computed `pointer-events` ≠ `none`. Count such points per control as `deadTextPoints` and record the first occluder descriptor
+- [x] Probe the **full grid** for this count even when the control is already reachable. Today `probe()` returns on the first reaching point; G needs the whole grid. Split the function so C keeps its early exit
+- [x] Aggregate: group controls by `tag + first class`. Emit `deadTextRings: [{group, controls, withOverlay, occluder}]` for groups with ≥3 members; mark `fault: true` when `withOverlay == controls`
 
 #### 3. Assertion F — attribute colour overridden
 
-- [ ] In `PROBE_JS`, for `fill` and `stroke` separately: over every SVG element with that attribute set (excluding `none`, `transparent`, `currentColor` and `url(...)`), group by `tag + class`. For groups of ≥3, record `{group, prop, n, attrDistinct, computedDistinct, computed}`. Mark `fault: true` when `attrDistinct ≥ 2 && computedDistinct == 1`
-- [ ] Also record, report-only, per `data-role` grouping: distinct roles vs distinct computed fills. This is the "legend advertises N colours" measurement from NEXTSTEPS item 1. It is a secondary signal and never a failure
+- [x] In `PROBE_JS`, for `fill` and `stroke` separately: over every SVG element with that attribute set (excluding `none`, `transparent`, `currentColor` and `url(...)`), group by `tag + class`. For groups of ≥3, record `{group, prop, n, attrDistinct, computedDistinct, computed}`. Mark `fault: true` when `attrDistinct ≥ 2 && computedDistinct == 1`
+- [x] Also record, report-only, per `data-role` grouping: distinct roles vs distinct computed fills. This is the "legend advertises N colours" measurement from NEXTSTEPS item 1. It is a secondary signal and never a failure
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Re-run the corpus: `hfix-nopointer` shows a `deadTextRings` entry with `fault: true` naming `text.label` — proves G catches the reference defect
-- [ ] `hfix` shows an F entry with `fault: true` for the note-badge group, `attrDistinct ≥ 5`, `computedDistinct == 1` — proves F catches the reference defect
-- [ ] `hfix-nopointer` shows `click_blocked` non-empty with an `occluder` — proves the discarded evidence is now kept
-- [ ] **Every other row: zero `fault: true` for G and F.** Any hit gets a `--screenshot` plus a computed-style read before being called a false positive or a newly found real bug. Record each in Notes
-- [ ] `passed` is unchanged for every row versus the Phase 1 baseline — proves nothing is wired into the verdict yet
+- [x] Re-run the corpus: `hfix-nopointer` shows a `deadTextRings` entry with `fault: true` naming `text.label` — proves G catches the reference defect
+- [x] `hfix` shows an F entry with `fault: true` for the note-badge group, `attrDistinct ≥ 5`, `computedDistinct == 1` — proves F catches the reference defect
+- [ ] `fail` `hfix-nopointer` shows `click_blocked` non-empty with an `occluder` — proves the discarded evidence is now kept — blocked by D's stale-handle defect (see amendment 09:40): the wheel clicks never happen, so nothing can be intercepted. Evidence capture is in place and verified by code path; it becomes observable once D re-probes (proposed Phase 2b)
+- [x] **Every other row: zero `fault: true` for G and F.** RESULT: F zero hits. G fired on 4 'passing' apps, and all 4 were adjudicated as REAL by click measurement, not false positives (see Notes) Any hit gets a `--screenshot` plus a computed-style read before being called a false positive or a newly found real bug. Record each in Notes
+- [x] `passed` is unchanged for every row versus the Phase 1 baseline — proves nothing is wired into the verdict yet
 
 ### Phase 3: Promote to verdict (conditional)
 
@@ -308,6 +310,55 @@ agency finding shrinks to "it followed the instruction". The real gap was a miss
   edits, maybe another tab state). Not investigated. The fixtures compare against each other, so it
   does not affect calibration.
 
+**Phase 2 corpus, 2026-09-23 (G/F report-only).** `clicked` = clicks that actually landed.
+
+| id | passed | clicked | G | F | |
+|---|---|---|---|---|---|
+| bare-cc | true | 25/25 | 0 | 0 | |
+| dsctl | true | **1/16** | 0 | 0 | |
+| dsv41 | true | **1/25** | 0 | 0 | |
+| fixval | false | 19/25 | 0 | 0 | |
+| gf-1 | true | 25/25 | 0 | 0 | |
+| **gf-3** | true | 4/16 | **1** | 0 | `path.slice` |
+| gf-e2e | true | 8/15 | 0 | 0 | |
+| gf2-2 | true | 22/25 | 0 | 0 | |
+| **gf2-3** | true | **1/25** | **1** | 0 | `g.wheel-sector` |
+| gf3-1 | true | **1/25** | 0 | 0 | |
+| gf3-2 | true | 7/25 | 0 | 0 | |
+| gf3-3 | true | **1/25** | 0 | 0 | |
+| **gf3-4** | true | 3/22 | **1** | 0 | `circle.` |
+| gf3-5 | false | 1/25 | 1 | 0 | `path.slice` (already failing) |
+| gf3-6 | true | 12/12 | 0 | 0 | |
+| **gf4-solo** | true | 5/25 | **1** | 0 | `path.sector` |
+| hfix | true | 1/25 | 0 | **1** | `text.note-badge:fill` |
+| hfix-nopointer | true | 1/25 | **1** | **1** | `path.segment`, `text.note-badge:fill` |
+
+(The four crashed apps show 0/0 and no G/F: A fires first, and `bun-hmr` is excluded.)
+
+**G adjudication, measured, not eyeballed** (`$SCRATCH/verify_g.py`). For 4 members of each
+fault ring, on a fresh load each time: click a bare point of the control, then click the dead-text
+point. Compare a DOM/text snapshot before and after.
+
+| ring | bare click | label click | verdict |
+|---|---|---|---|
+| gf-3 `path.slice` | CHANGED ×4 | no change ×4 | **real**: key names swallow clicks |
+| gf2-3 `g.wheel-sector` | CHANGED ×4 | no change ×4 | **real** |
+| gf3-4 `circle.` | CHANGED ×4 | no change ×4 | **real** |
+| gf4-solo `path.sector` | CHANGED ×4 | no change ×4 | **real**: minor-ring and accidental labels |
+| hfix-nopointer `path.segment` | CHANGED ×4 | no change ×4 | **real** (reference) |
+| gf3-5 `path.slice` | mixed (slices already occluded) | no change ×4 | real (already failing on C/E) |
+
+**Precision on the corpus: 6/6 G rings true, 2/2 F groups true, 0 false positives.** The
+precision set turned out smaller than "14 known-passing": four of those apps had this defect all
+along, invisible to every gate and to the fan-out judging. G was designed for the gf3-6 class
+("labels above the sectors … every click is swallowed"), and it catches it wherever the sectors ARE
+detectable controls. gf3-6 itself stays out of scope, as the docstring says.
+
+**D's coverage, measured for the first time:** of the 18 harvested apps that render, **7 landed
+exactly one click**: dsctl, dsv41, gf2-3, gf3-1, gf3-3, gf3-5 and hfix. Only 4 landed every click
+(bare-cc, gf-1, gf3-6, and gf2-2 at 22/25). So "survives interaction" was effectively untested on
+most of the recent factory runs. See amendment 09:40.
+
 **Deferred.** A per-role colour legend cross-check (read the legend's swatches and match them to
 fretboard fills) is more precise than the `data-role` measurement, but it is payload-shaped. Revisit
 only if F plus the role measurement miss something real.
@@ -328,4 +379,24 @@ from each ref's `app.manifest.yaml`, and it reuses an existing extracted dir, wh
 Verified during fixture build: in hfix the wheel's `<text class="label">` is a SIBLING of its
 `<path class="segment">` (`wheel.ts:85-89`), not a child. The `.segment text.label` CSS rule matches
 nothing. So G's "not a descendant of the control" condition holds for the reference defect.
+</details>
+<details>
+<summary>2026-09-23T09:40:00-07:00 — found while building Phase 2: assertion D clicks ONE control on apps that re-render</summary>
+
+`click_blocked` came back 24/25 on the FIXED hfix with no named occluder. Diagnosed with a
+direct probe: hfix re-renders its DOM on the first click, which wipes every `data-smoke-id` stamp
+(41 → 0). Every later `page.click('[data-smoke-id=…]')` then times out on a selector that no
+longer exists, and the old bare `continue` hid that. **So D ("clicking throws nothing") has
+exercised exactly one control on any re-rendering app**, and the 09-20 "no click_failures" on hfix
+meant "one click, no error".
+
+Phase 2 response, kept inside scope: a stamp that is gone before its click is counted as
+`click_stale`, not `click_blocked`, and the report now says `clicked N of M`. So `click_blocked`
+means only real interception. It cannot see the hfix wheel until D re-probes between clicks,
+because the wheel clicks never happen. G carries that signal independently.
+
+**Proposed, not built:** re-run the probe (or re-stamp by a stable signature: group + label +
+ordinal) before each click, so D exercises every control. It changes D's coverage on every
+re-rendering app, so new `click_failures` may appear across the corpus and must be calibrated like
+G/F. Candidate new Phase 2b. Needs Ron's call.
 </details>

@@ -3281,11 +3281,31 @@ be**: the self-compact extension's default 20% warning would already have fired 
 and hfix, which are the runs where a late revise pass broke earlier work. That is a suggestion, not
 evidence. It is queued as a gated experiment (item 7).
 
+## 2026-09-23b — spec 1 Phases 1–2: G and F work, four "good" apps were broken, and D barely clicked
+
+Built on the host, nothing mounted. `sandbox_mount/host/render_smoke_corpus.sh` runs the smoke over
+every harvested app (21 refs + an hfix mutation fixture). The full tables are in the spec's Notes.
+
+- **F (author's SVG colours overridden by CSS)** fires on hfix's 96 `note-badge`s (6 fill colours
+  written, all paint `rgb(148,163,184)`, matching the hand measurement) and on **nothing else**.
+- **G (a ring of controls all covered by dead text)** fires on the hfix wheel with the
+  `pointer-events` fix reverted, **not** on the fixed hfix, and on **four apps that passed every
+  gate and the fan-out judging**: gf-3, gf2-3, gf3-4, gf4-solo. Adjudicated by measurement: on
+  each, clicking the segment changes the app and clicking its key label does nothing, 4/4 members
+  per ring. They are real defects, the same one the hfix builder found by accident. 0 false positives.
+- **Assertion D has barely been clicking.** Apps that re-render on click wipe the smoke's
+  `data-smoke-id` stamps, and every later click timed out silently. 7 of 18 rendering apps landed
+  **one** click (including dsctl, dsv41, hfix). Now reported as `clicked N of M`; the re-probe fix is
+  proposed as Phase 2b and not built.
+- Still report-only: nothing's verdict changed. Next is Phase 3 (promote G and F), then 2b if approved.
+
 ## NEXT STEPS — read this first next session
 
 Ordered by value. Each spec carries its own phases, loop gates and validation commands.
 
 ### 1. `specs/render-content-and-prompt-gaps.md` — closes items 1, 2, 3 and 4(3)
+
+**In progress: Phases 1–2 done (2026-09-23b).** Next: Phase 3 promotes G and F; Phase 2b (D re-probe) awaits a decision.
 
 - A calibration corpus first: every harvested app in `../greenfield-sandboxes`
   `refs/sandbox/*`, plus two known-bad fixtures from hfix. New smoke signals land **report-only**

@@ -31,7 +31,7 @@ if [ $# -gt 0 ]; then refs=("$@"); else
     < <(git -C "$repo" for-each-ref --format='%(refname)' refs/sandbox)
 fi
 
-printf '%-34s %-6s %5s %5s %6s %6s %s\n' id passed ctrls unrch sector clkerr note
+printf '%-34s %-6s %5s %5s %6s %6s %7s %5s %5s %s\n' id passed ctrls unrch sector clkerr clicked G F note
 for ref in "${refs[@]}"; do
   id="${ref##*/}"
   dest="$out/$id"
@@ -57,6 +57,10 @@ for ref in "${refs[@]}"; do
     printf '%-34s %-6s %s\n' "$id" ERR "exit $code — see $out/$id.err"; continue
   fi
   jq -r --arg id "$id" '[$id, (.passed|tostring), (.controlCount//0), (.unreachable|length),
-      ((.sectorFaults//[])|length), (.click_failures|length), ""] | @tsv' "$out/$id.json" \
-    | awk -F'\t' '{printf "%-34s %-6s %5s %5s %6s %6s %s\n",$1,$2,$3,$4,$5,$6,$7}'
+      ((.sectorFaults//[])|length), (.click_failures|length),
+      "\(.clicked//"-")/\(.clickable//"-")",
+      ([(.deadTextRings//[])[]|select(.fault)]|length),
+      ([(.colourGroups//[])[]|select(.fault)]|length),
+      ([(.deadTextRings//[])[]|select(.fault)|.group] + [(.colourGroups//[])[]|select(.fault)|"\(.group):\(.prop)"] | join(" "))] | @tsv' "$out/$id.json" \
+    | awk -F'\t' '{printf "%-34s %-6s %5s %5s %6s %6s %7s %5s %5s %s\n",$1,$2,$3,$4,$5,$6,$7,$8,$9,$10}'
 done
