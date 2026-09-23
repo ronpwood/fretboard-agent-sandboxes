@@ -6,12 +6,18 @@ modified:
   - 2026-09-23T09:05:00-07:00
   - 2026-09-23T09:40:00-07:00
   - 2026-09-23T10:20:00-07:00
+  - 2026-09-23T09:45:00-07:00
 commits:
   - 45ac892
   - 7d0b92c
   - 8494357
   - 109ca75
   - 266486c
+  - 290ee37
+  - 772bb26
+  - 062cb94
+  - f9c3587
+  - 4e0a5c8
 agents:
   - claude-opus-5-5
 sessions:
@@ -19,7 +25,7 @@ sessions:
 back_refs: []
 forward_refs:
   - specs/context-rot-and-self-compact.md — its baseline arm runs on the harness this plan delivers
-status: building
+status: complete
 ---
 
 # Plan: Render smoke sees content, and the prompts close the gaps hfix exposed
@@ -239,11 +245,11 @@ Found while building Phase 2 (amendment 09:40): apps that re-render on click wip
 #### 2. Sync to the greenfield target
 
 - [x] `just target sync greenfield --dry-run` passes the leak check and all four gates
-- [ ] `wip` **Ask Ron** before `--push`: it is outward-facing (public repo). Dry run green at `f9c3587`; asked 2026-09-23
+- [x] **Ask Ron** before `--push`: it is outward-facing (public repo). Approved 2026-09-23; pushed as target `777d62f` (host `4e0a5c8`), verified on `origin/main`
 
 #### 3. Record
 
-- [ ] NEXTSTEPS entry with the corpus table, the promote/keep decision per signal, and the prompt diffs; mark items 1, 2, 3, 4(3) done there
+- [x] NEXTSTEPS entry with the corpus table, the promote/keep decision per signal, and the prompt diffs; mark items 1, 2, 3, 4(3) done there
 
 #### Validation — Phase 5
 
@@ -254,9 +260,9 @@ Found while building Phase 2 (amendment 09:40): apps that re-render on click wip
 
 ## Global Validation
 
-- [ ] `sandbox_mount/host/render_smoke_corpus.sh ../greenfield-sandboxes $SCRATCH/corpus-final` — final table: known-bad fixtures fail on the intended assertion; every other row matches the Phase 1 baseline verdict
-- [ ] `git diff 45ac892 --stat` touches only the files listed in Relevant Files
-- [ ] NEXTSTEPS "NEXT STEPS" section reflects which items this plan closed
+- [x] `sandbox_mount/host/render_smoke_corpus.sh ../greenfield-sandboxes $SCRATCH/corpus-final` — final table: known-bad fixtures fail on the intended assertion; every other row matches the Phase 1 baseline verdict
+- [x] `git diff 45ac892 --stat` touches only the files listed in Relevant Files (plus the three specs from the planning commit)
+- [x] NEXTSTEPS "NEXT STEPS" section reflects which items this plan closed
 
 ## Notes
 
@@ -452,4 +458,12 @@ because the wheel clicks never happen. G carries that signal independently.
 ordinal) before each click, so D exercises every control. It changes D's coverage on every
 re-rendering app, so new `click_failures` may appear across the corpus and must be calibrated like
 G/F. Candidate new Phase 2b. Needs Ron's call.
+</details>
+<details>
+<summary>2026-09-23 — closed: final corpus identical to the 2b run; target pushed</summary>
+
+The final corpus run against `render_smoke.py` as shipped matched the Phase 2b run exactly on all 22
+rows: verdict, click errors, G, F and clicks landed. The later changes (`--screenshot`, message
+wording, and the leak-safe comment edit) changed no behaviour. The target was synced and pushed at
+`777d62f`, and the remote was checked for the new smoke and the reviewer items.
 </details>

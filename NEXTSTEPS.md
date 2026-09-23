@@ -3320,7 +3320,7 @@ Ordered by value. Each spec carries its own phases, loop gates and validation co
 
 ### 1. `specs/render-content-and-prompt-gaps.md` — closes items 1, 2, 3 and 4(3)
 
-**Built: all phases done except the `--push` (2026-09-23b/c).** Reviewer now has the lossy-key and sibling-sweep items (`062cb94`). `just target sync greenfield --dry-run` is green at `f9c3587` (leak check caught two host-app names first, which were fixed at the source). **Awaiting Ron's go for `--push`.** Run it with `PATH=~/.nvm/versions/node/v22.21.0/bin:$PATH`, because `pi` lives only under node v22.
+**DONE 2026-09-23, spec complete.** Closes items 1, 2, 3 and 4(3). G/F/D-re-find in the gate, `--screenshot`, builder and reviewer prompts. The target is pushed at `777d62f` and verified on the remote. The final corpus matches the calibrated run exactly.
 
 - A calibration corpus first: every harvested app in `../greenfield-sandboxes`
   `refs/sandbox/*`, plus two known-bad fixtures from hfix. New smoke signals land **report-only**
@@ -3343,7 +3343,9 @@ Ordered by value. Each spec carries its own phases, loop gates and validation co
   whatever the code returns, which is exactly hfix's `app.test.ts:423-436`.
 - A per-turn context curve stamped on `agent_message` events, plus `just traces context-curve`.
 
-### 3. One baseline greenfield arm on the result
+### 3. One baseline greenfield arm on the result — NEXT (awaiting Ron's go to mount)
+
+Compare against **dsv41-20260920** (v4.1, same brief, old harness), so the harness is the only variable. hfix ran `0731`, so report it only as context. Pre-register the predictions here before mounting.
 
 v4.1 default roster, hfix's brief. Compare with hfix on defects found by hit-test after
 acceptance, the review trajectory, whether G/F fire *inside* the loop, and builder calls spent on
