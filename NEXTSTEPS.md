@@ -3360,6 +3360,44 @@ claude 2.1.280). hfix and dsv41 ran pi 0.85.1. `toolchain.lock` keeps pi in `ima
 (09-07), so this is the policy working, not an error. But any behaviour change in how agents run is
 now attributable to harness **or** pi. Setup's gate passed through 0.87.1 (pings and non-zero cost).
 
+## 2026-09-23e — harn2 judged: 6 of 6 predictions met; one latent defect, one cosmetic flaw
+
+`harn2-20260923-f50552`, adw `f07991a4`. **15/15 phases, approved on review_2, committed.** 35.5 min,
+8.96M tokens, pi-estimated $1.18 (billed spend is read at teardown). hfix: 12 phases, not approved,
+29.8M tokens, $2.32. Harvested at `refs/sandbox/harn2-20260923-f50552` (4 commits); traces at
+`.sandbox/traces/harn2-20260923-f50552/`.
+
+| # | prediction | result |
+|---|---|---|
+| 1 | builder looks at the app, never hand-rolls a server | **MET.** `--screenshot /tmp/app.png` in build, `/tmp/app2.png` in revise_1, and **read both images**. Zero server attempts (hfix: 4 calls on `http.server`, then gave up). It also noticed that the screenshot shows only the initial state |
+| 2 | runs the grading command | **MET.** `bun test app.test.ts tests/generated/f07991a4.test.ts`, 5 times across build and revise_1 |
+| 3 | new gates live in the loop | **MET.** Every smoke landed **25/25 clicks with 24 re-probes**: the app re-renders on each click, so the pre-2b smoke would have clicked ONE control. No G/F/D fault fired at any point, and the delivered tree is clean on all of them (a null result, not a gap: see 5) |
+| 4 | reviewer uses the new items | **MET, strongly.** review_1 rejected 12/19 citing "three verified lookup defects": **vii° voiced as a major barre ("drops the 'dim' quality into the major branch")** (the hfix class, caught in-loop this time), **F#/Gb rendering F natural** (the gf4-solo spelling family), and a CAGED quiz marking a random answer. Probes were written to `/tmp` and run. review_2 swept **by pitch class across keys incl. flats and F#/Gb and every CAGED shape**, then clicked everything in every mode. It also ran the render smoke itself, unprompted |
+| 5 | fewer post-acceptance defects, none of G/F/D class | **MET.** Delivered tree: smoke PASS (123 controls, 25/25 clicks, G/F/D clean). Independent sweep, ground truth from our own pitch-class table: scales 65/65, spelling 26/26, triads and sevenths 168/168 each, CAGED 65/65, pentatonic boxes 120/120, key signatures 12/12, **every user-reachable voicing plays exactly its chord** (12 keys × triads and sevenths × both barre shapes). **One latent defect:** `chords.ts:67` sets minor-mode seventh QUALITIES to a placeholder `symbols.map(() => "min7")` (the symbols table on line 20 is right), so minor ii° reads m7 and III/VI read m7. No UI path reaches it (every call site passes `"major"`). **One cosmetic flaw:** the centre hub covers ~20% of the inner edge of all 12 minor-key buttons. Measured by hit-test: every centre click lands; the major ring is fully clear |
+| 6 | no durable test pins wrong output | **MET.** Durable suite 2 → 15. The new tests assert the spec's answer for each reviewer finding (F#/Gb spelled with E#, dim voicing = B D F only, CAGED answer = E shape). Generated suite: 31 |
+
+**Attribution, honestly bounded.** Two confounds were named before judging: the model (hfix ran
+`0731`) and pi (0.85.1 → 0.87.1). What the trace ties to *today's* harness regardless of either:
+the `--screenshot` calls and image reads (the flag did not exist before), the 25/25 clicks via 24
+re-probes (the re-find did not exist), and the reviewer's lossy-key language and pitch-class sweeps
+(the prompt item did not exist). Token efficiency (8.96M vs 29.8M) and approval are NOT attributed:
+model, pi and a different app shape all move them. This is N=1.
+
+**My own measurement errors, caught before they became findings:** the sweep first reported 84
+triad and 84 seventh "failures". That was my own input (`"natural-minor"` where the API takes
+`"minor"`), plus a key-signature check too strict for F#/Gb, which carries both spellings.
+Re-checked against the call sites before re-running.
+
+### What this run queues
+
+1. **`--screenshot` should reach a state**, e.g. `--click "F#"` before capturing. The builder asked
+   for exactly this, and the initial state hides most of a multi-mode app.
+2. **Silent prompt-path fallback** (2026-09-23d): `execute` should refuse a `*.md` PROMPT missing
+   from the target.
+3. The latent minor-sevenths placeholder is the reviewer's blind spot in a precise form: it swept
+   what the UI reaches. That is arguably right for "is the request met". A dead-code path with wrong
+   data is not a UI defect, so no change is proposed. It is recorded as the limit of review-by-probing.
+
 ## NEXT STEPS — read this first next session
 
 Ordered by value. Each spec carries its own phases, loop gates and validation commands.
@@ -3389,7 +3427,7 @@ Ordered by value. Each spec carries its own phases, loop gates and validation co
   whatever the code returns, which is exactly hfix's `app.test.ts:423-436`.
 - A per-turn context curve stamped on `agent_message` events, plus `just traces context-curve`.
 
-### 3. One baseline greenfield arm on the result — NEXT (awaiting Ron's go to mount)
+### 3. One baseline greenfield arm on the result — DONE 2026-09-23e (`harn2`, 6/6 predictions met)
 
 Compare against **dsv41-20260920** (v4.1, same brief, old harness), so the harness is the only variable. hfix ran `0731`, so report it only as context. Pre-register the predictions here before mounting.
 
