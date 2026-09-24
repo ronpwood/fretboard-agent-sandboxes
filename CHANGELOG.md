@@ -3535,7 +3535,8 @@ A/B, builder seat only. Needs 1–3 done first.
 
 ## 2026-09-23f — the two harn2 harness fixes: staged screenshots, and no more filename briefs
 
-Both from the harn2 queue (2026-09-23e). Host-local; the greenfield target is not synced yet.
+Both from the harn2 queue (2026-09-23e). Pushed, and synced to the greenfield target at `e97e9a8`
+(pristine guard still ok: `apps/` untouched).
 
 ### `render_smoke.py --click LABEL` stages the screenshot
 
