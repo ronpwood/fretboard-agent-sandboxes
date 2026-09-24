@@ -3873,4 +3873,4 @@ player, nothing stops it, and the live interval keeps bun's event loop alive, so
 exits. The same class as the 37-min hang: bash has no timeout anywhere. **Pid 3943 was killed at
 16:07; the builder's trace resumed at 16:07:33, in the same session with revise_1 intact.** The
 builder saw a killed probe, which is also what a timeout would give it. harn4 stays in the rate,
-marked "nudged once". This is the second live hit of the no-timeout blocker in this set's first hour.
+marked "nudged once". This is the no-timeout blocker (NEXTSTEPS fan-out blocker) hitting live again.
