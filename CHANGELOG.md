@@ -3753,10 +3753,9 @@ use. And comparability costs little: the fixed smoke's verdict equals the old on
 harvested apps, harn2 and harn3 included. The fix does not reach the primary class either, since a
 lossy-key lookup throws nothing and D cannot see it.
 
-## 2026-09-24b — PRE-REGISTRATION (DRAFT, awaiting Ron's approval): harn4/5/6, N=3 replicates of the harn2/harn3 arm
+## 2026-09-24b — PRE-REGISTRATION: harn4/5/6, N=3 replicates of the harn2/harn3 arm
 
-**Draft. Nothing is mounted until Ron approves.** On approval this header becomes "Approved by Ron
-before mounting", and nothing above the mount records changes after that commit.
+**Approved by Ron before mounting.** Nothing above the mount records below changes after this commit.
 
 **The question:** how often does this arm ship a UI-reachable defect, the lossy-key class in
 particular, past three review rounds? Prior data, N=2: harn2 clean after two rounds; harn3 shipped

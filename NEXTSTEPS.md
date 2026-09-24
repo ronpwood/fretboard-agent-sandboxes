@@ -12,7 +12,7 @@ Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 202
 
 ## 1. N=3 replicates of the harn2/harn3 arm (CHANGELOG 2026-09-23i, 2026-09-24b)
 
-- **Pre-registration drafted as CHANGELOG 2026-09-24b, awaiting Ron's approval.** Then mount
+- **Pre-registration CHANGELOG 2026-09-24b approved.** Mounting
   harn4/5/6 together on target `a11ba95`.
 - The smoke blind spot is fixed (CHANGELOG 2026-09-24a): harn3 now clicks 25/25, and the corpus
   verdicts are unchanged. The cause was a hidden control, not `pointer-events: none`. The fix is
