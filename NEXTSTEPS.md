@@ -10,11 +10,10 @@ harn2 baseline arm, 6/6 predictions met (CHANGELOG 2026-09-23d/e), its two harne
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
 
-## 1. harn3: teardown decision, then a replicate set (CHANGELOG 2026-09-23i)
+## 1. N=3 replicates of the harn2/harn3 arm (CHANGELOG 2026-09-23i)
 
-- **harn3 is still mounted** (`harn3-20260924-e76bec`), with harvest and traces pulled. Teardown is
-  Ron's call; it records the billed spend.
-- The pre-registered rule fired: **N=3 replicates of the harn2/harn3 arm** before any fan-out.
+- harn3 is torn down (billed $1.998), and its harvest and traces are home.
+- The pre-registered rule fired, and Ron agreed: **N=3 replicates of the harn2/harn3 arm** before any fan-out.
   Pre-register first. The question is how often the lossy-key class ships past three review rounds.
 - Smoke blind spot: D cannot click `pointer-events: none` controls whose clicks the app routes
   elsewhere (harn3: 9/25 clicked, while a centroid hit-test gave 24/24). Hit-test by coordinates

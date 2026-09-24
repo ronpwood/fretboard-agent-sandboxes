@@ -3711,3 +3711,8 @@ P1 and P2 held, so the harness is trusted for that.
 Cost is recorded, not scored: the billed spend is read at teardown. Per-generation reconciliation
 was never built as a tool (2026-09-07f, "second half, not built"), so the teardown readout is the
 number of record.
+
+**Torn down, same day.** **Billed $1.998** (pi estimate $1.826, 1.09×). The key was revoked and
+verified absent, the VM destroyed and the tree clean. Artifacts are at
+`.sandbox/runs/harn3-20260924-e76bec-artifacts`. Ron looked at the app: visually appealing, with the
+same failings the reviewer and the measurement found. **Ron agrees: N=3 replicates next, not a fan-out.**
