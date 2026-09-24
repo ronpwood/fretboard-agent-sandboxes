@@ -3989,3 +3989,11 @@ with zero rounds to spare.
 
 Smoke: PASS, 32 controls, 25/25 (1 reload). The old smoke gives the same verdict, so the D fix changed
 nothing here. Audio correctness beyond the pitch content is not measured.
+
+**Teardowns (Ron's decision, same day):** harn4 billed **$1.187**, harn5 **$2.583**, harn7 **$1.231**.
+Keys revoked and verified absent, VMs destroyed. Ron on harn5's fretboard: "got close to the Claude bare
+metal version" (the bare-Claude control arm, 2026-09-19). Recorded as an impression, not scored.
+
+**harn8 replaces harn4 (Ron's decision):** `harn8-20260924-fd8bb4`, adw `2f09deb6`, pid 1714. Same arm, target
+`a11ba95`, no tool-level timeout, so the set stays comparable. **Check 0 PASSED:** gates A–E, `a11ba95`,
+tree clean, brief present, pi 0.87.1.
