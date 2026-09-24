@@ -3997,3 +3997,16 @@ metal version" (the bare-Claude control arm, 2026-09-19). Recorded as an impress
 **harn8 replaces harn4 (Ron's decision):** `harn8-20260924-fd8bb4`, adw `2f09deb6`, pid 1714. Same arm, target
 `a11ba95`, no tool-level timeout, so the set stays comparable. **Check 0 PASSED:** gates A–E, `a11ba95`,
 tree clean, brief present, pi 0.87.1.
+
+**harn8 lost to a provider error at `plan`, turn 2.** The error was `provider_error
+(openrouter/google/gemini-3.8-flash): Gemini models require OpenRouter reasoning details to be
+preserved…`, and the upstream cause is Google's **"Corrupted thought signature"** (400 INVALID_ARGUMENT).
+**It is intermittent, not a new enforcement:** harn7's planner hit the same 400 **5 times** and
+survived every one, because pi auto-retried (`auto_retry_start attempt 1/3` → `auto_retry_end
+success`). What differed in harn8 is the error's *shape*. harn7's arrived as an HTTP error (`"400:
+{…Provider returned error…}"`) and pi retried it. harn8's arrived bare and truncated mid-stream
+("…Please refer to our docs: https:"), and pi set `willRetry: false`. So the lost run comes from pi's
+retry classification, not from the model. **Per P2, harn8 is excluded.** The classification worked
+again (`plan | fail | provider_error…`). Nothing was committed and there is nothing to harvest.
+Tally so far: **3 of 5 runs in this set were ended by non-model causes** (harn6: provider content
+filter; harn4: stall watchdog; harn8: an unretried Gemini 400).
