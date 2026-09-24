@@ -4022,3 +4022,12 @@ is untouched): a two-turn gemini-3.8-flash call at thinking `high`, with 3 tool 
 failed in exactly the harn8/harn9 shape** (turn 2, bare error, `willRetry: false`). It is
 intermittent upstream and not VM-specific; harn8 and harn9 were two unlucky draws in a row. Gotcha
 on the way: `pi -p` blocks forever on an open stdin, so the repro needs `< /dev/null`.
+
+**Pinning test (same repro, 15 runs per arm, in parallel):** unpinned **12/15 clean (3 failed, at
+turns 2, 3 and 4)**; `compat.openRouterRouting.only: ["google-vertex"]` **15/15**;
+`["google-ai-studio"]` **15/15**. Pinned total: 0 failures in 30. At the unpinned 20% rate, 30 clean
+runs by chance is about 0.1%. This fits the backend-switch hypothesis (a thought signature issued by
+one Google backend is rejected by the other), but it does not prove it: which backend served each
+unpinned turn was not observed. The cure is measured; the mechanism is inferred. Proposed for harn10:
+pin gemini-3.8-flash to `google-ai-studio` with `allow_fallbacks: false` in `models.json.tmpl`, and
+record it as a deliberate difference that affects the planner only. Awaiting Ron.
