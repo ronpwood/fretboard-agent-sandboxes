@@ -4010,3 +4010,15 @@ retry classification, not from the model. **Per P2, harn8 is excluded.** The cla
 again (`plan | fail | provider_error…`). Nothing was committed and there is nothing to harvest.
 Tally so far: **3 of 5 runs in this set were ended by non-model causes** (harn6: provider content
 filter; harn4: stall watchdog; harn8: an unretried Gemini 400).
+
+**harn9 lost the same way, 20 s in** (`harn9-20260924-62ae1a`, adw `e9424ff0`): `plan | fail |
+provider_error (…gemini-3.8-flash): Gemini models require OpenRouter reasoning details…`. It was turn
+2, bare and mid-stream, with no retry, identical to harn8. **Excluded per P2.** Torn down (spend
+$0.004, key revoked and verified absent). harn8's teardown: $0.004. Mounting stopped here, pending a
+diagnosis (Ron approved: reproduce on the host, then try pinning the provider).
+
+**Host repro, pi 0.87.1** (run with `npx` in an isolated `HOME`, so the pinned host install at 0.85.1
+is untouched): a two-turn gemini-3.8-flash call at thinking `high`, with 3 tool calls. **1 of 7 runs
+failed in exactly the harn8/harn9 shape** (turn 2, bare error, `willRetry: false`). It is
+intermittent upstream and not VM-specific; harn8 and harn9 were two unlucky draws in a row. Gotcha
+on the way: `pi -p` blocks forever on an open stdin, so the repro needs `< /dev/null`.
