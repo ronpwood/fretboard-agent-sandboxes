@@ -3870,7 +3870,8 @@ harn2/harn3 had no pin either. Pinning it mid-set would be a new difference betw
 `bun run /tmp/dom_verify2.ts` hung for 13 min at 0.4% CPU; the trace was silent from 15:53:40. The
 script clicks "Play Jam" (line 6) to check the jam-to-wheel sync. That starts the app's interval
 player, nothing stops it, and the live interval keeps bun's event loop alive, so the probe never
-exits. The same class as the 37-min hang: bash has no timeout anywhere. **Pid 3943 was killed at
+exits. The same class as the 37-min hang. *(Corrected in 2026-09-24d: a 900 s stall watchdog has
+existed since 2026-09-18, and it was about 1 min from firing.)* **Pid 3943 was killed at
 16:07; the builder's trace resumed at 16:07:33, in the same session with revise_1 intact.** The
 builder saw a killed probe, which is also what a timeout would give it. harn4 stays in the rate,
 marked "nudged once". This is the no-timeout blocker (NEXTSTEPS fan-out blocker) hitting live again.
@@ -3923,3 +3924,32 @@ Tokens and billed spend are read at teardown.
 **Reading, N=1 of the set, no decision yet:** this run is harn2's shape, not harn3's. It was approved
 in two rounds and the lossy-key class is clean, but it still shipped a reachable value defect. The
 defect sits in the one data table that no test, no review sweep and no smoke check turns into pitches.
+
+## 2026-09-24d — harn4 ended by the stall watchdog in revise_1. My "no timeout anywhere" was stale
+
+**Correction first.** I told Ron, and wrote above, that "bash has no timeout anywhere". That was
+wrong. `agent_pi.py` has had a **stall watchdog since 2026-09-18 (`ea9e675`)**: if pi writes nothing
+for `PI_STALL_SECONDS` (900 s), it kills pi's process tree and raises. That is the "phase-level
+backstop" layer the 37-min hang called for. The memory note was never updated after it landed. The
+*tool-level* timeout, where a hung bash call returns an error the agent can react to, **still does
+not exist.**
+
+**What happened to harn4:**
+1. 15:53:40, revise_1: the builder's `bun run /tmp/dom_verify2.ts` clicks "Play Jam" and never
+   exits (an uncleared interval).
+2. 16:07:43: I killed that bun process, about 1 min before the watchdog would have fired at 16:08:40.
+3. 16:07:33: **the builder immediately re-ran the same script**, now piped through `| head -4`. It
+   printed its 4 lines ("jam painted sectors: 1 C …"), but `head` closing the pipe does not end a
+   bun process that has stopped writing, so it hung again.
+4. 16:22:33, after 900 s of silence: the watchdog killed the tree. `revise_1 | fail | pi produced no
+   output for 900s`, and the ADW exited. There is no retry and no phase recovery.
+
+So the intervention bought nothing. Without it, the watchdog would have ended the run 14 min
+earlier, the same way. **The watchdog turns a hang into a run failure, not a tool error:** the
+builder never learns its probe hung, so it cannot change course. That is the missing tool-level layer,
+and it is now the concrete defect, not the "no timeout" story.
+
+**harn4 is harness-ended, which is confounded like harn6** (P2's spirit: the run was cut off by
+something other than the model and the review loop). Its tree was snapshotted as UNAPPROVED
+("stalled in revise_1"), harvested (3 commits) and its traces pulled. The VM is still up pending
+Ron's decision.
