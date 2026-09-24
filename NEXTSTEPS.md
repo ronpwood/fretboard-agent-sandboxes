@@ -12,8 +12,8 @@ Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 202
 
 ## 1. N=3 replicates of the harn2/harn3 arm (CHANGELOG 2026-09-23i, 2026-09-24b)
 
-- **Pre-registration CHANGELOG 2026-09-24b approved.** Mounting
-  harn4/5/6 together on target `a11ba95`.
+- **Pre-registration CHANGELOG 2026-09-24b approved.** harn4/5 running on
+  `a11ba95`. harn6 was lost to an Alibaba content-filter `provider_error` and replaced by harn7.
 - The smoke blind spot is fixed (CHANGELOG 2026-09-24a): harn3 now clicks 25/25, and the corpus
   verdicts are unchanged. The cause was a hidden control, not `pointer-events: none`. The fix is
   synced to the target, so the replicates' gate carries it.
@@ -21,6 +21,9 @@ Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 202
   sector's centre (gf3-2, 9/25) blocks D. A centroid hit-test would reach those sectors.
 
 ## 2. Still open, not in a spec
+
+- **Pin the OpenRouter provider for v4.1-flash** (CHANGELOG 2026-09-24b): Alibaba's content filter
+  killed harn6's build. Do this after the N=3 set, since it would be a new difference between runs.
 
 - **(6) the audio channel**: four defects in four runs. It needs a brief-level requirement and an
   `AudioContext` value spy in `test-dom.ts`. This is a design task.

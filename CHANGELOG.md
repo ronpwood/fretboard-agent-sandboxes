@@ -3844,3 +3844,24 @@ The only coding so far is a crude one (term counts, not a judgment). Command-spe
 every gate command and all 7 smoke assertions. Smoke-rule-specific: harn5 ("CRITICAL:
 large-arc-flag = 0"). None stages `--click`/`--screenshot`. Any rubric is fixed before judging and
 reported as exploratory, with N=3 (N=5 pooled).
+
+**harn6 lost to a provider error, and harn7 replaces it (Ron's decision, not automatic).** harn6's
+`build` failed at about 8 min: `provider_error (openrouter/deepseek/deepseek-v4.1-flash): Upstream
+error from Alibaba: Output data may contain inappropriate content`. OpenRouter routed the builder
+to Alibaba, whose filter flagged it while it wrote `progressions.ts`, a false positive. The phases
+table records it as `build|fail|provider_error…`, so the 2026-09-23g classification worked on its
+first live error. Per P2, **harn6 is confounded and excluded from the rate.** The chain cannot
+resume a phase (`--adw-id` only rejoins a session), and a hand-resumed builder on a half-written
+tree would be a different arm. So Ron chose a fresh replacement.
+harn6 was snapshotted (`9248588`, UNAPPROVED), harvested (plan, red suite, partial build) and its
+traces pulled. It was torn down the same day: key revoked and verified absent, VM destroyed, spend
+$0.317.
+
+| run | adw | pid |
+|---|---|---|
+| `harn7-20260924-946224` | `2bda7d6c` | 1718 |
+
+**Check 0 PASSED:** gates A–E, `a11ba95`, tree clean, brief present, pi 0.87.1. harn6's plan stays
+in the frozen table above. harn7's plan is frozen the same way before its outcome is known.
+**Open risk, left alone for this set:** nothing pins the OpenRouter provider for v4.1-flash, and
+harn2/harn3 had no pin either. Pinning it mid-set would be a new difference between runs. Queued for after.
