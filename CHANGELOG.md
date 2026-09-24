@@ -3764,14 +3764,14 @@ the minor→major lookup (17/17 minor spellings wrong) after three, although the
 
 **The arm, unchanged from harn2/harn3:** default roster (`deepseek-v4.1-flash` builder/test_designer),
 `tdd` ADW, brief `prompts/greenfield.md`, MAX_REVISIONS=2. **One deliberate difference: the target
-is re-synced to carry the D fix (2026-09-24a)**, at the sha recorded below. Everything else in the
-factory is unchanged since `efb88e3`. **Three runs, mounted together** (3–5 concurrent arms are proven;
+is re-synced to carry the D fix (2026-09-24a): target `a11ba95` (host `c7e4101`, pushed).** The
+sync changed one file, `render_smoke.py`. Everything else in the factory is as at `efb88e3`. **Three runs, mounted together** (3–5 concurrent arms are proven;
 the shared-resource ceilings appeared at 6). Confounds: sampling (this is the point), and the pi
 version, which is recorded at mount per run (harn2 and harn3: 0.87.1; a change is a confound, not an error).
 
 ### Mount-time checks (free; they must pass before `execute`, per run)
 
-0. Target at the synced sha below, tree clean, `prompts/greenfield.md` present; the execute guard is in place
+0. Target at `a11ba95`, tree clean, `prompts/greenfield.md` present; the execute guard is in place
    (live-tested on harn3, not re-tested). pi version recorded.
 
 ### Predictions (judged per run; a miss is a result)
