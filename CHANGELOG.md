@@ -3874,3 +3874,52 @@ exits. The same class as the 37-min hang: bash has no timeout anywhere. **Pid 39
 16:07; the builder's trace resumed at 16:07:33, in the same session with revise_1 intact.** The
 builder saw a killed probe, which is also what a timeout would give it. harn4 stays in the rate,
 marked "nudged once". This is the no-timeout blocker (NEXTSTEPS fan-out blocker) hitting live again.
+
+## 2026-09-24c — harn7 judged (1 of 3): approved, lossy-key clean, and one reachable defect no review saw (CAGED)
+
+`harn7-20260924-946224`, adw `2bda7d6c`. **15/15 phases, approved at review_2** (review_1 rejected,
+one revision, retest green), the harn2 trajectory. Harvested as 4 commits (plan, red suite, code,
+docs), with no snapshot needed. The sweep script, browser probe and screenshot are in
+`.sandbox/runs/harn7-20260924-946224-artifacts/`.
+
+| # | prediction | result |
+|---|---|---|
+| 1 | the signals are recorded | **MET.** `context` events in all 7 agent phases. The last point equals `agent_sessions.context_tokens` for all 5 agents. `durable_tests: 2` at `commit_tests`, and growth rows on build (2→11) and revise_1 (2→24), both passing |
+| 2 | no provider errors | **MET.** Every phase succeeded |
+| 3 | the builder stages a screenshot | **MET.** 10 distinct images read, including `--click` captures (Capo, Quiz, Lessons) and its own Playwright shots of the CAGED and chord-tone fretboards |
+| 4 | the suite grows, correctly | **MET.** 2 → 24, and no assertion pins wrong output. **`build` itself added 9** (harn3: 0). But the CAGED test asserts only the five shape *names* |
+| 5 | **primary:** UI-reachable defects, as a count | **1 reachable defect, plus 1 minor spelling fault. The lossy-key class is absent.** See below |
+| 6 | the context budget holds | **MET.** Builder peak 195,364, **18.6%**, and no compaction |
+
+**The independent sweep** (my own table, not the app's): scales 168/168 (12 major and 12 minor
+roots × 7 scales), diatonic major 84/84, diatonic minor 84/84, **`chordPitchClasses` on every chord
+name the UI can produce 40/40 (lossy-key clean)**, **every voicing sounds exactly its chord 40/40**,
+key signatures 12/12, six-chord cluster 12/12, all 7 progressions × 12 keys 408/408, capo 50/50.
+
+**The defect: CAGED boxes, 3 of 5 shapes wrong in every key (24/60).** `guitar.ts` `CAGED_SHAPES`:
+the C-shape carries the D-shape's offsets, and the G- and D-shape offsets are measured from the wrong
+anchor. Measured in a real browser in the default key, with one dropdown (Display → "CAGED boxes"):
+the C-shape draws {C,F,A} = **F major**, G-shape {D#,G,A#} = **Eb major**, D-shape {D,G,B} =
+**G major**. Only A and E draw C major. The C-shape puts no marker on its own root string. The smoke
+is clean (41 controls, 25/25, G/F/D/E clean). This is a value defect, which D cannot see.
+**Spelling (minor):** F# major is spelled with F, not E#. The pitches are right.
+
+**Detection: nobody saw it, and two agents looked straight at it.**
+- The builder's plan note says it outright: "CAGED_SHAPES … Test only checks keys sort. Provide
+  meaningful data."
+- The builder **read its own CAGED screenshot and listed the C-shape's frets, "strings D/G/B/e frets
+  3,5,6,5. … Good."** Those frets are F-C-F-A: F major, read aloud and accepted. It went on: "Let me
+  not over-analyze." Vision saw the dots. Nobody turned fret numbers into pitches.
+- review_2 claimed "CAGED mode renders all five shapes … **verified markers land on the key's root
+  pitch class**." The measurement contradicts that: the C-shape draws no root on its root string.
+  The reviewer's pitch-class sweeps covered chords and scales, not CAGED.
+- The durable test asserts that shape names exist. This is "wiring is reviewable, values are not"
+  again, now in a channel with a picture.
+
+**Recorded, not scored:** the old smoke's verdict equals the fixed one (PASS, 25/25 both), so the D
+fix changed nothing here. The CAGED data was written in `build`; its occupancy is not computed yet.
+Tokens and billed spend are read at teardown.
+
+**Reading, N=1 of the set, no decision yet:** this run is harn2's shape, not harn3's. It was approved
+in two rounds and the lossy-key class is clean, but it still shipped a reachable value defect. The
+defect sits in the one data table that no test, no review sweep and no smoke check turns into pitches.
