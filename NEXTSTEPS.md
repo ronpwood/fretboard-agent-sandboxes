@@ -10,14 +10,15 @@ harn2 baseline arm, 6/6 predictions met (CHANGELOG 2026-09-23d/e), its two harne
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
 
-## 1. N=3 replicates of the harn2/harn3 arm (CHANGELOG 2026-09-23i)
+## 1. N=3 replicates of the harn2/harn3 arm (CHANGELOG 2026-09-23i, 2026-09-24b)
 
-- harn3 is torn down (billed $1.998), and its harvest and traces are home.
-- The pre-registered rule fired, and Ron agreed: **N=3 replicates of the harn2/harn3 arm** before any fan-out.
-  Pre-register first. The question is how often the lossy-key class ships past three review rounds.
-- Smoke blind spot: D cannot click `pointer-events: none` controls whose clicks the app routes
-  elsewhere (harn3: 9/25 clicked, while a centroid hit-test gave 24/24). Hit-test by coordinates
-  for those.
+- **Pre-registration drafted as CHANGELOG 2026-09-24b, awaiting Ron's approval.** Then mount
+  harn4/5/6 together on the re-synced target.
+- The smoke blind spot is fixed (CHANGELOG 2026-09-24a): harn3 now clicks 25/25, and the corpus
+  verdicts are unchanged. The cause was a hidden control, not `pointer-events: none`. The fix is
+  synced to the target, so the replicates' gate carries it.
+- Still open, a different class: Playwright clicks a control's box centre, so a hub covering every
+  sector's centre (gf3-2, 9/25) blocks D. A centroid hit-test would reach those sectors.
 
 ## 2. Still open, not in a spec
 

@@ -3716,3 +3716,105 @@ number of record.
 verified absent, the VM destroyed and the tree clean. Artifacts are at
 `.sandbox/runs/harn3-20260924-e76bec-artifacts`. Ron looked at the app: visually appealing, with the
 same failings the reviewer and the measurement found. **Ron agrees: N=3 replicates next, not a fan-out.**
+
+## 2026-09-24a — render smoke D: a hidden control is re-found, not waited on. harn3's blind spot was misdiagnosed
+
+**The 2026-09-23i diagnosis was wrong.** It said D could not click wheel sectors with
+`pointer-events: none`. The sectors carry no such thing; only their `<text>` labels do, correctly.
+The raw Playwright log for every blocked sector reads **"element is not visible"**, and no occluder
+is named. Measured by tracing each click: the 4th control D clicks is the "Fretboard & Scales" tab.
+It collapses the wheel's panel to width 0, the sectors keep their `data-smoke-id` stamps, and so
+the re-find (2026-09-23, hfix) never fires. It only ran when a stamp was *gone*. D then spent 16
+timeouts on hidden elements.
+
+**Fix** (`adws/adw_modules/render_smoke.py`, D loop): a stamp that is present but not visible is
+handled like a missing stamp. D re-probes, reloads to the starting state if needed, and re-finds
+the control by group + label + ordinal. One line of logic, no new mechanism.
+
+**Measured:**
+
+| | before | after |
+|---|---|---|
+| harn3 clicked | 9/25 | **25/25** (1 reload, 0 blocked, 0 click errors) |
+| corpus, 23 harvested apps: pass/fail | — | **identical on all 23** |
+| corpus: clicked counts changed | — | 2 rows, both up: harn3 9→25, fixval 19→20 |
+
+**Still low, and a different class** (every one names a real occluder; not fixed, recorded):
+gf3-1 1/25 (a help modal an earlier click opened stays over everything), gf3-2 9/25 (the wheel hub
+button covers each sector's box centre, which is where Playwright clicks — a centroid hit-test
+would reach them), gf2-3 and gf4-solo (dead text on the controls, known defects that already fail).
+The centroid hit-test idea from 2026-09-23i applies to gf3-2, not to harn3.
+
+**Synced to the greenfield target, after first deciding not to.** The first draft kept the target at
+`efb88e3` so the replicates would run harn2/harn3's exact factory. Ron questioned that, and the
+reversal holds up. The smoke is also the chain's quality gate (`quality.py:281`) and a builder tool,
+so withholding the fix measures an arm with a known broken instrument that no future run will
+use. And comparability costs little: the fixed smoke's verdict equals the old one on all 23
+harvested apps, harn2 and harn3 included. The fix does not reach the primary class either, since a
+lossy-key lookup throws nothing and D cannot see it.
+
+## 2026-09-24b — PRE-REGISTRATION (DRAFT, awaiting Ron's approval): harn4/5/6, N=3 replicates of the harn2/harn3 arm
+
+**Draft. Nothing is mounted until Ron approves.** On approval this header becomes "Approved by Ron
+before mounting", and nothing above the mount records changes after that commit.
+
+**The question:** how often does this arm ship a UI-reachable defect, the lossy-key class in
+particular, past three review rounds? Prior data, N=2: harn2 clean after two rounds; harn3 shipped
+the minor→major lookup (17/17 minor spellings wrong) after three, although the reviewer caught it.
+
+**The arm, unchanged from harn2/harn3:** default roster (`deepseek-v4.1-flash` builder/test_designer),
+`tdd` ADW, brief `prompts/greenfield.md`, MAX_REVISIONS=2. **One deliberate difference: the target
+is re-synced to carry the D fix (2026-09-24a)**, at the sha recorded below. Everything else in the
+factory is unchanged since `efb88e3`. **Three runs, mounted together** (3–5 concurrent arms are proven;
+the shared-resource ceilings appeared at 6). Confounds: sampling (this is the point), and the pi
+version, which is recorded at mount per run (harn2 and harn3: 0.87.1; a change is a confound, not an error).
+
+### Mount-time checks (free; they must pass before `execute`, per run)
+
+0. Target at the synced sha below, tree clean, `prompts/greenfield.md` present; the execute guard is in place
+   (live-tested on harn3, not re-tested). pi version recorded.
+
+### Predictions (judged per run; a miss is a result)
+
+1. **The signals are recorded, all of them** (instrument; a miss is a harness bug): `context` events
+   in every agent phase, the last point equals `agent_sessions.context_tokens`, `durable_tests=<n>` at
+   `commit_tests`, and a non-failing `durable_suite_growth` row for every `build`/`fix_i`/`revise_i`.
+2. **No provider errors.** A run with a `provider_error` phase is reported as confounded and
+   excluded from the rate, which then says N=2 (or less). It is not re-run automatically.
+3. **The builder stages a screenshot:** at least one `render_smoke.py … --screenshot … --click …`
+   call in a builder phase, and the image is read afterwards.
+4. **The durable suite grows, correctly:** growth > 0 from the `commit_tests` baseline, and no
+   durable test pins wrong output.
+5. **Primary, as a count: UI-reachable defects in the delivered tree, per run,** whether or not the
+   final review approves. Measured by: the fixed render smoke over the harvested tree (G/F/D clean,
+   clicks ≥ 0.8; a named-occluder shortfall is hit-tested by hand at centroids), plus **the full
+   harn2 sweep, run this time** (harn3 skipped it): scales, spelling, triads and sevenths, CAGED,
+   pentatonic boxes, key signatures, and every reachable voicing across 12 keys × both qualities,
+   against our own pitch-class table. Also every chord lookup, checked for the lossy-key class
+   (quality dropped or swapped). No point prediction on the rate — that is what is being measured.
+6. **The context budget holds:** builder peak ≤ 26% of the window, no compaction.
+
+### Recorded, not scored
+
+- **In-loop detection, per shipped defect:** did any review name it (caught, but rounds ran out,
+  as in harn3), or did no review see it (a detection gap)? This decides what to fix.
+- **Old-vs-new gate verdict, per run:** the pre-fix smoke (`4cd0a68`'s copy) is re-run host-side on
+  each harvest. Any run where its verdict differs from the fixed gate's is named. If none differ,
+  pooling with harn2/harn3 holds exactly. A gate failure the fix caused shows in the review
+  trajectory as a spent round.
+- **Durable tests added by `build` itself** (harn3: zero, all growth came after rejections).
+- The occupancy at the turn each shipped defect was written (context-rot stage 1).
+- Tokens, billed dollars (read at each teardown), wall clock, review trajectory, the final verdict.
+  Accept/reject is not a quality ranking.
+
+**Not measured, and not claimed:** audio (NEXTSTEPS item 2).
+
+### What would change a decision (pooled with harn2/harn3, N=5)
+
+- **0 of 3 ship a reachable defect** (1/5 pooled): harn3 was the tail. Fan-out design is unblocked.
+- **1–2 of 3 ship one:** the rate is real. Before any fan-out, fix the lever the detection record
+  points to. If the defects were caught but the rounds ran out, that is the review-loop budget or the
+  quality of revisions. If no review saw them, that is a detection gap: a gate for the class.
+- **3 of 3 ship one:** harn2 was the outlier, and the arm ships defects routinely. Same fork on the
+  detection record, with higher priority.
+- If P1 or P2 miss on a run, fix the harness before reading anything else from that run.
