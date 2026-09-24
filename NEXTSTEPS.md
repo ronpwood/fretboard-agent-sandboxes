@@ -10,13 +10,12 @@ harn2 baseline arm, 6/6 predictions met (CHANGELOG 2026-09-23d/e), and its two h
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
 
-## 1. `specs/harness-signals-suite-growth-provider-errors-context.md` — closes items 5 and 4(5)
+## 1. Finish the harness-signals spec: one live check (CHANGELOG 2026-09-23g)
 
-- `stopReason: "error"` is classified as `provider_error: <errorMessage>` and never sent into
-  JSON-retry. The shape was verified against a real local 401 turn.
-- The durable-suite growth count, **report-only on purpose**: a "must grow" gate rewards pinning
-  whatever the code returns, which is exactly hfix's `app.test.ts:423-436`.
-- A per-turn context curve stamped on `agent_message` events, plus `just traces context-curve`.
+Built and replay-verified. Open: one cheap local ADW run to see `context` events from a live pi
+stream (`just obs context-curve <adw_id>`). It needs the host pi key fix approved: `~/.pi/agent/models.json`
+`apiKey` `env:OPENROUTER_API_KEY` → `$OPENROUTER_API_KEY` (already edited, backup beside it).
+Then `just target sync greenfield --push` with Ron's go-ahead.
 
 ## 2. Still open, not in a spec
 

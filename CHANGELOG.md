@@ -3565,3 +3565,45 @@ The builder prompt and TREE.md document the flag.
 
 **Not yet exercised on a VM:** the `execute` ssh guard. Its case logic and the justfile parse were
 checked locally. The next mount is the first live test.
+
+## 2026-09-23g — harness signals built: provider errors named, suite growth counted, context curved
+
+`specs/harness-signals-suite-growth-provider-errors-context.md`: 24 of 25 boxes done, and one live
+check is blocked (below). Closes 2026-09-20b items 5 and 4(5). Host-local, not synced to the target.
+
+### Provider errors are named as provider errors
+
+`PiResult` now carries the last turn's `stop_reason` and `error_message`. `_parse_with_retries`
+raises `ProviderError("provider_error (<model>): <message>")` before any JSON correction is sent, so
+phases record it as `where error like 'provider_error%'`.
+- Verified against pi's real 401 line (adw `0d0e8411`, which was recorded as "planner never produced
+  valid PlanOutput JSON").
+- An errored result makes no send. A `stop` result with bad JSON still sends 2 corrections.
+- **It fired live on its first real use.** See "Found" below.
+
+### Durable-suite growth: measured, reported, never failing
+
+`gates.durable_suite_count` counts through `quality.tests_argv()` + junit. `durable_suite_growth`
+always passes and records `durable suite: <baseline> → <now> (+N)`. The baseline is taken at
+`commit_tests`, and the gate runs on `build`, every `fix_i` and every `revise_i`. On hfix: the red
+commit holds 2 and the delivered snapshot holds 41, so +39. The spec's "29" was the count at
+`revise_1`. The reviewer does not see the number yet: its only channel would overwrite the builder's
+notes.
+
+### The per-turn context curve
+
+A `context` event goes out per valid assistant turn, and `agent_start` carries `context_window`.
+Query: `just obs context-curve <adw_id> [db]`. It is **not** a stamp on `agent_message`: harn2's
+builder had 12 of those across 60 turns. harn2's builder stream, replayed through the real parser,
+gave 60 points. They never decrease and run from 6,944 to 150,056 (14.3% of 1M), and the last point
+equals `agent_sessions.context_tokens`.
+
+### Found: host-local ADWs have never been able to authenticate
+
+`~/.pi/agent/models.json` on the host has `"apiKey": "env:OPENROUTER_API_KEY"`, which is **not pi
+syntax**. pi resolves `$VAR`, `${VAR}` or `!command` (pi docs `models.md`, "Value Resolution"), so it
+sent the literal string. VMs are fine because provision replaces the token with the key. The fix
+needs no secret on disk: `"$OPENROUTER_API_KEY"`, since `utils.py` already loads `.env`. I edited
+the host file (backup: `~/.pi/agent/models.json.bak-20260923`). **The confirming live run was
+blocked by the permission classifier**, pending Ron's approval. Until then the context curve is
+proven on a recorded stream only.

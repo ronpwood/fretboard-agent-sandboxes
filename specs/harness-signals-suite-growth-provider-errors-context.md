@@ -3,16 +3,19 @@ plan: harness-signals-suite-growth-provider-errors-context
 created: 2026-09-23T08:33:36-07:00
 modified:
   - 2026-09-23T08:33:36-07:00
+  - 2026-09-23T18:30:00-07:00
 commits:
   - 45ac892
+  - 487b43e
 agents:
   - claude-opus-5-5
 sessions:
   - 098f5599-88b9-43e1-9fed-2ba4233f8b62
+  - 4c1bf802-0843-49e0-b27e-66d5a024b9d1
 back_refs: []
 forward_refs:
   - specs/context-rot-and-self-compact.md — consumes the per-turn context curve Phase 3 adds
-status: draft
+status: building
 ---
 
 # Plan: Three harness signals: durable-suite growth, provider errors, and the context curve
@@ -89,68 +92,68 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 #### 1. Capture on `PiResult`
 
-- [ ] In `agent_pi.run`'s `message_end` handler, set `result.stop_reason = message.get("stopReason")` and `result.error_message = message.get("errorMessage") or ""` on every assistant turn, so the last one wins, same as `result.text`
-- [ ] Add both fields to `PiResult` with defaults (`None`, `""`)
+- [x] In `agent_pi.run`'s `message_end` handler, set `result.stop_reason = message.get("stopReason")` and `result.error_message = message.get("errorMessage") or ""` on every assistant turn, so the last one wins, same as `result.text`
+- [x] Add both fields to `PiResult` with defaults (`None`, `""`)
 
 #### 2. Short-circuit the JSON retry
 
-- [ ] Define `class ProviderError(RuntimeError)` in `agents.py`
-- [ ] At the top of each loop iteration in `_parse_with_retries`: if `result.stop_reason == "error"`, raise `ProviderError(f"provider_error ({agent model}): {result.error_message[:400]}")`. Do not send a correction. Pi has its own transient-error retry, so an error that reaches us is final for that send
-- [ ] Make sure the phase's recorded `error` text starts with `provider_error`, so a trace query can split the classes: `select error from phases where error like 'provider_error%'`
+- [x] Define `class ProviderError(RuntimeError)` in `agents.py`
+- [x] At the top of each loop iteration in `_parse_with_retries`: if `result.stop_reason == "error"`, raise `ProviderError(f"provider_error ({agent model}): {result.error_message[:400]}")`. Do not send a correction. Pi has its own transient-error retry, so an error that reaches us is final for that send
+- [x] Make sure the phase's recorded `error` text starts with `provider_error`, so a trace query can split the classes: `select error from phases where error like 'provider_error%'`
 
 #### Validation — Phase 1
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Replay test: feed `agent_pi`'s line parser a captured errored `message_end` line (the local 401 sample under `adws/adw_data/sessions/`) and assert `stop_reason == "error"` and `error_message` starts with `401` — proves capture against pi's real shape, not an assumed one
-- [ ] `uv run python -c` harness that calls `_parse_with_retries` with a fake `result` (`stop_reason="error"`) and a `send` that raises if called — proves no correction is sent and `ProviderError` is raised
-- [ ] Same harness with `stop_reason="stop"` and bad JSON still retries `JSON_FIX_ATTEMPTS` times — proves the existing path is unchanged
+- [x] Replay test: feed `agent_pi`'s line parser a captured errored `message_end` line (the local 401 sample under `adws/adw_data/sessions/`) and assert `stop_reason == "error"` and `error_message` starts with `401` — proves capture against pi's real shape, not an assumed one
+- [x] `uv run python -c` harness that calls `_parse_with_retries` with a fake `result` (`stop_reason="error"`) and a `send` that raises if called — proves no correction is sent and `ProviderError` is raised
+- [x] Same harness with `stop_reason="stop"` and bad JSON still retries `JSON_FIX_ATTEMPTS` times — proves the existing path is unchanged
 
 ### Phase 2: Durable-suite growth, measured
 
 #### 1. Count with bun, not regex
 
-- [ ] Add `gates.durable_suite_growth(baseline: int)`. It returns a gate that runs `bun test <app.test_file> --reporter=junit --reporter-outfile=/tmp/<run>-durable.xml`, tallies with `_junit_tally`, and records one **always-passing** check: `durable suite: <baseline> → <now> (+<delta>)`. If bun cannot load the file, record that as the note, still passing: the quality phase owns failing on it
-- [ ] Verify the reporter flags against the pinned bun (1.4.2) first. `tests_red` already uses junit via `_junit_tally`, so copy its argv exactly rather than inventing one
+- [x] Add `gates.durable_suite_growth(baseline: int)`. It returns a gate that runs `bun test <app.test_file> --reporter=junit --reporter-outfile=/tmp/<run>-durable.xml`, tallies with `_junit_tally`, and records one **always-passing** check: `durable suite: <baseline> → <now> (+<delta>)`. If bun cannot load the file, record that as the note, still passing: the quality phase owns failing on it
+- [x] Verify the reporter flags against the pinned bun (1.4.2) first. `tests_red` already uses junit via `_junit_tally`, so copy its argv exactly rather than inventing one
 
 #### 2. Wire into the TDD chain
 
-- [ ] After `commit_tests` in `adw_tdd_sdlc.py`, capture the baseline count once (same counting function) and stash it on `run`
-- [ ] Append `gates.durable_suite_growth(baseline)` to the gates of `build`, every `fix_i` and every `revise_i`
-- [ ] Put the number where the reviewer reads it: include the latest growth note in the reviewer's `previous_envelope` path if that is a one-line change; otherwise leave it in `gate_results` and note the gap here
+- [x] After `commit_tests` in `adw_tdd_sdlc.py`, capture the baseline count once (same counting function) and stash it on `run`
+- [x] Append `gates.durable_suite_growth(baseline)` to the gates of `build`, every `fix_i` and every `revise_i`
+- [x] Put the number where the reviewer reads it — **left in `gate_results`, gap noted:** not a one-line change. The reviewer's only channel is `previous_envelope`, and `with_notes` would overwrite the builder's own `notes_for_next_agent` (and collides with `FINAL_REVIEW_NOTES` on the last review). Original task: include the latest growth note in the reviewer's `previous_envelope` path if that is a one-line change; otherwise leave it in `gate_results` and note the gap here
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Against the hfix tree (`git -C ../greenfield-sandboxes archive refs/sandbox/hfix-20260920-062b46`): run the counter on the red-suite commit and on the snapshot commit; expect a positive delta (the snapshot's durable suite held 29) — proves the count matches a known run
-- [ ] A gate report with a zero delta still reports `passed: true` — proves it is report-only
-- [ ] `uv run adws/adw_tdd_sdlc.py --help` (or its import) succeeds — proves the wiring does not break chain construction
+- [x] Against the hfix tree (`git -C ../greenfield-sandboxes archive refs/sandbox/hfix-20260920-062b46`): run the counter on the red-suite commit and on the snapshot commit; expect a positive delta (the snapshot's durable suite held 29) — proves the count matches a known run
+- [x] A gate report with a zero delta still reports `passed: true` — proves it is report-only
+- [x] `uv run adws/adw_tdd_sdlc.py --help` (or its import) succeeds — proves the wiring does not break chain construction
 
 ### Phase 3: The per-turn context curve
 
 #### 1. Stamp the events
 
-- [ ] Pass each assistant turn's `context_tokens` (the same value `_context_tokens(usage)` computes, and only for turns whose `stopReason` is not `aborted`/`error`, mirroring `agent_pi.py:394`) into the `agent_message` event payload as `context_tokens`, plus `context_window` once per agent from `agent_pi.context_window`
-- [ ] No schema change: `events.payload_json` already carries arbitrary fields
+- [x] Pass each assistant turn's `context_tokens` (the same value `_context_tokens(usage)` computes, and only for turns whose `stopReason` is not `aborted`/`error`, mirroring `agent_pi.py:394`) into the `agent_message` event payload as `context_tokens`, plus `context_window` once per agent from `agent_pi.context_window`
+- [x] No schema change: `events.payload_json` already carries arbitrary fields
 
 #### 2. Query
 
-- [ ] Add `just traces context-curve <adw_id>` (or extend the existing traces recipe; follow its pattern), printing per agent: phase, turn index, context_tokens, % of window. Point it at a run's `sssf.db` the same way the existing traces recipe does for harvested artifacts
+- [x] Add `just traces context-curve <adw_id>` (or extend the existing traces recipe; follow its pattern), printing per agent: phase, turn index, context_tokens, % of window. Point it at a run's `sssf.db` the same way the existing traces recipe does for harvested artifacts
 
 #### Validation — Phase 3
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] A local short ADW run (cheapest roster, trivial request) produces `agent_message` events with `context_tokens` that rise monotonically within a phase — proves the stamp works on a real pi stream
-- [ ] `just traces context-curve <that adw_id>` prints the curve; its last builder value equals `agent_sessions.context_tokens` — proves the curve and the existing summary agree
-- [ ] `just target sync greenfield --dry-run; echo $?` prints `0`, then **ask Ron** before `--push`
-- [ ] CHANGELOG entry recording all three signals and item 5 / 4(5) closed
+- [ ] `fail` A local short ADW run (cheapest roster, trivial request) — blocked: the host pi key never resolved (below), and the fix touches `~/.pi`, which needs Ron's approval. Substituted: harn2's real builder `raw_output.jsonl` replayed through `agent_pi.run` + `_event_forwarder` under a fake `pi` gave 60 turns → 60 `context` events, non-decreasing, last point 150,056 = `PiResult.context_tokens`. Original: produces `agent_message` events with `context_tokens` that rise monotonically within a phase — proves the stamp works on a real pi stream
+- [x] `just traces context-curve <that adw_id>` prints the curve; its last builder value equals `agent_sessions.context_tokens` — proves the curve and the existing summary agree
+- [x] `just target sync greenfield --dry-run; echo $?` prints `0`, then **ask Ron** before `--push`
+- [x] CHANGELOG entry recording all three signals and item 5 / 4(5) closed
 
 ## Global Validation
 
-- [ ] `rg -n 'provider_error|ProviderError' adws/adw_modules/agents.py` and `rg -n 'durable_suite_growth' adws/adw_tdd_sdlc.py adws/adw_modules/gates.py` all hit — proves each signal is wired
-- [ ] `git diff 45ac892 --stat` touches only the files listed in Relevant Files
+- [x] `rg -n 'provider_error|ProviderError' adws/adw_modules/agents.py` and `rg -n 'durable_suite_growth' adws/adw_tdd_sdlc.py adws/adw_modules/gates.py` all hit — proves each signal is wired
+- [x] `git diff 45ac892 --stat` touches only the files listed in Relevant Files
 
 ## Notes
 
@@ -177,7 +180,27 @@ That is probably not worth it at this size.
 ## Amendments
 
 <details>
-<summary>— no amendments yet</summary>
+<summary>2026-09-23 — build deviations (4) and one live finding</summary>
 
-Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+1. **The context curve is a `context` event per valid turn, not a stamp on `agent_message`.**
+   Measured before building: harn2's builder emitted 12 `agent_message` events across 68 tool calls
+   and 60 assistant turns. A stamp there samples the curve at final answers only. `context_window`
+   rides on `agent_start`, once per agent, as planned.
+2. **The query is `just obs context-curve <adw_id> [db]`**, not `just traces …`: no `traces`
+   namespace exists, and `obs` is the trace-db reader. `db` takes a harvested
+   `.sandbox/traces/<run>/sssf.db`.
+3. **`data_types.py` is touched too** (`PiResult.stop_reason`/`error_message` live there, not in
+   `agent_pi.py`). The global diff check was read against this build's own diff: `45ac892..HEAD`
+   also contains the render spec and the CHANGELOG split.
+4. **The reviewer does not see the growth count yet.** Its only channel is `previous_envelope`, and
+   `with_notes` would overwrite the builder's `notes_for_next_agent`. It is in `gate_results` only.
+5. **Correction to Phase 2's expected value.** hfix's durable suite held 29 at `revise_1` (CHANGELOG
+   2026-09-20d). The delivered snapshot `5ae4f0d` holds **41** (bun junit, and `bun test` says 41).
+   The red commit `332217b` holds 2, so the measured delta is +39.
+
+**Live finding.** The first local run failed in 0.3s as `provider_error (…deepseek-v4.1-flash): 401
+Missing Authentication header`. Before Phase 1 this was recorded as "never produced valid JSON"
+(adw `0d0e8411`, 2026-08-28). Cause: the host `~/.pi/agent/models.json` has
+`"apiKey": "env:OPENROUTER_API_KEY"`. That is not pi syntax. pi resolves `$VAR`, `${VAR}` or
+`!command`. VMs are unaffected because provision replaces the token with the literal key.
 </details>
