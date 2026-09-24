@@ -3613,3 +3613,51 @@ proven on a recorded stream only.
 `agent_message` for 3 turns. The first attempt failed "model not found" for another reason: the `!`
 shell has no `pi` on PATH (nvm node v22). Side effect of `$OPENROUTER_API_KEY`: pi lists OpenRouter
 models only when that variable is set (0 vs 388), which the ADWs cover by loading `.env`.
+
+## 2026-09-23h — PRE-REGISTRATION: harn3, a replicate of harn2 carrying the new signals
+
+**Approved by Ron before mounting.** Nothing above the mount record below changes after this commit.
+
+Default roster (`deepseek-v4.1-flash` builder/test_designer), `tdd` ADW, brief `prompts/greenfield.md`,
+greenfield target at `efb88e3`. **Comparator: harn2** (`f07991a4`, 2026-09-23e). It has the same
+model, brief, roster and ADW, so for the first time the comparator is clean. The deliberate
+differences are 2026-09-23f/g only: `--click` screenshots, the prompt-path guard, and the three
+signals. Known confounds: sampling (this is N=2 on the harn2 question) and the exe.dev image's pi
+version (harn2 ran 0.87.1; record it at mount, and treat a change as a confound, not an error).
+
+### Mount-time checks (free; they must pass before `execute`)
+
+0. **The execute guard, first live test.** `execute <run> prompts/does-not-exist.md` exits 1 with
+   the refusal message and records no pid. Then the real `execute … prompts/greenfield.md` passes it.
+
+### Predictions (judge each; a miss is a result)
+
+1. **The signals are recorded, all of them** (instrument check, expected certain; a miss is a harness
+   bug): every agent phase emits `context` events. Each agent's last curve point equals its
+   `agent_sessions.context_tokens`. `commit_tests` logs `durable_tests=<n>`. Every `build`/`fix_i`/`revise_i`
+   has a `durable_suite_growth` row, and none fails.
+2. **No provider errors.** Zero phases with `error like 'provider_error%'`. If one occurs, the
+   prediction is that it is classified that way and not as a JSON failure, and the run is then
+   reported as confounded rather than judged.
+3. **The builder stages a screenshot:** at least one `render_smoke.py … --screenshot … --click …` call
+   in a builder phase, and the image is read afterwards. harn2 asked for this and could not do it.
+4. **The durable suite grows, and correctly:** growth > 0 from the `commit_tests` baseline (harn2:
+   2 → 15), and no durable test pins wrong output (my sweep finds none).
+5. **Primary, replicated from harn2: zero UI-reachable defects after acceptance**, by measurement.
+   The render smoke runs over the harvested tree (G/F/D clean, clicks ≥ 0.8), plus the harn2
+   independent sweep against our own pitch-class table: scales, spelling, triads and sevenths,
+   CAGED, pentatonic boxes, key signatures, and every reachable voicing across 12 keys × both
+   qualities. harn2: 0 reachable, 1 latent. Latent (non-UI) defects are recorded and not scored:
+   harn2 already showed review-by-probing cannot see them.
+6. **The context budget holds:** builder peak ≤ 26% of the window, with no compaction (15 runs so
+   far; harn2 peaked at 14.3%). Also recorded for the context-rot stage 1, not scored: the
+   occupancy at the turn where each reviewer-cited defect was written.
+
+**Not measured, and not claimed:** audio. There is still no instrument for it (NEXTSTEPS item 1).
+
+Recorded, never scored: tokens, dollars (reconcile generation ids before teardown), wall clock,
+review trajectory, and whether the final review approves. Accept/reject is not a quality ranking.
+
+**What would change a decision:** if 5 misses, harn2's 6/6 was partly sampling. The next move is
+then a small replicate set (N=3) before any fan-out, not more harness. If 1 or 2 miss, fix the
+harness before reading anything else from the run.
