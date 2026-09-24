@@ -3828,3 +3828,19 @@ version, which is recorded at mount per run (harn2 and harn3: 0.87.1; a change i
 
 **Check 0 PASSED on all three:** gates A–E pass, HEAD `a11ba95`, tree clean, brief present.
 **pi 0.87.1 on all three, the same as harn2/harn3, so the pi confound does not apply.**
+
+**Added after mount, NOT pre-registered (exploratory):** Ron noticed that the planner handoffs differ
+in how specific they are about verification. The question is whether handoff specificity predicts
+the outcome. **The three plans are frozen here, before any outcome is known**, so a postmortem can't
+reread them in hindsight:
+
+| run | `plan.md` sha256 | words |
+|---|---|---|
+| harn4 | `aa74fc124c7a` | 3449 |
+| harn5 | `7fd4368118bc` | 4001 |
+| harn6 | `4147c2dd0795` | 2736 |
+
+The only coding so far is a crude one (term counts, not a judgment). Command-specific: harn6 names
+every gate command and all 7 smoke assertions. Smoke-rule-specific: harn5 ("CRITICAL:
+large-arc-flag = 0"). None stages `--click`/`--screenshot`. Any rubric is fixed before judging and
+reported as exploratory, with N=3 (N=5 pooled).
