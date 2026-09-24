@@ -4,35 +4,58 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently closed:** `specs/render-content-and-prompt-gaps.md` (CHANGELOG 2026-09-23b/c) and the
-harn2 baseline arm, 6/6 predictions met (CHANGELOG 2026-09-23d/e), its two harness fixes
-(CHANGELOG 2026-09-23f), and the harness-signals spec (CHANGELOG 2026-09-23g; target sync pending).
+**Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
+2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
+harn2/harn3 and the harness-signals spec (CHANGELOG 2026-09-23d–i).
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
 
-## 1. N=3 replicates of the harn2/harn3 arm (CHANGELOG 2026-09-23i, 2026-09-24b)
+## 1. Harness robustness: the fan-out blocker (CHANGELOG 2026-09-24f, finding 3)
 
-- **Pre-registration CHANGELOG 2026-09-24b approved.** harn4/5 running on
-  `a11ba95`. harn6 was lost to an Alibaba content-filter `provider_error` and replaced by harn7.
-- The smoke blind spot is fixed (CHANGELOG 2026-09-24a): harn3 now clicks 25/25, and the corpus
-  verdicts are unchanged. The cause was a hidden control, not `pointer-events: none`. The fix is
-  synced to the target, so the replicates' gate carries it.
-- Still open, a different class: Playwright clicks a control's box centre, so a hub covering every
-  sector's centre (gf3-2, 9/25) blocks D. A centroid hit-test would reach those sectors.
+3 of 6 mounts in the last set were ended by causes outside the model. Both fixes below are
+model-agnostic, and both come before any fan-out:
 
-## 2. Still open, not in a spec
+- **A bash timeout at the tool level**, so a never-exiting command (an uncleared `setInterval`, a
+  foreground server) returns an *error the agent sees*. Today the 900 s stall watchdog
+  (`agent_pi.py`, `PI_STALL_SECONDS`) kills the whole run, and the agent never learns why. harn4 retried
+  the same hang. Keep the watchdog as the backstop.
+- **A phase-level retry on `provider_error`.** The classification already exists (`agents.py`). Retry
+  the phase a bounded number of times before failing the run. That covers intermittent upstream faults
+  for any model (Gemini thought-signature 400s, false-positive content filters). **Not** per-model
+  provider pinning (rejected in 2026-09-24f).
 
-- **Pin the OpenRouter provider for v4.1-flash** (CHANGELOG 2026-09-24b): Alibaba's content filter
-  killed harn6's build. Do this after the N=3 set, since it would be a new difference between runs.
+## 2. Close the value-detection gap (CHANGELOG 2026-09-24f, findings 1–2)
 
-- **(6) the audio channel**: four defects in four runs. It needs a brief-level requirement and an
-  `AudioContext` value spy in `test-dom.ts`. This is a design task.
+Reachable value defects shipped in 2 of 4 runs, both in tables that no agent converted into pitches.
+Every in-loop catch was an enumerated check; the harn7 miss was an asserted one. A design task:
 
-## 3. A 0731 control roster, if any A/B is wanted
+- Make the value sweep a **required, checkable review artifact**: an enumerated table of input →
+  expected (from first principles) → actual. That replaces "verified" claims, and a reviewer cannot
+  assert a check it did not run.
+- Starting points: `.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts` and `harn7-…/sweep_harn7.ts`
+  (an independent answer table, mutation-tested).
+- Candidate: a builder-prompt line on "turn every data table into values and check it", like the
+  existing silent-channel line.
+
+## 3. A small re-run to test 1 and 2, before any fan-out
+
+Pre-register it. One or two runs on the default arm with the robustness fixes and the value artifact.
+Predictions: no non-model losses, and an enumerated value table in every review.
+
+## 4. Still open, not in a spec
+
+- **(6) the audio channel**: still unmeasured. It needs a brief-level requirement and an
+  `AudioContext` value spy in `test-dom.ts`. Related to item 2 (a silent channel is a value channel).
+- **Render smoke D, the box-centre case**: Playwright clicks a control's box centre, so a hub covering
+  every sector's centre (gf3-2, 9/25) blocks D. A centroid hit-test would reach them.
+- **Planner-specificity postmortem** (exploratory, 2026-09-24b): plans for harn4/5/6 frozen blind;
+  harn7's hash taken after its outcome. Low priority at N=2.
+
+## 5. A 0731 control roster, if any A/B is wanted
 
 The default runs v4.1 and nothing runs `0731`. Build one only when an A/B needs it.
 
-## 4. `specs/context-rot-and-self-compact.md` — a later experiment, gated
+## 6. `specs/context-rot-and-self-compact.md` — a later experiment, gated
 
 A stub. Stage 1 reads the context curves: do defects concentrate at high occupancy? If not, stop.
 Stage 2 is a host-local spike: the self-compact extension is tested only under pi **RPC** mode,

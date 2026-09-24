@@ -4031,3 +4031,49 @@ one Google backend is rejected by the other), but it does not prove it: which ba
 unpinned turn was not observed. The cure is measured; the mechanism is inferred. Proposed for harn10:
 pin gemini-3.8-flash to `google-ai-studio` with `allow_fallbacks: false` in `models.json.tmpl`, and
 record it as a deliberate difference that affects the planner only. Awaiting Ron.
+
+## 2026-09-24f — N=3 set CLOSED at 2 valid runs: value defects recur, lossy-key does not; the lever is value checking and harness robustness
+
+**Closed by decision (Ron, same day), not by reaching N=3.** Of 6 mounts (harn4–9), 2 produced a valid
+run: harn5 and harn7. The pre-registered rule (2026-09-24b) could no longer change. harn7 had
+already shipped a reachable defect, so "0 of 3 → fan-out unblocked" was gone. The remaining outcomes,
+"1–2 of 3" and "3 of 3", both prescribe the same action (fix the lever before any fan-out) and differ
+only in urgency. A third valid run would have added precision, not a decision. So the set stops here,
+and this is stated as N=2 in the set, N=4 pooled.
+
+| run | reachable defects shipped | the class | detection record |
+|---|---|---|---|
+| harn2 | 0 | — | — (2 rounds) |
+| harn3 | 1 | lossy-key: minor chords as major | **caught in-loop, rounds ran out** (3 rounds) |
+| harn5 | 0 | — | **caught its CAGED bug in-loop**, fixed with 0 rounds to spare (3 rounds) |
+| harn7 | 1 | CAGED shapes: 3/5 wrong in every key | **no review saw it**; the builder read the wrong frets aloud and accepted them; the reviewer claimed a root check it had not made (2 rounds) |
+
+**Findings (a direction, not a rate, at N=4):**
+1. **The lossy-key class is not the recurring problem (1/4). Reachable *value* defects are (2/4).**
+   They ship wherever no agent converts a data table into pitches. harn5's reviewer enumerated CAGED
+   windows against first principles and caught the bug. harn7's builder looked at a correct-looking
+   picture of wrong notes, and its reviewer asserted the check instead of running it. Vision does not
+   close this gap.
+2. **More review rounds are not the lever.** Every in-loop catch came from an enumerated value check.
+   The failure mode is an unverifiable claim of having checked.
+3. **The harness is fragile under concurrency: 3 of 6 mounts were ended by non-model causes**, and a
+   fourth (harn9) by the same upstream fault as harn8. harn6: Alibaba content filter
+   (`provider_error`, not retried). harn4: the stall watchdog, which kills the *run* rather than the
+   *tool call*, so the agent retried the same hang. harn8/harn9: Google's "Corrupted thought
+   signature" 400, arriving mid-stream so pi did not retry it. It is intermittent: 3/15 unpinned on
+   the host repro.
+4. **The instruments held:** the classification of provider errors (3/3 correct), all the signals
+   (P1 met on every completed run), and the D fix (smoke verdicts identical old vs new on every
+   harvest: harn5, harn7).
+
+**Not adopted: provider pinning.** Pinning gemini-3.8-flash cured the 400 (0/30 vs 3/15), but it
+hard-codes a route for one model and removes OpenRouter's fallback. That is the wrong shape for a
+framework whose point is a diverse, swappable model set. The model-agnostic fix is a phase-level retry
+on `provider_error`. The repro and its result stay on record (2026-09-24e) if the question comes back.
+
+**Recorded, never scored, for the whole set:** billed harn4 $1.187, harn5 $2.583, harn6 $0.317,
+harn7 $1.231, harn8 $0.004, harn9 $0.004, for **$5.33 total**. The host repro was about $0.25 and
+is not tracked per call. Every VM is torn down, and every key is revoked and verified absent.
+Harvests and traces are home for harn4–7. Sweep scripts are in the harn5/harn7 artifact dirs.
+The planner-specificity question (2026-09-24b, exploratory) stays open. Its plans are frozen; harn7's
+hash was taken after its outcome was known.
