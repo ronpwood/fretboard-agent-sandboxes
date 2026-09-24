@@ -3865,3 +3865,12 @@ $0.317.
 in the frozen table above. harn7's plan is frozen the same way before its outcome is known.
 **Open risk, left alone for this set:** nothing pins the OpenRouter provider for v4.1-flash, and
 harn2/harn3 had no pin either. Pinning it mid-set would be a new difference between runs. Queued for after.
+
+**harn4 nudged once (operator intervention, Ron's decision).** In `revise_1`, the builder's DOM probe
+`bun run /tmp/dom_verify2.ts` hung for 13 min at 0.4% CPU; the trace was silent from 15:53:40. The
+script clicks "Play Jam" (line 6) to check the jam-to-wheel sync. That starts the app's interval
+player, nothing stops it, and the live interval keeps bun's event loop alive, so the probe never
+exits. The same class as the 37-min hang: bash has no timeout anywhere. **Pid 3943 was killed at
+16:07; the builder's trace resumed at 16:07:33, in the same session with revise_1 intact.** The
+builder saw a killed probe, which is also what a timeout would give it. harn4 stays in the rate,
+marked "nudged once". This is the second live hit of the no-timeout blocker in this set's first hour.
