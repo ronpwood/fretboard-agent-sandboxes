@@ -12,7 +12,7 @@ Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 202
 
 ## 1. Harness robustness: the fan-out blocker (CHANGELOG 2026-09-24f, finding 3)
 
-3 of 6 mounts in the last set were ended by causes outside the model. Both fixes below are
+4 of 6 mounts in the last set were ended by causes outside the model. Both fixes below are
 model-agnostic, and both come before any fan-out:
 
 - **A bash timeout at the tool level**, so a never-exiting command (an uncleared `setInterval`, a

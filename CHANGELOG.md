@@ -4056,8 +4056,7 @@ and this is stated as N=2 in the set, N=4 pooled.
    close this gap.
 2. **More review rounds are not the lever.** Every in-loop catch came from an enumerated value check.
    The failure mode is an unverifiable claim of having checked.
-3. **The harness is fragile under concurrency: 3 of 6 mounts were ended by non-model causes**, and a
-   fourth (harn9) by the same upstream fault as harn8. harn6: Alibaba content filter
+3. **The harness is fragile under concurrency: 4 of 6 mounts were ended by non-model causes.** harn6: Alibaba content filter
    (`provider_error`, not retried). harn4: the stall watchdog, which kills the *run* rather than the
    *tool call*, so the agent retried the same hang. harn8/harn9: Google's "Corrupted thought
    signature" 400, arriving mid-stream so pi did not retry it. It is intermittent: 3/15 unpinned on
