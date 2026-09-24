@@ -3817,3 +3817,14 @@ version, which is recorded at mount per run (harn2 and harn3: 0.87.1; a change i
 - **3 of 3 ship one:** harn2 was the outlier, and the arm ships defects routinely. Same fork on the
   detection record, with higher priority.
 - If P1 or P2 miss on a run, fix the harness before reading anything else from that run.
+
+**Mounted together** at target `a11ba95`, $10 limit each, default roster, `tdd` ADW, `prompts/greenfield.md`:
+
+| run | adw | pid |
+|---|---|---|
+| `harn4-20260924-21e3d9` | `c4ead9b6` | 1713 |
+| `harn5-20260924-1a7401` | `a7bff1cc` | 1715 |
+| `harn6-20260924-a803b0` | `aeb346cd` | 1708 |
+
+**Check 0 PASSED on all three:** gates A–E pass, HEAD `a11ba95`, tree clean, brief present.
+**pi 0.87.1 on all three, the same as harn2/harn3, so the pi confound does not apply.**
