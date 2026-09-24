@@ -3661,3 +3661,9 @@ review trajectory, and whether the final review approves. Accept/reject is not a
 **What would change a decision:** if 5 misses, harn2's 6/6 was partly sampling. The next move is
 then a small replicate set (N=3) before any fan-out, not more harness. If 1 or 2 miss, fix the
 harness before reading anything else from the run.
+
+**Mounted as `harn3-20260924-e76bec`**, adw `f561559d`, pid 1748. Target pinned at `efb88e3`, tree
+clean, `prompts/greenfield.md` present. The recorded input is the brief's text, not a filename.
+**pi 0.87.1, the same as harn2, so the pi confound named above does not apply.**
+**Check 0 PASSED:** `execute … prompts/does-not-exist.md` exited 1 with the refusal message and
+recorded no pid. That was the guard's first live test (2026-09-23f).
