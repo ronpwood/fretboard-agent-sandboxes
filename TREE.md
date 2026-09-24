@@ -125,7 +125,7 @@ adws/adw_modules/     agents.py (roster + validation), agent_pi.py / agent_cc.py
                       eat a whole ring's clicks (G), SVG colours one CSS rule overrides (F), or a
                       sector ring drawn the long way (E). happy-dom closed crash-on-load but does
                       no layout and no hit-testing. `--screenshot /tmp/x.png` gives agents a
-                      picture. Exit 2 (no browser) is a SKIP, never a failure.
+                      picture; `--click LABEL` (repeatable) stages it first. Exit 2 (no browser) is a SKIP, never a failure.
   (host) sandbox_mount/host/render_smoke_corpus.sh — calibrates the smoke over every harvested app;
                       run it before promoting any new assertion.
 adws/adw_sssf_config/ sssf.config.yaml (cheap roster) and sssf.frontier.config.yaml.

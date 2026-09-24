@@ -5,18 +5,12 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 closes, write its result entry in the changelog and delete it here.
 
 **Recently closed:** `specs/render-content-and-prompt-gaps.md` (CHANGELOG 2026-09-23b/c) and the
-harn2 baseline arm, 6/6 predictions met (CHANGELOG 2026-09-23d/e).
+harn2 baseline arm, 6/6 predictions met (CHANGELOG 2026-09-23d/e), and its two harness fixes
+(CHANGELOG 2026-09-23f).
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
 
-## 1. Two small harness fixes from harn2 (cheap, do first)
-
-- **`render_smoke.py --screenshot` should reach a state first**, e.g. `--click "F#"` (repeatable) before
-  capturing. The harn2 builder noticed on its own that the initial state hides most of a multi-mode app.
-- **`execute` must refuse a `*.md` PROMPT that is absent from the target.** Today it silently becomes
-  the brief: dsctl, dsv41 and dsv41s all ran on a 36-character filename (CHANGELOG 2026-09-23d).
-
-## 2. `specs/harness-signals-suite-growth-provider-errors-context.md` — closes items 5 and 4(5)
+## 1. `specs/harness-signals-suite-growth-provider-errors-context.md` — closes items 5 and 4(5)
 
 - `stopReason: "error"` is classified as `provider_error: <errorMessage>` and never sent into
   JSON-retry. The shape was verified against a real local 401 turn.
@@ -24,22 +18,22 @@ Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 202
   whatever the code returns, which is exactly hfix's `app.test.ts:423-436`.
 - A per-turn context curve stamped on `agent_message` events, plus `just traces context-curve`.
 
-## 3. Still open, not in a spec
+## 2. Still open, not in a spec
 
 - **(6) the audio channel**: four defects in four runs. It needs a brief-level requirement and an
   `AudioContext` value spy in `test-dom.ts`. This is a design task.
 
-## 4. A 0731 control roster, if any A/B is wanted
+## 3. A 0731 control roster, if any A/B is wanted
 
 The default runs v4.1 and nothing runs `0731`. Build one only when an A/B needs it.
 
-## 5. `specs/context-rot-and-self-compact.md` — a later experiment, gated
+## 4. `specs/context-rot-and-self-compact.md` — a later experiment, gated
 
 A stub. Stage 1 reads the context curves: do defects concentrate at high occupancy? If not, stop.
 Stage 2 is a host-local spike: the self-compact extension is tested only under pi **RPC** mode,
 while the factory runs `pi -p --mode json`, which exits at idle. So its handoff (compaction once
 idle, note returned as the next turn) may never complete in print mode. Stage 3 is a two-arm
-A/B, builder seat only. Needs item 2 done first (it produces the context curves).
+A/B, builder seat only. Needs item 1 done first (it produces the context curves).
 
 
 # CURRENT STATE — DeepSeek V4.1 is the default; the other rosters are still on 0731

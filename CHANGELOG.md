@@ -3532,3 +3532,35 @@ while the factory runs `pi -p --mode json`, which exits at idle. So its handoff 
 idle, note returned as the next turn) may never complete in print mode. Stage 3 is a two-arm
 A/B, builder seat only. Needs 1–3 done first.
 
+
+## 2026-09-23f — the two harn2 harness fixes: staged screenshots, and no more filename briefs
+
+Both from the harn2 queue (2026-09-23e). Host-local; the greenfield target is not synced yet.
+
+### `render_smoke.py --click LABEL` stages the screenshot
+
+`--click` is repeatable and runs in order. It clicks by visible text: a button with that name first,
+otherwise any element whose text is exactly that. `force=True` clicks at the element's centre the
+way a user would, so an SVG `<text>` label with `pointer-events:none` hands the click to its segment.
+The clicks run on a **separate page**, so G/F/E/D still measure a clean load. A label that matches
+nothing is printed as `did NOT click (...)`, and the picture is still written. `--click` without
+`--screenshot` exits 2.
+
+Verified on the harn2 harvest (`refs/sandbox/harn2-20260923-f50552`):
+- `--click "F#"` reported a miss. The app's label is `F#/Gb`, so the miss was correct and not a bug.
+- `--click "F#/Gb" --click "7th Chords" --click "Pentatonic Boxes"`: the picture shows F# selected,
+  seventh chords and pentatonic box 1. The verdict was unchanged (PASS, 25/25 clicked).
+
+The builder prompt and TREE.md document the flag.
+
+### A `*.md` prompt that does not exist is refused, in two places
+
+- `just sbx lifecycle execute` runs `test -f` on the VM before detaching. It exits 1 with a message,
+  not a PID. Prompts that contain whitespace are still inline text, so "add a README.md badge" passes.
+- `utils.resolve_prompt` raises `SystemExit` for a single-token `*.md` that is not a file, which
+  covers host-local ADWs too. Tested: `prompts/10-circle-of-fifths-wheel.md` from the wrong
+  directory (the dsctl shape) is refused, the correct relative path reads the file, and prose that
+  ends in `.md` is kept as text.
+
+**Not yet exercised on a VM:** the `execute` ssh guard. Its case logic and the justfile parse were
+checked locally. The next mount is the first live test.
