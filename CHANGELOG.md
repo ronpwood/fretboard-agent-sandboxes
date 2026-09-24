@@ -3568,8 +3568,7 @@ checked locally. The next mount is the first live test.
 
 ## 2026-09-23g — harness signals built: provider errors named, suite growth counted, context curved
 
-`specs/harness-signals-suite-growth-provider-errors-context.md`: 24 of 25 boxes done, and one live
-check is blocked (below). Closes 2026-09-20b items 5 and 4(5). Host-local, not synced to the target.
+`specs/harness-signals-suite-growth-provider-errors-context.md`: complete, 25 of 25. Closes 2026-09-20b items 5 and 4(5). Host-local, not synced to the target.
 
 ### Provider errors are named as provider errors
 
@@ -3607,3 +3606,10 @@ needs no secret on disk: `"$OPENROUTER_API_KEY"`, since `utils.py` already loads
 the host file (backup: `~/.pi/agent/models.json.bak-20260923`). **The confirming live run was
 blocked by the permission classifier**, pending Ron's approval. Until then the context curve is
 proven on a recorded stream only.
+
+**Live confirmation, same day.** With the host key fix kept, adw `903142cf` (scout, v4.1-flash,
+11,228 tokens, $0.0009) produced 3 `context` events, 2,889 → 4,072 → 4,267. The last equals
+`agent_sessions.context_tokens`, and `agent_start` carries the window (1,000,000). It had 1
+`agent_message` for 3 turns. The first attempt failed "model not found" for another reason: the `!`
+shell has no `pi` on PATH (nvm node v22). Side effect of `$OPENROUTER_API_KEY`: pi lists OpenRouter
+models only when that variable is set (0 vs 388), which the ADWs cover by loading `.env`.

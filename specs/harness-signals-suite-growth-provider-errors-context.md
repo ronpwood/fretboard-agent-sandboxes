@@ -4,6 +4,7 @@ created: 2026-09-23T08:33:36-07:00
 modified:
   - 2026-09-23T08:33:36-07:00
   - 2026-09-23T18:30:00-07:00
+  - 2026-09-23T19:15:00-07:00
 commits:
   - 45ac892
   - 9b901d0
@@ -15,7 +16,7 @@ sessions:
 back_refs: []
 forward_refs:
   - specs/context-rot-and-self-compact.md — consumes the per-turn context curve Phase 3 adds
-status: building
+status: complete
 ---
 
 # Plan: Three harness signals: durable-suite growth, provider errors, and the context curve
@@ -145,7 +146,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `fail` A local short ADW run (cheapest roster, trivial request) — blocked: the host pi key never resolved (below), and the fix touches `~/.pi`, which needs Ron's approval. Substituted: harn2's real builder `raw_output.jsonl` replayed through `agent_pi.run` + `_event_forwarder` under a fake `pi` gave 60 turns → 60 `context` events, non-decreasing, last point 150,056 = `PiResult.context_tokens`. Original: produces `agent_message` events with `context_tokens` that rise monotonically within a phase — proves the stamp works on a real pi stream
+- [x] A local short ADW run (cheapest roster, trivial request) — adw `903142cf` (scout, v4.1-flash, $0.0009): 3 turns → 3 `context` events 2,889 → 4,072 → 4,267; also replayed harn2's builder stream, 60 turns → 60 points. Original: produces `agent_message` events with `context_tokens` that rise monotonically within a phase — proves the stamp works on a real pi stream
 - [x] `just traces context-curve <that adw_id>` prints the curve; its last builder value equals `agent_sessions.context_tokens` — proves the curve and the existing summary agree
 - [x] `just target sync greenfield --dry-run; echo $?` prints `0`, then **ask Ron** before `--push`
 - [x] CHANGELOG entry recording all three signals and item 5 / 4(5) closed
