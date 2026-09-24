@@ -3667,3 +3667,47 @@ clean, `prompts/greenfield.md` present. The recorded input is the brief's text, 
 **pi 0.87.1, the same as harn2, so the pi confound named above does not apply.**
 **Check 0 PASSED:** `execute … prompts/does-not-exist.md` exited 1 with the refusal message and
 recorded no pid. That was the guard's first live test (2026-09-23f).
+
+## 2026-09-23i — harn3 judged: 5 of 6 met, and the primary missed. harn2's clean result was partly sampling
+
+`harn3-20260924-e76bec`, adw `f561559d`. **12/12 phases, not accepted:** review_3 rejected at 12/14
+with 3 blocking items. The delivered tree was snapshotted as `ce3d8f4` ("UNAPPROVED snapshot") and
+harvested to `refs/sandbox/harn3-20260924-e76bec`. Traces are in `.sandbox/traces/harn3-20260924-e76bec/`.
+It took 32.6 min over three review rounds, 21.6M tokens (harn2: 9.0M, two rounds), pi-estimated $1.83.
+
+| # | prediction | result |
+|---|---|---|
+| 0 | execute guard (mount time) | **PASSED.** A missing `*.md` exits 1 and records no pid |
+| 1 | the signals are recorded | **MET.** `context` events in all 8 agent phases. The last point equals `agent_sessions.context_tokens` for all 4 agents. `durable_tests=2` at `commit_tests`, and a growth row on build, revise_1 and revise_2, none failing |
+| 2 | no provider errors | **MET.** 0 `provider_error` phases. The only `error` event is the `not_accepted` verdict |
+| 3 | the builder stages a screenshot | **MET, beyond the prediction.** It read `render_smoke.py`'s source first (3 calls), then took one staged capture per mode (`--click "Fretboard & Scales"`, `"Diatonic Chords"`, progressions, quiz) plus the initial state, and **read all 5 images** |
+| 4 | the durable suite grows, correctly | **MET, weakly.** 2 → 13, and no test pins wrong output. But **`build` added zero durable tests**: all growth came after rejections (+9 in revise_1, +2 in revise_2). The tone tests assert the root sector (`data-key`) and a count above 0, which are identical for Cm and C, so the suite passes over the defect below. The reviewer named this gap in its own words |
+| 5 | **primary:** zero UI-reachable defects after acceptance | **MISSED.** `chordTonePitchClasses` (`theory/chords.ts:88-96`) puts `"m"` in the major branch. Measured: **17/17 minor spellings return the major triad**, and 34/34 major and dim are correct. In the rendered app (its own test DOM), the default pop progression stepped to `vi Am` lights pitch classes **{1,4,9} = A major**. It is wrong theory in the default configuration, called from `fretboard.ts:102` and `circle-wheel.ts`. Second defect: `Bbb` (Andalusian in Db) is unparseable by the app's own regex, so that tile highlights nothing. G/F clean |
+| 6 | the context budget holds | **MET.** Builder peak 210,150, **20.0%**, and no compaction events. The defect was written at builder turn 113/132 at 195,862 (18.7%): late in the session, at low occupancy. One point, no pattern |
+
+**The click criterion is a smoke blind spot, not an app defect.** The smoke clicked 9 of 25: all
+16 blocked controls are wheel sectors with `pointer-events: none`, whose clicks the app routes
+elsewhere. Playwright's actionability check refuses them. A real mouse at each sector's centroid:
+**24/24 activate their own sector.** My first probe used the first interior point from a bbox corner,
+reported F# → Db and D#m → Bbm, and was wrong: edge points. Re-measured at centroids before
+recording anything. Queued: the smoke's D should hit-test by coordinates when a control has
+`pointer-events: none`.
+
+**Not re-run by me:** harn2's full theory sweep (scales, CAGED, pentatonic, voicings). review_3
+claims those are clean and I have not verified that. P5 is a miss either way.
+
+**The reviewer was right, and it rejected correctly.** Both blocking defects were found in-loop and
+measured in the reviewer's own probes. It caught the defect that `revise_2` introduced while fixing
+review_2's blocker. This is the hfix/harn2 "lossy key" class (a lookup that drops the quality)
+recurring in a new function. The loop ran out of rounds, not out of detection.
+
+### Decision (pre-registered rule)
+
+P5 missed, so **harn2's 6/6 was partly sampling.** Same model, brief, roster and pi, and the
+outcome differs: harn2 shipped a clean app in two rounds, harn3 shipped a known defect after three.
+The rule says the next move is **a small replicate set (N=3) before any fan-out, not more harness.**
+P1 and P2 held, so the harness is trusted for that.
+
+Cost is recorded, not scored: the billed spend is read at teardown. Per-generation reconciliation
+was never built as a tool (2026-09-07f, "second half, not built"), so the teardown readout is the
+number of record.
