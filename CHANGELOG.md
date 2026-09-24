@@ -3953,3 +3953,39 @@ and it is now the concrete defect, not the "no timeout" story.
 something other than the model and the review loop). Its tree was snapshotted as UNAPPROVED
 ("stalled in revise_1"), harvested (3 commits) and its traces pulled. The VM is still up pending
 Ron's decision.
+
+## 2026-09-24e — harn5 judged (2 of 3): approved at review_3, zero reachable defects found. It caught its own CAGED bug in-loop
+
+`harn5-20260924-1a7401`, adw `a7bff1cc`. **17/17 phases, approved at review_3**, using all three
+rounds. The reviewers' self-reported coverage: review_1 "19 of 27 requirements", review_2 "26 of 27",
+review_3 "all 27". Harvested as 4 commits. The code commit is titled "Fix CAGED box window geometry so
+the five shapes interlock per key". The sweep script is in `.sandbox/runs/harn5-20260924-1a7401-artifacts/`.
+
+| # | prediction | result |
+|---|---|---|
+| 1 | the signals are recorded | **MET.** `context` events in all 9 agent phases. The last point equals `agent_sessions.context_tokens` for all 5 agents. `durable_tests: 2` at `commit_tests`, and growth rows on build/revise_1/revise_2, all passing |
+| 2 | no provider errors | **MET.** Every phase succeeded |
+| 3 | the builder stages a screenshot | **MET.** 12 distinct images read, and 6 `--click` staged captures |
+| 4 | the suite grows, correctly | **MET.** 2 → 24. **`build` itself added 14** (harn3: 0, harn7: 9) |
+| 5 | **primary:** UI-reachable defects | **0 found.** Lossy-key class absent |
+| 6 | the context budget holds | **MET.** Builder peak 235,682, **22.5%**, the highest of the set but under 26%. No compaction |
+
+**The independent sweep, all clean:** key signatures 12/12. Spelled scales for both modes 24/24, with
+**spelling also 24/24**: harn5 hard-codes properly spelled scales, so F# major has E#, where harn7 had
+F. Fretboard scales 168/168. Diatonic chords 84/84 in each mode. **What each diatonic chord card
+fingers and what its audio plays, 168/168 each (lossy-key clean in both channels).** Wheel positions
+168/168, all 7 progressions × 12 keys through the audio path 408/408, CAGED roots inside their own
+boxes 60/60, with the windows distinct, and capo 144/144.
+
+**The sweep was mutation-tested before it was believed.** Injecting harn3's exact bug (a minor chord
+voiced as major) turns both lossy-key checks to 96/168 and progressions to 348/408. Moving the
+G-shape's root string turns CAGED to 48/60. So "all clean" is a measurement, not an absence of checks.
+
+**Detection record: the CAGED class was caught in-loop.** review_2's single blocking item was the
+CAGED window geometry. revise_2 rebuilt it as a per-shape table (root pitch class, window offset,
+root offset), and review_3 "verified by enumeration, not by spot check". This is the defect *class*
+harn7 shipped, but harn5's reviewer turned frets into pitches and harn7's did not. The fix landed
+with zero rounds to spare.
+
+Smoke: PASS, 32 controls, 25/25 (1 reload). The old smoke gives the same verdict, so the D fix changed
+nothing here. Audio correctness beyond the pitch content is not measured.
