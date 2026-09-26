@@ -4329,3 +4329,8 @@ keys.
 
 **Recorded, not scored:** agent phase time is about 1,950 s. Billed dollars will be read at
 teardown. The VM is alive; teardown is Ron's call.
+
+**Teardown (Ron's decision, same day):** team1 billed **$1.644**, which includes the mount-time
+timeout check. The key was revoked and verified absent, the VM destroyed, and the record closed. The
+harvest is complete. Recorded, never scored. For reference, the harn runs on the same brief billed
+$1.19–$2.58. Ron's impression: "much improved; the team did well". Recorded as an impression, not scored.
