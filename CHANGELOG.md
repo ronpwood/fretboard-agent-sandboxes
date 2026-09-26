@@ -4400,3 +4400,56 @@ recorded at mount.
 - Whether reviewer evidence carries per-instance counts.
 - The review trajectory, tokens, billed dollars (at teardown) and wall clock. Accept/reject is not a
   quality ranking.
+
+**Mounted** `team2-20260926-7832cb`, adw `1712fcd8`, pid 1708. Greenfield at `d6d461c`, $10 limit,
+`team` ADW, `sssf.team.config.yaml`. **Check 0 PASSED:** gates A–E, HEAD `d6d461c`, tree clean,
+brief present, pi 0.87.1.
+
+## 2026-09-26g — team2 judged: approved at review_2, the answer key grew 78 → 101 through three amendments, and zero reachable defects in our sweep
+
+`team2-20260926-7832cb`, adw `1712fcd8`. **16/16 phases, approved at review_2** (1 revision of 2),
+about 2,660 s of agent time. Harvested as 4 commits into `refs/sandbox/team2-20260926-7832cb`.
+Traces are home. The sweep, the probe and the output are in
+`.sandbox/runs/team2-20260926-7832cb-artifacts/`.
+
+### Predictions (2026-09-26f)
+
+| | prediction | result |
+|---|---|---|
+| P1 | every review sweeps every effective `V` | **MET.** review_1 96/96, review_2 101/101, sweep declared |
+| P2 | at least one amendment proposed and ruled | **MET, three:** A1 test_designer (V79–V90), A2 builder (V91–V96), A3 builder in revise_1 (V97–V101). All were accepted with written re-derivations |
+| P3 | every trap cites an existing `V` | **MET on the first try:** 10 traps, `spec_form` passed with no correction |
+| P4 | zero reachable defects in team1's two classes | **MET.** Neck spelling is correct in 15/15 reachable keys (including Cb, Gb and C#: the neck shows E# and B#), and every chord card draws a diagram in 15/15 keys |
+| P5 | no reachable value defect in a `V`-covered area | **MET.** Our sweep found 0 misses in 17 areas: 105/105 triads spelled, 105/105 voicings with exact chord tones and the root in the bass, signatures, scales, pentatonics, 96/96 fret pitches |
+| P6 | no non-model loss | **MET, and not exercised:** zero gate failures of any kind, zero `provider_retry`, zero timeouts |
+
+### What changed between team1 and team2
+
+- **The answer key grew during the run: 78 → 101 rows**, through three amendments from two roles.
+  The test designer proposed rows for four requirements that had none ("no mechanical sweep can see
+  whether they are met"). The builder proposed rows for natural minor, the Bb and sharp-key chords,
+  and later for the new UI features. The reviewer accepted each one with a written re-derivation
+  (for example, the "W-H-W-W-H-W-W" natural-minor pattern). team1 had zero amendments.
+- **The reviewer counted per instance and swept the traps against the UI.** Its evidence reads
+  "7 diagrams per key … 84/84 instances" and "Bb major spells pc3 'Eb' not 'D#'". Those are
+  exactly the two checks whose absence let team1's defects ship.
+- **The builder fixed each shipped class structurally, not by patching a table:** a key-aware
+  speller for fretboard labels, and a movable-shape voicing generator (its diminished formula,
+  root/b5/root/b3, checked by hand).
+- **Review 1 still found real gaps:** three missing UI features (signature display, custom
+  progression authoring, the pentatonic explanation), each with a probe count. They were closed in
+  revise_1.
+
+### Caveats
+
+- **N=1**, and the same-brief confound from 2026-09-26e applies.
+- **team2's scope is narrower than team1's:** major keys only, with the minor ring as labels. So
+  team1's minor-key surface, where the lossy-key class lived, does not exist here. That was a spec
+  decision the reviewer accepted; it is not a defect.
+- **My first sweep run reported C# as wrong.** The cause was my own bookkeeping: the enharmonic
+  preference persists across sector clicks, and I toggled it twice. From a fresh app, C# is correct
+  (`probe_cs.test.ts`). The persistence is odd UX, but it is not wrong.
+- **The unsatisfiable-test gap is still open.** It did not arise this run.
+
+**Ron's impression, during the run:** "this is much more what teamwork looks like". Recorded as an
+impression, not scored.

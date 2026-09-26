@@ -4,7 +4,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently run:** team1, the first live run of the team arm (CHANGELOG 2026-09-26d): approved, the lossy-key class caught in-loop, and two defects shipped where the answer key was silent. The robustness fixes (2026-09-26b) held, but were not exercised.
+**Recently run:** team1 (CHANGELOG 2026-09-26d), then team2 with the team1 levers (2026-09-26g): approved, the answer key grew 78 → 101 through three amendments, and zero reachable defects in our sweep. The robustness fixes (2026-09-26b) held in both runs, but were never exercised.
 
 **Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
@@ -25,22 +25,19 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. team1 ran (CHANGELOG 2026-09-26d): the next levers, from its two misses
+## 3. team2 ran (CHANGELOG 2026-09-26g): all six predictions met. What next
 
-team1 is approved and judged. P1, P3, P4 and P5 were met; P2 (amendments) was missed. Two reachable
-defects shipped, both where the `V` table was silent. What to build next, in order:
+team2, the team arm with the team1 levers, was approved with the answer key grown 78 → 101 through
+three amendments, and zero reachable defects in our independent sweep. At N=2 for the team arm, the
+direction is clear, but it is not yet a rate. Candidates, to be decided:
 
-- **Every Trap carries a `V` row** (a `spec_form` check). team1's planner named "F major with A#
-  instead of Bb" as the plausible wrong answer, and then shipped it in 12 of 24 keys, because no row
-  made the trap sweepable.
-- **Say that amendments are for *incomplete* specs, not only wrong ones.** When review_1 found the
-  minor-key gap, the builder added durable tests, not `V` rows, so the answer key never grew. The
-  reviewer's gap findings should come with "propose the missing rows as an amendment".
-- **Requirement coverage across keys:** R3 was ruled met with 14 of 40 chord diagrams missing. The
-  reviewer's sweep should enumerate stated requirements over every key, not only the `V` rows.
-- **Unsatisfiable-test detection:** `tests_red` cannot tell "red, the code is missing" from "can
-  never pass". This one was caught by the builder and verified by the reviewer.
-- Then a second team run (team2), pre-registered, to see whether the `V` table and amendments grow.
+- **Replicate before generalising:** 1–2 more team runs on the same brief (N=3–4), to see whether
+  amendments and per-instance counting hold up or were sampling.
+- **A different brief:** the same arm on a non-music brief, to test whether the levers transfer
+  beyond pitch-class tables, and to escape the same-brief confound.
+- **Unsatisfiable-test detection** (still open from team1): `tests_red` cannot tell "red, the code
+  is missing" from "can never pass".
+- **Promote the team arm to the default?** Not before a replicate or a second brief.
 
 ## 4. Still open, not in a spec
 
