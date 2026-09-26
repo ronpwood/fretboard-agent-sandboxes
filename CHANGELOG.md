@@ -4358,3 +4358,45 @@ still byte-identical against `7a4a5b8`.
 - **Confound, named:** the new prompt lines cite team1's own defects from the same brief. team1's
   planner had named the A# trap itself, so the added knowledge is small. The added *checkability* is
   the treatment.
+
+## 2026-09-26f — PRE-REGISTRATION: team2, the team arm with the team1 levers
+
+**Approved by Ron before mounting** ("Sounds great. Let's do it."). Nothing above the mount record
+below changes after this commit.
+
+**The question:** with traps forced to cite `V` rows and amendments framed as the way to complete an
+incomplete answer key, does the key grow during the run, and do team1's two uncovered defect classes
+stay out of the delivered app?
+
+**The arm:** the team1 arm plus the 2026-09-26e levers: the `team` ADW, `sssf.team.config.yaml` (the
+same models), `prompts/greenfield.md`, greenfield at **`d6d461c`** (host `0247291`), $10 limit, **N=1**.
+**Comparison:** team1 (2026-09-26d), with the harn2–harn7 record as the background. **Confounds:**
+N=1; the new prompt lines cite team1's defects from the same brief (2026-09-26e); the pi version is
+recorded at mount.
+
+### Mount-time checks
+
+0. Gates A–E pass, HEAD `d6d461c`, tree clean, brief present, pi version recorded.
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument):** every review has a `value_check` for every effective `V`, plus a declared sweep.
+- **P2:** at least one amendment is proposed and ruled on. team1 had zero.
+- **P3:** every trap in the committed spec cites an existing `V` row (the `spec_form` gate makes this
+  mechanical; a miss is a gate bug). **Recorded:** whether the planner needed a `spec_form`
+  correction to get there.
+- **P4 (primary):** zero reachable defects in the two classes that shipped in team1, judged by our own
+  sweep (`sweep_team1.test.ts`, adapted to this run's module surface):
+  - (a) note spelling shown in the UI, in all 24 keys
+  - (b) a chord diagram on every diatonic chord card, in all 24 keys (or, if the app does not show
+    diagrams per card, the per-instance form of whatever R3-equivalent the spec states)
+- **P5:** no reachable value defect in a `V`-covered area (the full sweep, as for team1).
+- **P6 (robustness):** no non-model loss; every `provider_retry` and every timeout is recorded.
+
+### Recorded, not scored
+
+- The `V` count at plan and at the end, and the count added by accepted amendments.
+- The count of traps.
+- Whether reviewer evidence carries per-instance counts.
+- The review trajectory, tokens, billed dollars (at teardown) and wall clock. Accept/reject is not a
+  quality ranking.
