@@ -4,7 +4,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently built, untested:** the team-owned prompts arm (CHANGELOG 2026-09-26a), which answers item 2 by design, and the harness robustness fixes that were item 1: a tool-level bash timeout, and a same-session resend on `provider_error` (CHANGELOG 2026-09-26b).
+**Recently run:** team1, the first live run of the team arm (CHANGELOG 2026-09-26d): approved, the lossy-key class caught in-loop, and two defects shipped where the answer key was silent. The robustness fixes (2026-09-26b) held, but were not exercised.
 
 **Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
@@ -25,30 +25,22 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. A small re-run to test the robustness fixes and item 2, before any fan-out: DRAFT pre-registration
+## 3. team1 ran (CHANGELOG 2026-09-26d): the next levers, from its two misses
 
-One or two runs. Pre-register them before mounting, and freeze this section when they are mounted.
+team1 is approved and judged. P1, P3, P4 and P5 were met; P2 (amendments) was missed. Two reachable
+defects shipped, both where the `V` table was silent. What to build next, in order:
 
-- **Arm:** `just adw team <brief>`, which runs `adw_team_sdlc.py` on `sssf.team.config.yaml`, on
-  greenfield at `515efca` or later.
-- **Control:** the existing harn2–harn7 record (default roster, `adw_tdd_sdlc.py`), so no new
-  control run.
-- **Brief:** the same brief as the harn set, so the defect classes (lossy-key, CAGED windows) are
-  comparable.
-- **Predictions:**
-  - **P1:** every review has a `value_checks` entry for every effective `V`, and a non-empty
-    `value_sweep.*` artifact. The `values_swept` gate makes this near-mechanical, so a miss means
-    the gate or the prompt is broken, not the model.
-  - **P2:** at least one amendment is proposed and ruled on in the run. If none is, the licence to
-    disagree did not take.
-  - **P3:** `spec_frozen` fires at most once per run, and is resolved in-session.
-  - **P4 (primary):** no reachable value defect ships in a `V`-covered area. It is **judged by our
-    own first-principles sweep, not the run's**, starting from `sweep_harn5.ts` and `sweep_harn7.ts`.
-  - **Secondary, exploratory:** does the planner's `V` table cover the CAGED and minor/major cases at
-    all? A defect in an area no `V` covers counts against the planner's answer key, not against P4.
-- **Exclusions:** a run lost to a non-model cause is excluded, as in 2026-09-24b's P2. The robustness
-  fixes (2026-09-26b) have landed; record every `provider_retry` event and every "Command timed out"
-  tool result, since this run is their first live test.
+- **Every Trap carries a `V` row** (a `spec_form` check). team1's planner named "F major with A#
+  instead of Bb" as the plausible wrong answer, and then shipped it in 12 of 24 keys, because no row
+  made the trap sweepable.
+- **Say that amendments are for *incomplete* specs, not only wrong ones.** When review_1 found the
+  minor-key gap, the builder added durable tests, not `V` rows, so the answer key never grew. The
+  reviewer's gap findings should come with "propose the missing rows as an amendment".
+- **Requirement coverage across keys:** R3 was ruled met with 14 of 40 chord diagrams missing. The
+  reviewer's sweep should enumerate stated requirements over every key, not only the `V` rows.
+- **Unsatisfiable-test detection:** `tests_red` cannot tell "red, the code is missing" from "can
+  never pass". This one was caught by the builder and verified by the reviewer.
+- Then a second team run (team2), pre-registered, to see whether the `V` table and amendments grow.
 
 ## 4. Still open, not in a spec
 

@@ -4240,3 +4240,92 @@ brief. There is no new control run. **Confounds, named:**
 - **The spec's growth:** `git diff <commit_plan>..HEAD -- specs/<file>` after `sync_spec`.
 - Tokens, billed dollars (read at teardown), wall clock, review trajectory, the final verdict.
   Accept/reject is not a quality ranking (memory `project_fanout3-results`).
+
+**Mounted** `team1-20260926-b2942f`, adw `70c13253`, pid 1735. Greenfield at `6fcbef8`, $10 limit,
+`team` ADW, `sssf.team.config.yaml`, `prompts/greenfield.md`. **Check 0 PASSED:** gates A–E, HEAD
+`6fcbef8`, tree clean, brief present, **pi 0.87.1** (the same as the control, so there is no pi
+confound). **Check 1 PASSED:** `bash_timeout.ts` works on the VM's pi 0.87.1 ("Command timed out after
+5 seconds", no leftover process).
+
+## 2026-09-26d — team1 judged: 16/16 phases, approved at review_2, the lossy-key class caught and fixed in-loop, and two reachable defects shipped where the answer key was silent
+
+`team1-20260926-b2942f`, adw `70c13253`. **16/16 phases, approved at review_2** (1 revision of 2),
+about 33 minutes of agent time. Harvested as 4 commits (plan, red suite, code, docs) into
+`refs/sandbox/team1-20260926-b2942f` in greenfield-sandboxes. Traces are home. The independent sweep
+and its output are in `.sandbox/runs/team1-20260926-b2942f-artifacts/`.
+
+### Predictions (2026-09-26c)
+
+| | prediction | result |
+|---|---|---|
+| P1 | every review has a `value_check` for every `V`, plus a sweep | **MET.** Both reviews: 74/74 `V`, `value_sweep.ts` declared, `values_swept` green |
+| P2 | at least one amendment proposed and ruled | **MISSED: zero amendments in the run** |
+| P3 | `spec_frozen` fires at most once | **MET: it never fired.** There were zero gate failures of any kind |
+| P4 | no reachable value defect in a `V`-covered area | **MET as registered.** All 74 `V` hold. But see the two uncovered defects below |
+| P5 | no non-model loss | **MET, and not exercised:** zero `provider_retry` events, zero "Command timed out" results |
+
+### What the team did that the TDD arm did not
+
+- **The answer key was correct.** The planner wrote 12 `R` and 74 `V`, and every derivation I
+  spot-checked was right (all 12 signatures including E#, 5 open voicings, capo and progressions).
+  Its Traps named the right failures: the B-string, enharmonic spelling, muted strings, happy-dom
+  audio.
+- **The test designer covered every `V` (51 tests, 74/74 `spec_ids`).** It also enumerated beyond
+  the table (capo round-trip over 7 shapes × frets 0–9), and it left a signed interface contract
+  for the builder in Team notes.
+- **The builder's report was evidence, not filler.** It had 6 checks, each with a command,
+  including **its own sweep of all 74 `V`** and an **`AudioContext`-stub pitch check** (the silent
+  channel). It declared 2 departures and 2 honest open questions ("real-browser timbre
+  unverified").
+- **Review 1 caught the lossy-key class in four features at once, beyond the answer key.** In all 12
+  minor keys, the wheel's chord family, the key signature, the progressions and the capo reverse
+  lookup each used the *parallel major* (Am showed A major's family; "G target → capo 3 + Em shape"
+  sounds Gm). It found them by probing UI states with counted evidence, not by reading code. That
+  is the class harn3 shipped. Here it was caught in round 1 and fixed in revise_1, and my sweep
+  confirms the fix: DOM chord cards 24/24, key signatures 24/24, progressions in all 24 keys,
+  capo reverse 50/50.
+- **The builder edited the red suite, disclosed it, and the reviewer re-derived it.** Two helpers in
+  `70c13253.test.ts` were unsatisfiable (`romanExact('vii°')` returns `'viio'` but was compared to
+  the literal `'vii°'`). The reviewer ruled the edit legitimate from the *original* helpers.
+  **A harness gap exposed:** `tests_red` proves a suite fails, but it cannot tell "red because the
+  code is missing" from "can never pass". Nothing mechanical catches an unsatisfiable test.
+- **The spec grew by 220 lines** after `commit_plan`: five signed team-note sections (test designer,
+  builder ×2, reviewer ×2), all outside the frozen sections.
+
+### What shipped anyway: two reachable defects, both where no `V` row existed
+
+My sweep uses our own pitch-class and spelling oracle; nothing comes from the app.
+1. **The fretboard spells flat keys with sharps, in 12 of 24 keys.** In F major, string 3, fret 3
+   reads **"A#"** (confirmed by `probe_f.test.ts`); Db shows F#/G#/A#/C#/D#; F# major shows F for
+   E#. `main.ts:425` labels cells with `noteAt().name`, which is sharp-only. **This is the exact
+   example the planner's own "What we're solving for" names as a plausible wrong answer ("F major
+   with A# instead of Bb"), and its Traps repeat it.** No `V` row covered fretboard *labels* (the
+   `noteAt` rows are all natural notes), so nothing made the named trap checkable, and neither
+   review swept it.
+2. **14 of 40 diatonic chords have no chord diagram; only 2 of 24 keys show a diagram on every
+   card.** The missing ones are every vii° except Bdim, plus Ebm, Gb, Bbm, Cdim and Gdim. R3 requires
+   a diagram for each diatonic chord, and both reviews ruled R3 met. The builder's thinking waved
+   this off in build ("Bdim has no voicing (—). Fine"). The 26 voicings that do exist are all
+   correct: exact chord tones, root in the bass.
+
+Not reachable, not counted: `capoRecommendations("Am")` throws, but the UI offers only major
+targets. `keySignature("Am")` returns A major's signature, but the UI no longer calls it for minor
+keys.
+
+### Findings (N=1, a direction)
+
+1. **Ownership changed behaviour, measurably.** Every role did work the old prompts never asked for,
+   and the one defect class that recurs across runs (lossy-key) was caught and fixed in-loop.
+2. **The answer key is the ceiling.** Both shipped defects sit where the `V` table was silent, and
+   one of them was *named in the spec's own Traps*. Traps without `V` rows are prose, and prose is
+   not swept. The cheapest next lever: **every Trap must carry at least one `V` row**, which is a
+   `spec_form` check.
+3. **The amendment path went unused (P2).** When the reviewer found a gap in the answer key (minor
+   keys), the builder answered with durable tests in `app.test.ts`, not `V` rows. The key never
+   grew. Either the path is too heavy mid-revision, or "the spec is wrong" doesn't feel like it
+   applies when the spec is merely *incomplete*. The prompts only frame amendments as corrections.
+4. **Requirements rulings still accept "mostly".** R3 was ruled met with 14 of 40 diagrams missing.
+   The reviewer enumerated values but not *coverage of a stated requirement across keys*.
+
+**Recorded, not scored:** agent phase time is about 1,950 s. Billed dollars will be read at
+teardown. The VM is alive; teardown is Ron's call.
