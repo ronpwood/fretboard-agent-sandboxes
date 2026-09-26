@@ -4,27 +4,13 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently built, untested:** the team-owned prompts arm (CHANGELOG 2026-09-26a), which answers item 2 by design.
+**Recently built, untested:** the team-owned prompts arm (CHANGELOG 2026-09-26a), which answers item 2 by design, and the harness robustness fixes that were item 1: a tool-level bash timeout, and a same-session resend on `provider_error` (CHANGELOG 2026-09-26b).
 
 **Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
 harn2/harn3 and the harness-signals spec (CHANGELOG 2026-09-23d–i).
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
-
-## 1. Harness robustness: the fan-out blocker (CHANGELOG 2026-09-24f, finding 3)
-
-4 of 6 mounts in the last set were ended by causes outside the model. Both fixes below are
-model-agnostic, and both come before any fan-out:
-
-- **A bash timeout at the tool level**, so a never-exiting command (an uncleared `setInterval`, a
-  foreground server) returns an *error the agent sees*. Today the 900 s stall watchdog
-  (`agent_pi.py`, `PI_STALL_SECONDS`) kills the whole run, and the agent never learns why. harn4 retried
-  the same hang. Keep the watchdog as the backstop.
-- **A phase-level retry on `provider_error`.** The classification already exists (`agents.py`). Retry
-  the phase a bounded number of times before failing the run. That covers intermittent upstream faults
-  for any model (Gemini thought-signature 400s, false-positive content filters). **Not** per-model
-  provider pinning (rejected in 2026-09-24f).
 
 ## 2. Close the value-detection gap: BUILT as the team arm, untested (CHANGELOG 2026-09-26a)
 
@@ -39,7 +25,7 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. A small re-run to test 1 and 2, before any fan-out: DRAFT pre-registration
+## 3. A small re-run to test the robustness fixes and item 2, before any fan-out: DRAFT pre-registration
 
 One or two runs. Pre-register them before mounting, and freeze this section when they are mounted.
 
@@ -60,9 +46,9 @@ One or two runs. Pre-register them before mounting, and freeze this section when
     own first-principles sweep, not the run's**, starting from `sweep_harn5.ts` and `sweep_harn7.ts`.
   - **Secondary, exploratory:** does the planner's `V` table cover the CAGED and minor/major cases at
     all? A defect in an area no `V` covers counts against the planner's answer key, not against P4.
-- **Exclusions:** a run lost to a non-model cause is excluded, as in 2026-09-24b's P2. Item 1 should
-  land first, because the planner is still `gemini-3.8-flash`, the source of the thought-signature
-  400s.
+- **Exclusions:** a run lost to a non-model cause is excluded, as in 2026-09-24b's P2. The robustness
+  fixes (2026-09-26b) have landed; record every `provider_retry` event and every "Command timed out"
+  tool result, since this run is their first live test.
 
 ## 4. Still open, not in a spec
 

@@ -4135,3 +4135,51 @@ from 1.4k–8.1k chars to 11.1k–16.5k chars (about +2.6k tokens each).
 **Host gotcha, again:** `just target sync` and `agents.validate` both need pi on PATH. That means
 `export PATH="$HOME/.nvm/versions/node/v22.21.0/bin:$PATH"` first, or every model "is not found in pi
 --list-models" (memory `project_pi-lives-on-node-v22`).
+
+## 2026-09-26b — Harness robustness BUILT (NEXTSTEPS item 1): a tool-level bash timeout, and a same-session resend on provider errors
+
+Both are model-agnostic and apply to **every roster and chain**, the control included, because they
+fix the harness rather than the treatment. They answer finding 3 of 2026-09-24f: 4 of 6 mounts in
+the N=3 set were ended by non-model causes.
+
+**1. A bash timeout at the tool level** (`adws/adw_data/harness_engineering/bash_timeout.ts`):
+- **The stale claim, corrected first.** `agent_pi.py` said "pi has no tool timeout". That was wrong
+  for the pinned pi 0.85.1: its bash tool takes `timeout` (seconds) but has **no default**, and
+  extensions may mutate `event.input` in a `tool_call` hook.
+- **What the extension does.** It sets `timeout` on every bash call that lacks one (300 s), and
+  clamps a longer request to the maximum (600 s). `agent_pi.run` loads it for every pi agent,
+  whatever the roster says (it registers no tool, so `--tools` does not filter it). `agent_pi.run`
+  also passes the limits as `PI_BASH_TIMEOUT_SECONDS`/`_MAX_SECONDS`, with the max held below the
+  stall watchdog (`STALL_SECONDS - 60`). The 900 s watchdog stays as the backstop.
+- **On timeout.** pi kills the command's process tree and returns its output plus "Command timed out
+  after N seconds" as a tool error, in the same turn.
+- **Verified live on the host** (pi 0.85.1, deepseek-v4.1-flash, limits 5 s/8 s):
+  - harn4's exact shape, `bun -e "setInterval(() => {}, 1000)"`, returned "Command timed out after 5
+    seconds" in 7 s wall time, with no `bun` left running. The agent read the error and explained it.
+  - An explicit `timeout: 100` was clamped to 8 s.
+- **Trace gotcha:** `tool_execution_start` args show what the model *asked for* (100), not the
+  value the extension set (8).
+
+**2. A same-session resend on `provider_error`** (`agents.execute`, `PROVIDER_RETRIES = 2`, waits of
+15 s and 45 s; env `SSSF_PROVIDER_RETRIES`):
+- **The design.** Every send in a phase (first prompt, JSON fixes, gate corrections) goes through
+  one `send()`. When pi's last turn ended with `stopReason: error`, the chain resends a short
+  "your turn was cut off by the provider, continue" prompt into the **same** session. After the
+  retries run out, `ProviderError` is raised exactly as before, so the trace classification is
+  unchanged. Each resend is traced as a `provider_retry` log event.
+- **Why the same session, not a fresh phase:**
+  - The Gemini 400 is per request: harn7's planner hit it 5 times and pi's own resend cleared
+    every one.
+  - pi's `transformMessages` drops assistant messages with `stopReason` `error` or `aborted` when
+    it rebuilds the context, so the resend is the same clean context pi's own retry would send.
+  - The agent keeps its work.
+- **Verified** by driving the real `execute()` with a stubbed `agent_pi.run`:
+  - error then success: 2 sends, same session, the envelope parses
+  - three errors: 3 sends, then `provider_error (…)`
+  - no error: 1 send
+
+  **Not verified against a live provider fault:** the Gemini 400 can't be triggered on demand.
+  The first real test is the item-3 re-run, whose planner is still gemini-3.8-flash.
+
+**Regressions checked:** all ten rosters validate, the nine control rosters still render
+byte-identical prompts, and the team gates' fixture checks and the team prompts' checks still pass.
