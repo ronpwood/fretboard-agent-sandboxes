@@ -4183,3 +4183,60 @@ the N=3 set were ended by non-model causes.
 
 **Regressions checked:** all ten rosters validate, the nine control rosters still render
 byte-identical prompts, and the team gates' fixture checks and the team prompts' checks still pass.
+
+## 2026-09-26c — PRE-REGISTRATION: team1, the first live run of the team arm and the robustness fixes
+
+**Approved by Ron before mounting** ("go ahead, mount the team run"). This is the draft in NEXTSTEPS
+item 3, frozen. Nothing above the mount record below changes after this commit.
+
+**The question:** does a team that owns the outcome, working from a living spec whose Expected values
+are an answer key every review must sweep, close the value-detection gap? That gap shipped reachable
+value defects in 2 of 4 valid runs of the TDD arm (2026-09-24f). Secondary: do the robustness fixes
+(2026-09-26b) keep the run alive through the non-model faults that ended 4 of 6 mounts?
+
+**The arm:** `team` ADW (`adw_team_sdlc.py`), roster `sssf.team.config.yaml`, which uses the same
+models as the default: gemini-3.8-flash planner, deepseek-v4.1-flash test_designer/builder, glm-5.3
+reviewer, gpt-5.6-luna documenter. Brief `prompts/greenfield.md`, MAX_REVISIONS=2. Target greenfield
+at **`6fcbef8`** (host `4a834fa`, pushed), with a $10 limit. **N=1.** This is a small-N design check,
+not a rate (memory `feedback_small-n-before-fanout`).
+
+**Control:** the harn2–harn7 record, which used the default roster, the `tdd` ADW and the same
+brief. There is no new control run. **Confounds, named:**
+- The treatment is prompts + chain + gates together, so the robustness fixes also differ from the
+  control.
+- N=1.
+- The pi version is recorded at mount; the control ran on 0.87.1.
+
+### Mount-time checks (free or cents; they must pass before `execute`)
+
+0. Gates A–E pass, HEAD `6fcbef8`, tree clean, `prompts/greenfield.md` present, and the pi version
+   is recorded.
+1. **The bash timeout works on the VM's pi:** `bun -e "setInterval(()=>{},1000)"` run through
+   `bash_timeout.ts` with a 3 s limit returns "Command timed out". This is needed because the host
+   test was on pi 0.85.1, and the VMs may run 0.87.1.
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument; a miss is a harness or prompt bug, not a model result):** every review has a
+  `value_checks` entry for every effective `V`, and declares a non-empty `value_sweep.*`. The
+  `values_swept` gate makes this near-mechanical.
+- **P2:** at least one amendment is proposed and ruled on in the run.
+- **P3:** `spec_frozen` fires at most once per run, and is resolved in-session.
+- **P4 (primary):** no reachable value defect ships in a `V`-covered area. It is judged by **our own
+  first-principles sweep, not the run's**: the harn5/harn7 sweep scripts extended to this run's
+  module surface, plus the fixed render smoke on the harvested tree.
+- **P5 (robustness):** no non-model loss. Every `provider_retry` event and every "Command timed out"
+  tool result is recorded, with whether the run survived it.
+
+### Recorded, not scored
+
+- **The planner's answer key:** how many `R` and `V` entries, whether the `V` table covers the CAGED
+  windows and the minor/major spelling cases at all, and whether its derivations are right. A defect
+  in an area no `V` covers counts against the answer key, not against P4.
+- **Every amendment:** who proposed it, what it targeted, the ruling, and whether the ruling was
+  right on first principles.
+- **The builder's report fields** (`checks`, `departures`, `open_questions`): were they evidence or
+  filler?
+- **The spec's growth:** `git diff <commit_plan>..HEAD -- specs/<file>` after `sync_spec`.
+- Tokens, billed dollars (read at teardown), wall clock, review trajectory, the final verdict.
+  Accept/reject is not a quality ranking (memory `project_fanout3-results`).
