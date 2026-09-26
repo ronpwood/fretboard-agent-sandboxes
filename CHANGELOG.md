@@ -4334,3 +4334,27 @@ teardown. The VM is alive; teardown is Ron's call.
 timeout check. The key was revoked and verified absent, the VM destroyed, and the record closed. The
 harvest is complete. Recorded, never scored. For reference, the harn runs on the same brief billed
 $1.19–$2.58. Ron's impression: "much improved; the team did well". Recorded as an impression, not scored.
+
+## 2026-09-26e — The team1 levers, built: traps must cite V rows, amendments grow an incomplete key, requirements are counted per instance
+
+These come from team1's two misses (2026-09-26d). They change the team arm only; the control is
+still byte-identical against `7a4a5b8`.
+- **Every trap cites an existing `V` row**, enforced by `spec_form`'s new `traps` check
+  (`team_spec.parse` now collects `traps`). **Calibrated on team1's real spec:** it parses all 6 traps
+  and fails all 6, including the "Accidental Spelling" trap that shipped. So team1's planner would have
+  been corrected before any code existed. The planner prompt adds that a trap must be exposed where
+  values are *shown* (flat and sharp keys), and that per-key requirements need rows across the whole
+  range.
+- **Amendments complete an *incomplete* spec** (`team.md`, builder, reviewer). A gap closed only in
+  code leaves the next sweep blind to it. A reviewer finding in an area no `V` covers must name the
+  rows to propose. team1's builder fixed all 12 minor keys and left the answer key unchanged.
+- **Per-instance requirements are counted** (`team.md`, builder, reviewer): "40/40 diagrams". team1's
+  reviewers ruled R3 met with 14 of 40 missing. **Every trap is swept** against what the UI shows.
+- **Deferred:** detecting unsatisfiable tests (`tests_red` proves failure, not satisfiability). It
+  needs a design, not a prompt line.
+- **Verified:** gate fixtures, now with trap cases (a trap with no `V` fails; a trap citing a missing
+  `V` fails); prompt phrase survival; no `{{`; all rosters validate; the control rosters render
+  identically.
+- **Confound, named:** the new prompt lines cite team1's own defects from the same brief. team1's
+  planner had named the A# trap itself, so the added knowledge is small. The added *checkability* is
+  the treatment.
