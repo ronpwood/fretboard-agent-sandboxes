@@ -4453,3 +4453,11 @@ Traces are home. The sweep, the probe and the output are in
 
 **Ron's impression, during the run:** "this is much more what teamwork looks like". Recorded as an
 impression, not scored.
+
+**Teardown (Ron's decision, same day):** team2 billed **$2.318**. The key was revoked and verified
+absent, the VM destroyed, and `reap` found no orphaned keys. Session total for the two team runs:
+**$3.96** (team1 $1.644, team2 $2.318). Recorded, never scored.
+
+**Decision (Ron, same day): the next experiment is a second, non-music brief on the team arm**, to
+test whether the levers generalise beyond pitch-class tables, and to escape the same-brief confound.
+It comes before any replicate or any promotion to the default.

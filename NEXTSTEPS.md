@@ -25,19 +25,44 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. team2 ran (CHANGELOG 2026-09-26g): all six predictions met. What next
+## 3. NEXT: the team arm on a second, non-music brief (decided 2026-09-26, CHANGELOG 2026-09-26g)
 
-team2, the team arm with the team1 levers, was approved with the answer key grown 78 → 101 through
-three amendments, and zero reachable defects in our independent sweep. At N=2 for the team arm, the
-direction is clear, but it is not yet a rate. Candidates, to be decided:
+team2 met all six predictions on the music brief. The question now is whether the levers
+**generalise**: the answer key, amendments, traps with rows, per-instance counting. The same brief
+is also a confound, since the prompts cite team1's defects. So the next experiment is a new brief,
+not a replicate.
 
-- **Replicate before generalising:** 1–2 more team runs on the same brief (N=3–4), to see whether
-  amendments and per-instance counting hold up or were sampling.
-- **A different brief:** the same arm on a non-music brief, to test whether the levers transfer
-  beyond pitch-class tables, and to escape the same-brief confound.
-- **Unsatisfiable-test detection** (still open from team1): `tests_red` cannot tell "red, the code
-  is missing" from "can never pass".
-- **Promote the team arm to the default?** Not before a replicate or a second brief.
+**Choosing the brief.** It has to have the property that made the music brief a good test: **values
+that can be wrong while looking right, derivable from first principles, spread across many
+instances**. Otherwise the answer key has nothing to do. Candidates (pick one; don't run all of them):
+- **A loan / mortgage amortization explorer:** payment formula, per-period schedules, rounding,
+  extra payments. Lossy-key analogue: monthly vs annual rates, and the last-payment remainder.
+- **A time-zone meeting planner:** UTC offsets, DST transitions, overlaps across zones, day
+  rollovers. Rich in "right-looking wrong" answers.
+- **A unit-conversion workbench** (cooking, engineering): factor tables, compound units,
+  significant figures. Easy to judge, but maybe too shallow.
+
+**Steps:**
+1. Write the brief as `prompts/<name>.md` in greenfield-sandboxes. `prompts/` is target-owned, so it
+   is a normal commit there, not a factory sync. It gives the same kind of constraints as
+   `greenfield.md` (infrastructure only, every design decision delegated), and it names no answers.
+2. Add the brief's domain terms to `targets/greenfield.yaml` `leak_patterns` if needed, and check
+   that nothing in the factory prompts leaks the new domain. The current incident examples are all
+   music, which is fine for this run.
+3. Write an **independent oracle sweep first**, before mounting. Build it from the domain's own
+   formulas (the P4/P5 judge), so it cannot be shaped by what the run builds. This is the step that
+   took the longest to adapt for each music run.
+4. Pre-register, reusing team2's predictions: P1–P3 and P6 as written. P4 becomes "zero reachable
+   value defects, judged by our sweep". Record the `V` growth, the amendments and the per-instance
+   evidence.
+5. Mount one run on the team arm (`just sbx lifecycle execute <id> prompts/<name>.md
+   adws/adw_sssf_config/sssf.team.config.yaml team`). Optionally run a second arm on the `tdd` ADW,
+   the old prompts, as a same-brief control. That is the first control on a fresh brief, and it would
+   make the comparison clean.
+
+**Still open, not blocking:** unsatisfiable-test detection (`tests_red` cannot tell "red, the code is
+missing" from "can never pass"). A replicate on the music brief. Promoting the team arm to the
+default only after the second brief.
 
 ## 4. Still open, not in a spec
 
