@@ -4076,3 +4076,62 @@ is not tracked per call. Every VM is torn down, and every key is revoked and ver
 Harvests and traces are home for harn4–7. Sweep scripts are in the harn5/harn7 artifact dirs.
 The planner-specificity question (2026-09-24b, exploratory) stays open. Its plans are frozen; harn7's
 hash was taken after its outcome was known.
+
+## 2026-09-26a — Team-owned prompts BUILT: a living spec, a team chain, six rewritten roles. No live run yet
+
+**Why.** Ron read the factory's role prompts after the N=3 close (2026-09-24f), with the "factory has
+no owner of intent" framing in mind. His verdict was that none of them is about *what are we solving
+for*; all of them are about *how do we get out of here*. The audit found five things:
+- The builder's purpose is "implement the plan exactly", and it is graded by `bun test`.
+- The planner is asked for files and changes, never for what right looks like, so the why is gone
+  after the first handoff.
+- Every `user.md` ends in "emit your Report JSON", and the report has no field for evidence,
+  departures or doubt.
+- About 80% of the builder prompt is scar tissue.
+- The builder prompt's "by the time it files a finding you are gone" is **false**:
+  `_agent_session_id` reconnects the builder and the reviewer to their own sessions on every
+  revision.
+
+**What was built** (design: `specs/team-ownership-prompts.md`; commits `685e2c0`, `b6439c5`):
+- **A living spec.** `plan.md` is written in a fixed eight-section form (`adws/adw_modules/team_spec.py`).
+  Three sections are frozen after `commit_plan`: What we're solving for, Requirements (`R#`) and
+  Expected values (`V#`, each with a first-principles derivation). The others are annotated by the
+  whole team. A frozen entry changes only through an amendment, which only the reviewer rules on.
+- **Gates** (`gates.py`):
+  - `spec_form`: the form, plus at least one derived `V` row.
+  - `spec_frozen`: the frozen sections are byte-equal to the committed copy.
+  - `amendments_ruled`: no amendment is left `proposed`, and every ruling gives a reason.
+  - `values_swept`: every effective `V` has a `value_check`, and the reviewer declares a
+    `value_sweep.*` script.
+  - `build_claims`: report-only.
+- **Reports as claims with evidence:** `BuildOutput.checks`, `.departures` and `.open_questions`;
+  `ReviewOutput.value_checks`; `TestCase.spec_ids`. All are optional, so the control prompts still
+  parse.
+- **`PromptEngineering.preamble`/`.appendix`:** a shared `team.md` charter goes before every role
+  prompt, and a shared `tool_contracts.md` goes after it.
+- **The prompt set:** six roles rewritten in `adws/adw_data/prompt_engineering_team/`.
+- **The chain:** `adws/adw_team_sdlc.py`, run as `just adw team`. It is the TDD chain plus the gates,
+  one retry on each spec-gated phase, and a `sync_spec` phase that copies the annotated spec over its
+  committed copy.
+- **The roster:** `sssf.team.config.yaml`.
+- **Greenfield:** synced and pushed at `515efca`.
+
+**Verified** (host, no model calls):
+- All nine existing rosters render **byte-identical** system prompts through the new composition
+  path, and the control prompts, chains and default roster have no diff against `7a4a5b8`.
+- Every gate passes or fails as intended on four fixture specs (`adws/adw_data/fixtures/team_spec/`),
+  and `spec_frozen` was run against a throwaway git repo.
+- All 22 earned-rule phrases from the old prompts survive in the new set, nothing says "you are
+  gone", and no `{{` survives rendering.
+- The team roster equals the default in models, thinking, writes, harness and defaults. Both
+  rosters validate against pi.
+- The target sync gates (manifest, build, test, rosters) pass.
+
+**Not verified:** no agent has run these prompts. Whether the planner writes a usable answer key,
+whether amendments get proposed at all, and whether `spec_frozen` fires on whitespace are all open
+until the pre-registered re-run (NEXTSTEPS item 3). Recorded, not scored: the system prompts grow
+from 1.4k–8.1k chars to 11.1k–16.5k chars (about +2.6k tokens each).
+
+**Host gotcha, again:** `just target sync` and `agents.validate` both need pi on PATH. That means
+`export PATH="$HOME/.nvm/versions/node/v22.21.0/bin:$PATH"` first, or every model "is not found in pi
+--list-models" (memory `project_pi-lives-on-node-v22`).

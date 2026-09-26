@@ -4,8 +4,11 @@ created: 2026-09-26T12:13:13-07:00
 modified:
   - 2026-09-26T12:13:13-07:00
   - 2026-09-26T13:05:00-07:00
+  - 2026-09-26T12:45:00-07:00
 commits:
   - 7a4a5b8
+  - 685e2c0
+  - b6439c5
 agents:
   - claude-opus-5-5
 sessions:
@@ -13,7 +16,7 @@ sessions:
 back_refs:
   - specs/tdd-red-gate-phase.md — the chain this plan's ADW copies (`adw_tdd_sdlc.py`), and the source of the "control stays untouched" precedent
 forward_refs: []
-status: building
+status: complete
 ---
 
 # Plan: Team-owned prompts and a living spec
@@ -326,45 +329,45 @@ reading What we're solving for".
 
 #### 1. `sssf.team.config.yaml`
 
-- [ ] Copy `sssf.config.yaml`. Change only the following, and comment each change with its reason in the file's style:
+- [x] Copy `sssf.config.yaml`. Change only the following, and comment each change with its reason in the file's style:
   - every `prompt_engineering.system` and `.user` points to `prompt_engineering_team/<role>/`
   - every agent gets `preamble: [adws/adw_data/prompt_engineering_team/team.md]` and `appendix: [adws/adw_data/prompt_engineering_team/tool_contracts.md]`
   - `edit` is added to the tools of `test_designer` and `reviewer`, so they can annotate `plan.md`; their repo `writes` stay exactly as they are, and `permissions.py` still enforces them
   - each `purpose:` line is rewritten to match the new role
-- [ ] Models, thinking levels, `writes`, `harness_engineering` and `protected_files` stay **identical** to the default roster.
+- [x] Models, thinking levels, `writes`, `harness_engineering` and `protected_files` stay **identical** to the default roster.
 
 #### 2. Target sync
 
-- [ ] `just target sync greenfield` without `--push` first, and read the output. Then `--push` once it's clean. `adws/` and `just/` are already in `sync_paths`, so nothing in `targets/greenfield.yaml` needs to change.
+- [x] `just target sync greenfield` without `--push` first, and read the output. Then `--push` once it's clean. `adws/` and `just/` are already in `sync_paths`, so nothing in `targets/greenfield.yaml` needs to change.
 
 #### 3. Records
 
-- [ ] `NEXTSTEPS.md`: item 2 points to this spec as the design that answers it. Item 3's re-run names its arm (`--config adws/adw_sssf_config/sssf.team.config.yaml`, `just team`) and its control (the default roster on `just tdd`, from the existing harn runs).
-- [ ] Draft the item-3 pre-registration in `NEXTSTEPS.md` as predictions, not results:
+- [x] `NEXTSTEPS.md`: item 2 points to this spec as the design that answers it. Item 3's re-run names its arm (`--config adws/adw_sssf_config/sssf.team.config.yaml`, `just team`) and its control (the default roster on `just tdd`, from the existing harn runs).
+- [x] Draft the item-3 pre-registration in `NEXTSTEPS.md` as predictions, not results:
   - (P1) every review has a `value_checks` entry for every effective `V`, and a `value_sweep.*` artifact
   - (P2) at least one amendment is proposed and ruled on in the run
   - (P3) `spec_frozen` fires at most once per run and is resolved in-session
   - (P4) no reachable value defect ships in a `V`-covered area
 
   The primary outcome is P4, **judged independently by a sweep we write from first principles, not by the run's own sweep**. Mark that the harness-robustness fixes (item 1) should land first, or that any non-model loss is excluded per P2 of 2026-09-24b.
-- [ ] `CHANGELOG.md`: a dated entry saying what was built, what was verified (the Phase 1–3 validation results), and what was not, namely that no live run has happened.
+- [x] `CHANGELOG.md`: a dated entry saying what was built, what was verified (the Phase 1–3 validation results), and what was not, namely that no live run has happened.
 
 #### Validation — Phase 4
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `cd adws && uv run python -c "from adw_modules import agents; cfg=agents.load_config('adw_sssf_config/sssf.team.config.yaml'); agents.validate(cfg, ['planner','test_designer','builder','reviewer','documenter']); print([ (a.name, a.model) for a in cfg.agents])"` — the roster validates, and its models match the default roster's (compare against the same one-liner on `sssf.config.yaml`).
-- [ ] `cd adws && uv run python -c "from adw_modules import agents; f=lambda p:[(a.name,a.model,a.thinking,a.writes) for a in agents.load_config(p).agents]; a,b=f('adw_sssf_config/sssf.config.yaml'),f('adw_sssf_config/sssf.team.config.yaml'); assert a==b,(a,b); print('models/thinking/writes identical')"` — the only differences between the rosters are prompts, preamble/appendix, tools and purpose.
-- [ ] A full render of every team agent through `agents.system_text` with the team roster — no `{{` survives, and each system prompt contains both the `team.md` heading and the `tool_contracts.md` heading.
-- [ ] `git -C ../greenfield-sandboxes log -1 --stat | grep -E "prompt_engineering_team|adw_team_sdlc|sssf.team"` — the clean room carries the set after the push.
-- [ ] `git diff --stat 7a4a5b8 -- adws/adw_data/prompt_engineering adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py adws/adw_sssf_config/sssf.config.yaml` — still prints nothing.
+- [x] `cd adws && uv run python -c "from adw_modules import agents; cfg=agents.load_config('adw_sssf_config/sssf.team.config.yaml'); agents.validate(cfg, ['planner','test_designer','builder','reviewer','documenter']); print([ (a.name, a.model) for a in cfg.agents])"` — the roster validates, and its models match the default roster's (compare against the same one-liner on `sssf.config.yaml`).
+- [x] `cd adws && uv run python -c "from adw_modules import agents; f=lambda p:[(a.name,a.model,a.thinking,a.writes) for a in agents.load_config(p).agents]; a,b=f('adw_sssf_config/sssf.config.yaml'),f('adw_sssf_config/sssf.team.config.yaml'); assert a==b,(a,b); print('models/thinking/writes identical')"` — the only differences between the rosters are prompts, preamble/appendix, tools and purpose.
+- [x] A full render of every team agent through `agents.system_text` with the team roster — no `{{` survives, and each system prompt contains both the `team.md` heading and the `tool_contracts.md` heading.
+- [x] `git -C ../greenfield-sandboxes log -1 --stat | grep -E "prompt_engineering_team|adw_team_sdlc|sssf.team"` — the clean room carries the set after the push.
+- [x] `git diff --stat 7a4a5b8 -- adws/adw_data/prompt_engineering adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py adws/adw_sssf_config/sssf.config.yaml` — still prints nothing.
 
 ## Global Validation
 
-- [ ] Every Phase 1–4 validation box is `[x]`.
-- [ ] `git diff --stat 7a4a5b8 -- adws/adw_data/prompt_engineering adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py adws/adw_sssf_config/sssf.config.yaml` — prints nothing, so the control is byte-identical.
-- [ ] `grep -c '^- \[ \]' specs/team-ownership-prompts.md` — returns 0.
-- [ ] CHANGELOG and NEXTSTEPS are updated, and the item-3 pre-registration exists with P1–P4 and an independent judge for P4.
+- [x] Every Phase 1–4 validation box is `[x]`.
+- [x] `git diff --stat 7a4a5b8 -- adws/adw_data/prompt_engineering adws/adw_tdd_sdlc.py adws/adw_simple_sdlc.py adws/adw_sssf_config/sssf.config.yaml` — prints nothing, so the control is byte-identical.
+- [x] `grep -c '^- \[ \]' specs/team-ownership-prompts.md` — returns 0.
+- [x] CHANGELOG and NEXTSTEPS are updated, and the item-3 pre-registration exists with P1–P4 and an independent judge for P4.
 
 ## Notes
 
@@ -463,4 +466,21 @@ The render check in Phase 3 records the character counts so it's visible.
   exists in the session's `context_handoff/`.
 - **Phase 3 render sizes (recorded, not gated):** system prompts are 11.1k–16.5k chars, against a
   control of 1.4k–8.1k. The shared preamble and appendix add about 10.5k chars, roughly 2.6k tokens.
+</details>
+
+<details>
+<summary>2026-09-26T12:45:00-07:00 — Phase 4 done; greenfield at 515efca</summary>
+
+- **The roster's validation commands run from the repo root, with pi on PATH.** Roster paths are
+  relative to the root. `agents.validate` and `just target sync` both call `pi --list-models`, which
+  exists on the host only under nvm node v22 (`export PATH="$HOME/.nvm/versions/node/v22.21.0/bin:$PATH"`).
+  Without it, every model reports "not found".
+- **The planner's and test designer's purpose lines were reworded** to avoid a bare `: ` inside an
+  unquoted YAML scalar, which fails the parse.
+- **The roster comparison also checks `harness_engineering` and `defaults`**, which is stronger than
+  the plan's command.
+- **The scout keeps `write` without `edit`.** It appends its team note with bash. The plan only
+  gave `edit` to the test designer and the reviewer.
+- **Result:** CHANGELOG 2026-09-26a. NEXTSTEPS item 2 now points here, and item 3 carries the draft
+  pre-registration (P1–P4, P4 judged by our own sweep).
 </details>

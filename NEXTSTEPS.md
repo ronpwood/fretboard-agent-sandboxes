@@ -4,6 +4,8 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
+**Recently built, untested:** the team-owned prompts arm (CHANGELOG 2026-09-26a), which answers item 2 by design.
+
 **Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
 harn2/harn3 and the harness-signals spec (CHANGELOG 2026-09-23d–i).
@@ -24,23 +26,43 @@ model-agnostic, and both come before any fan-out:
   for any model (Gemini thought-signature 400s, false-positive content filters). **Not** per-model
   provider pinning (rejected in 2026-09-24f).
 
-## 2. Close the value-detection gap (CHANGELOG 2026-09-24f, findings 1–2)
+## 2. Close the value-detection gap: BUILT as the team arm, untested (CHANGELOG 2026-09-26a)
 
 Reachable value defects shipped in 2 of 4 runs, both in tables that no agent converted into pitches.
-Every in-loop catch was an enumerated check; the harn7 miss was an asserted one. A design task:
+Every in-loop catch was an enumerated check; the harn7 miss was an asserted one.
 
-- Make the value sweep a **required, checkable review artifact**: an enumerated table of input →
-  expected (from first principles) → actual. That replaces "verified" claims, and a reviewer cannot
-  assert a check it did not run.
-- Starting points: `.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts` and `harn7-…/sweep_harn7.ts`
-  (an independent answer table, mutation-tested).
-- Candidate: a builder-prompt line on "turn every data table into values and check it", like the
-  existing silent-channel line.
+**Answered by design, not yet by a run:** `specs/team-ownership-prompts.md`. The planner writes an
+Expected values table (input → expected → derivation), which is frozen and changes only through
+amendments the reviewer rules on. Every review must sweep every `V` and declare its `value_sweep.*`
+script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py` +
+`sssf.team.config.yaml`. The control is untouched. The harn5/harn7 sweep scripts
+(`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
+point for the independent judge in item 3.
 
-## 3. A small re-run to test 1 and 2, before any fan-out
+## 3. A small re-run to test 1 and 2, before any fan-out: DRAFT pre-registration
 
-Pre-register it. One or two runs on the default arm with the robustness fixes and the value artifact.
-Predictions: no non-model losses, and an enumerated value table in every review.
+One or two runs. Pre-register them before mounting, and freeze this section when they are mounted.
+
+- **Arm:** `just adw team <brief>`, which runs `adw_team_sdlc.py` on `sssf.team.config.yaml`, on
+  greenfield at `515efca` or later.
+- **Control:** the existing harn2–harn7 record (default roster, `adw_tdd_sdlc.py`), so no new
+  control run.
+- **Brief:** the same brief as the harn set, so the defect classes (lossy-key, CAGED windows) are
+  comparable.
+- **Predictions:**
+  - **P1:** every review has a `value_checks` entry for every effective `V`, and a non-empty
+    `value_sweep.*` artifact. The `values_swept` gate makes this near-mechanical, so a miss means
+    the gate or the prompt is broken, not the model.
+  - **P2:** at least one amendment is proposed and ruled on in the run. If none is, the licence to
+    disagree did not take.
+  - **P3:** `spec_frozen` fires at most once per run, and is resolved in-session.
+  - **P4 (primary):** no reachable value defect ships in a `V`-covered area. It is **judged by our
+    own first-principles sweep, not the run's**, starting from `sweep_harn5.ts` and `sweep_harn7.ts`.
+  - **Secondary, exploratory:** does the planner's `V` table cover the CAGED and minor/major cases at
+    all? A defect in an area no `V` covers counts against the planner's answer key, not against P4.
+- **Exclusions:** a run lost to a non-model cause is excluded, as in 2026-09-24b's P2. Item 1 should
+  land first, because the planner is still `gemini-3.8-flash`, the source of the thought-signature
+  400s.
 
 ## 4. Still open, not in a spec
 
