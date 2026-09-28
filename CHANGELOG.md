@@ -4527,3 +4527,9 @@ matters is team vs control on P4.
 - Whether reviewer evidence carries per-instance counts (rows × loans).
 - The review trajectory, tokens, billed dollars (at teardown) and wall clock. Accept/reject is not a
   quality ranking.
+
+**Mounted** `amort1-20260928-3b70c4`, adw `4e1bbc37`, pid 1709, `team` ADW, `sssf.team.config.yaml`.
+**Mounted** `amort1c-20260928-ba7ad8`, adw `108bb1f8`, pid 1702, `tdd` ADW, `sssf.config.yaml`.
+Both: greenfield pinned explicitly to **`8428cab`** (`fill <id> 8428cab`; the last pushed sync,
+`d6d461c`, predates the brief, so `mount`'s auto-pin would have lacked it), $10 limit. **Check 0
+PASSED on both:** gates A–F, HEAD `8428cab`, brief present, pi 0.87.1 (same as team2).
