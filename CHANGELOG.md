@@ -4575,3 +4575,24 @@ and the 30Y-vs-15Y comparison. Together they imply the `STANDARD` convention.
   against the original value.
 - **A harness defect, surfaced:** gate E checks for credit above zero, not for enough credit to cover
   N arms × the expected run cost. The account had about $2.70 at mount, enough for one arm and not two.
+
+## 2026-09-28c — PRE-REGISTRATION: amort2, the team arm rerun on the amortization brief
+
+**Approved by Ron** (2026-09-28, "Let's rerun the team run on this brief"). The account has been topped
+up. The torn-down runs billed **amort1c $0.928, amort1 $1.346**.
+
+**Why rerun, given 2026-09-28b:** amort1 never reached a review, so P1, P2 and P6 are unanswered
+on this brief. The core engine is already known to be exact in both arms, so the rerun's information is
+in the **review loop**: does the reviewer sweep all `V`, does anyone amend, and does a complete key
+change what ships beyond the core (UI values, rollups, comparisons)?
+
+**The arm:** identical to amort1 (2026-09-28a): the `team` ADW, `sssf.team.config.yaml`,
+`prompts/amortization.md`, $10 limit, N=1. The only differences: greenfield at **`ba4f5c8`** (the
+factory sync of host `9d9b2fb`, which carries the gate E fix on top of the brief), and a plain `mount`,
+since the last pushed sync now contains the brief. **Predictions P1–P6 and the recorded list are as
+in 2026-09-28a**, and P4 is judged by the same oracle and sweep (`sweep_amort1.test.ts` adapted).
+**Added, recorded, not scored:** whether review findings touch values outside the oracle's scope
+(rollup labels, the comparison, the scrubber).
+
+**Gate E fix, verified live on this mount:** a first setup with `SBX_EXPECTED_RUN_COST=1000` must
+FAIL assertion E. The real setup must then pass it.
