@@ -4,7 +4,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently run:** team1 (CHANGELOG 2026-09-26d), then team2 with the team1 levers (2026-09-26g): approved, the answer key grew 78 → 101 through three amendments, and zero reachable defects in our sweep. The robustness fixes (2026-09-26b) held in both runs, but were never exercised.
+**Recently run:** the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
 
 **Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
@@ -25,54 +25,40 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. NEXT: the team arm on a second, non-music brief (decided 2026-09-26, CHANGELOG 2026-09-26g)
+## 3. NEXT: the team arm on a third brief, the meeting planner (PREPARED 2026-09-28)
 
-**IN FLIGHT (2026-09-28, CHANGELOG 2026-09-28a):** the brief is loan amortization
-(`prompts/amortization.md`, greenfield `8428cab`). The oracle was written first:
-`specs/oracles/amortization_oracle.ts`. Two arms are running: `amort1-20260928-3b70c4` (team) and
-`amort1c-20260928-ba7ad8` (tdd control, same brief). **Next:** when both finish, `lifecycle refresh`
-and harvest each one. Then adapt the oracle into `sweep_amort1.test.ts` (the app's module/DOM surface →
-`invariants()` over `GRID`, plus `schedule()` under the declared convention), judge P1–P6, reconcile
-cost, and tear down.
+**The amortization brief is done** (CHANGELOG 2026-09-28a–d). The team arm (amort2) was approved at
+review_1 with one amendment and was exact on every value. The control (amort1c) and the first team
+attempt (amort1, died on an empty account) missed a **half-cent rounding tie** by 1¢. amort2 got it
+right only because its key happened to pin a tie loan. Verdict at N=1: the levers carry to a new
+domain, but **the key catches an edge only when the key contains that edge.**
 
-team2 met all six predictions on the music brief. The question now is whether the levers
-**generalise**: the answer key, amendments, traps with rows, per-instance counting. The same brief
-is also a confound, since the prompts cite team1's defects. So the next experiment is a new brief,
-not a replicate.
+**Prepared, not mounted:**
+- The brief: `prompts/meeting-planner.md`, greenfield `61a6e45`, **local commit, not pushed**. The next
+  `just target sync greenfield --push` carries it (run it with nvm node v22 on PATH, see memory).
+- `leak_patterns`: `meeting planner` and `daylight saving` added; the factory export had zero hits beforehand.
+- The oracle: `specs/oracles/meeting_oracle.ts`. It is **rule-based** (US/EU/AU/Lord Howe/NZ DST rules
+  and 30/45-minute offsets), so it is independent of the Intl/tzdb the app will use. It matched tzdb on
+  894,288 instants over 2025–2030, and a planted rule error was caught. Its `PROBES` cover US/EU disagreement
+  weeks, southern DST across New Year, the spring gap, the autumn overlap, and the 30-minute Lord Howe overlap.
+  It is integer milliseconds with no rounding, which avoids the float-tie class.
 
-**Choosing the brief.** It has to have the property that made the music brief a good test: **values
-that can be wrong while looking right, derivable from first principles, spread across many
-instances**. Otherwise the answer key has nothing to do. Candidates (pick one; don't run all of them):
-- **A loan / mortgage amortization explorer:** payment formula, per-period schedules, rounding,
-  extra payments. Lossy-key analogue: monthly vs annual rates, and the last-payment remainder.
-- **A time-zone meeting planner:** UTC offsets, DST transitions, overlaps across zones, day
-  rollovers. Rich in "right-looking wrong" answers.
-- **A unit-conversion workbench** (cooking, engineering): factor tables, compound units,
-  significant figures. Easy to judge, but maybe too shallow.
-
-**Steps:**
-1. Write the brief as `prompts/<name>.md` in greenfield-sandboxes. `prompts/` is target-owned, so it
-   is a normal commit there, not a factory sync. It gives the same kind of constraints as
-   `greenfield.md` (infrastructure only, every design decision delegated), and it names no answers.
-2. Add the brief's domain terms to `targets/greenfield.yaml` `leak_patterns` if needed, and check
-   that nothing in the factory prompts leaks the new domain. The current incident examples are all
-   music, which is fine for this run.
-3. Write an **independent oracle sweep first**, before mounting. Build it from the domain's own
-   formulas (the P4/P5 judge), so it cannot be shaped by what the run builds. This is the step that
-   took the longest to adapt for each music run.
-4. Pre-register, reusing team2's predictions: P1–P3 and P6 as written. P4 becomes "zero reachable
-   value defects, judged by our sweep". Record the `V` growth, the amendments and the per-instance
-   evidence.
-5. Mount one run on the team arm (`just sbx lifecycle execute <id> prompts/<name>.md
-   adws/adw_sssf_config/sssf.team.config.yaml team`). Optionally run a second arm on the `tdd` ADW,
-   the old prompts, as a same-brief control. That is the first control on a fresh brief, and it would
-   make the comparison clean.
+**Steps:** (1) sync + push; (2) pre-register, reusing P1–P6, with P4 judged by `offsetAt`/`fromWall`/
+`overlap` over the PROBES plus a zone × date grid, and P5 = "the key covers a DST transition, a
+gap/overlap wall time, and a date rollover"; (3) mount the team arm, plus the tdd control on the same
+brief (the amort pair showed the control is where the edge shows up); (4) build the sweep adapter
+once the apps exist.
 
 **Still open, not blocking:** unsatisfiable-test detection (`tests_red` cannot tell "red, the code is
 missing" from "can never pass"). A replicate on the music brief. Promoting the team arm to the
-default only after the second brief.
+default only after the meeting-planner brief. A same-brief amortization replicate would say whether
+amort2 pinning a tie was luck.
 
 ## 4. Still open, not in a spec
+
+- **Housekeeping:** `fret-explorer-20260829-7935db` is still open in the run records (key 404, VM gone),
+  so gate E counts it as an open run. Close it with `just sbx lifecycle teardown
+  fret-explorer-20260829-7935db --no-harvest` (the auto-mode classifier blocked me from doing it, 2026-09-28).
 
 - **(6) the audio channel**: still unmeasured. It needs a brief-level requirement and an
   `AudioContext` value spy in `test-dom.ts`. Related to item 2 (a silent channel is a value channel).
