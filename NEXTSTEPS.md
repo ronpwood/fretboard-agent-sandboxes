@@ -56,9 +56,6 @@ amort2 pinning a tie was luck.
 
 ## 4. Still open, not in a spec
 
-- **Housekeeping:** `fret-explorer-20260829-7935db` is still open in the run records (key 404, VM gone),
-  so gate E counts it as an open run. Close it with `just sbx lifecycle teardown
-  fret-explorer-20260829-7935db --no-harvest` (the auto-mode classifier blocked me from doing it, 2026-09-28).
 
 - **(6) the audio channel**: still unmeasured. It needs a brief-level requirement and an
   `AudioContext` value spy in `test-dom.ts`. Related to item 2 (a silent channel is a value channel).
