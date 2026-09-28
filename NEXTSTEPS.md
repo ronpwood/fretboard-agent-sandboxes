@@ -25,6 +25,28 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
+## 2b. FIRST: consolidate the codebase around the team arm (decided 2026-09-28)
+
+Ron is leaning towards deferring to the team model. The evidence: team2 (music) shipped 0 defects,
+and amort2 was exact where the control shipped the half-cent tie (CHANGELOG 2026-09-26g, 2026-09-28d).
+That meets the "after a second brief" bar, at N=1 per brief. Write it as a `plan` spec first, then build.
+
+**Three conditions:**
+1. **Make team the default, but don't delete the old path.** `just adw` runs team. The `tdd` ADW and the
+   default roster become a **frozen, named control**. Every finding so far came from a same-brief control
+   (the tie showed up only because amort1c existed).
+2. **Cut aggressively everywhere else, archiving rather than deleting** (`archive/` convention), after
+   an inventory of what references what. Candidates: the five `0731` rosters that nothing runs
+   (asymmetric, deepestseek, inverse, open-weights, top-speed), the `dsflash41` duplicate, and ADWs no
+   experiment has used in weeks. Re-check the "Do NOT tidy" rules below: `0731` stays *registered* in
+   models.json even if its rosters are archived.
+3. **Keep the refactor from confounding the next run.** The team arm's prompts, config and gates must
+   come out **byte-identical** (verify with a diff). Then the meeting-planner run (item 3) doubles as
+   the post-cleanup smoke test.
+
+**The next lever (not in this cleanup):** "the key only protects edges it contains". Make the P5-style
+obligation a gate: the key must include a row for each named edge class of the brief's domain.
+
 ## 3. NEXT: the team arm on a third brief, the meeting planner (PREPARED 2026-09-28)
 
 **The amortization brief is done** (CHANGELOG 2026-09-28a–d). The team arm (amort2) was approved at
