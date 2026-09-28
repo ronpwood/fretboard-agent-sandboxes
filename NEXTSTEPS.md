@@ -27,6 +27,14 @@ point for the independent judge in item 3.
 
 ## 3. NEXT: the team arm on a second, non-music brief (decided 2026-09-26, CHANGELOG 2026-09-26g)
 
+**IN FLIGHT (2026-09-28, CHANGELOG 2026-09-28a):** the brief is loan amortization
+(`prompts/amortization.md`, greenfield `8428cab`). The oracle was written first:
+`specs/oracles/amortization_oracle.ts`. Two arms are running: `amort1-20260928-3b70c4` (team) and
+`amort1c-20260928-ba7ad8` (tdd control, same brief). **Next:** when both finish, `lifecycle refresh`
+and harvest each one. Then adapt the oracle into `sweep_amort1.test.ts` (the app's module/DOM surface →
+`invariants()` over `GRID`, plus `schedule()` under the declared convention), judge P1–P6, reconcile
+cost, and tear down.
+
 team2 met all six predictions on the music brief. The question now is whether the levers
 **generalise**: the answer key, amendments, traps with rows, per-instance counting. The same brief
 is also a confound, since the prompts cite team1's defects. So the next experiment is a new brief,
