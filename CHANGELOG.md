@@ -4461,3 +4461,69 @@ absent, the VM destroyed, and `reap` found no orphaned keys. Session total for t
 **Decision (Ron, same day): the next experiment is a second, non-music brief on the team arm**, to
 test whether the levers generalise beyond pitch-class tables, and to escape the same-brief confound.
 It comes before any replicate or any promotion to the default.
+
+## 2026-09-28a — PRE-REGISTRATION: amort1, the team arm on a second, non-music brief
+
+**Approved by Ron before mounting** (2026-09-28, "Approve, team + tdd control"). Nothing above the
+mount records below changes after this commit.
+
+**The question:** do the team levers (answer key, amendments, traps that cite `V` rows, per-instance
+counting) **generalise** off the music brief whose defects the prompts cite? Or did team2 succeed
+partly because the prompts were tuned to it (the 2026-09-26e confound)?
+
+**The brief:** `prompts/amortization.md` in greenfield, a loan amortization explorer. It has the same
+constraint block as `greenfield.md` and names no answers, conventions or features. Why this brief:
+the values can be wrong while looking right, they are derivable from first principles (payment
+formula, per-period schedule), and they are spread across many instances (every schedule row).
+`amortiz` and `mortgage` were added to `leak_patterns`; the factory export had zero hits for loan terms
+before the addition.
+
+**The oracle, written first:** `specs/oracles/amortization_oracle.ts` (+ self-test, 5/5). It is
+host-only and never synced. It has two layers, because rounding is the run's design decision:
+`schedule(loan, convention)` is exact under a declared convention (integer cents, the payment formula,
+the zero-rate case, final-payment adjustment, extra payments), and `invariants(loan, rows)` holds
+under **every** convention: interest = balance·r, payment = interest + principal, the level payment
+on every non-final row, a zero final balance, Σ principal = P, the term honoured, and extra payments
+shortening the term. It was checked against published anchors (200k/6%/30y → $1,199.10; 250k/7%/30y →
+$1,663.26; 100k/5%/15y → $790.79). A fixed 15-loan `GRID` was chosen before the run, including zero
+rate, a single payment, a tiny principal, a near-zero rate and extra-payment overshoot.
+
+**The arm:** the `team` ADW, `sssf.team.config.yaml` (same models as team2), `prompts/amortization.md`,
+greenfield at **`8428cab`**, $10 limit, **N=1**. **Comparison:** team2 (2026-09-26g), with the
+music-brief record as the background. **Confounds:** N=1; a different brief is the manipulation, so
+the model × brief interaction is not separable; pi version recorded at mount.
+
+**The control (amort1c), mounted alongside:** the `tdd` ADW, the default roster's old prompts, the same
+brief and the same greenfield commit, $10 limit, N=1. It is the first same-brief control on a fresh
+brief. It has no `V` table, so P1–P3 and P5 do not apply to it; **P4 is judged identically** (same
+sweep, `STANDARD` convention unless its spec declares one) and P6 is recorded. The comparison that
+matters is team vs control on P4.
+
+### Mount-time checks
+
+0. Gates A–E pass, greenfield HEAD = the brief commit, tree clean, `prompts/amortization.md` present,
+   pi version recorded.
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument):** every review has a `value_check` for every effective `V`, plus a declared sweep.
+- **P2:** at least one amendment is proposed and ruled on.
+- **P3:** every trap in the committed spec cites an existing `V` row. **Recorded:** whether a
+  `spec_form` correction was needed.
+- **P4 (primary):** zero reachable value defects, judged by our sweep: for every `GRID` loan the app
+  accepts, every schedule it shows satisfies `invariants()`, and its payment, totals and final payment
+  equal `schedule()` under the convention its `V` table declares. If no convention is declared, judge
+  against `STANDARD` and record the omission. A feature the app does not offer (e.g. extra payments)
+  makes those rows N/A, recorded, not a miss.
+- **P5:** the planner's `V` table covers the lossy-key corners: at least one row each for the zero
+  rate, the final-payment remainder, and the periodic-rate conversion. A miss means the key did not
+  generalise to where this domain's traps are.
+- **P6 (robustness):** no non-model loss; every `provider_retry` and every timeout is recorded.
+
+### Recorded, not scored
+
+- The `V` count at plan and at the end, and the count added by accepted amendments.
+- The count of traps, and which lossy-key corners they name.
+- Whether reviewer evidence carries per-instance counts (rows × loans).
+- The review trajectory, tokens, billed dollars (at teardown) and wall clock. Accept/reject is not a
+  quality ranking.
