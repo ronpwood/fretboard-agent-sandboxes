@@ -4596,3 +4596,10 @@ in 2026-09-28a**, and P4 is judged by the same oracle and sweep (`sweep_amort1.t
 
 **Gate E fix, verified live on this mount:** a first setup with `SBX_EXPECTED_RUN_COST=1000` must
 FAIL assertion E. The real setup must then pass it.
+
+**Mounted** `amort2-20260928-1b3daa`, `team` ADW, `sssf.team.config.yaml`, greenfield **`ba4f5c8`**
+(auto-pinned from the last sync), $10 limit. **Gate E fix verified live:** with
+`SBX_EXPECTED_RUN_COST=1000` setup exited 1 on assertion E ("account remaining $20.30, need $2000.00");
+the real setup passed it ($20.30 ≥ $6.00). **Check 0 PASSED:** gates A–F, pi 0.87.1. Open runs counted
+as 2, not 1: `fret-explorer-20260829-7935db` is still unclosed in the run records (key 404, VM gone).
+It is the known 2026-08-29 housekeeping item, and closing it is left to Ron.
