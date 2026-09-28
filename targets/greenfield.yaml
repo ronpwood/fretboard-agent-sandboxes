@@ -71,3 +71,5 @@ target:
     - circle-of-fifths
     - amortiz                         # 2026-09-28: the amortization brief's domain
     - mortgage
+    - meeting planner                 # 2026-09-28: the meeting-planner brief's domain
+    - daylight saving
