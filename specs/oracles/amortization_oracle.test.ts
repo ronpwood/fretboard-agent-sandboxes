@@ -50,3 +50,10 @@ test("extra payments shorten the term and cut interest", () => {
   expect(b.totalInterestCents).toBeLessThan(a.totalInterestCents);
   console.log("200k@6%/30y:", a, "\n+ $200/mo:", b);
 });
+
+test("half-cent ties round half up, exactly (the float tie that fooled the first oracle)", () => {
+  expect(O.interestCents(278_600, 15)).toBe(3483); // 3482.5 exactly
+  expect(O.interestCents(320_000_00, 6.5)).toBe(1733_33);
+  expect(O.interestCents(350_000_00, 6.875)).toBe(2005_21); // 2005.208…
+  expect(O.totals(O.schedule({ principalCents: 10_000_00, aprPercent: 15, months: 24 })).totalInterestCents).toBe(1636_82);
+});

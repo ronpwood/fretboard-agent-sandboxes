@@ -4554,7 +4554,7 @@ PASSED on both:** gates A–F, HEAD `8428cab`, brief present, pi 0.87.1 (same as
 | P1 every review sweeps every V | **NOT REACHED** (no review completed) | n/a |
 | P2 at least one amendment | **NOT REACHED**; zero amendments were proposed through build | n/a |
 | P3 traps cite V rows | **MET on the first try**: 10 traps, `spec_form` with no correction | n/a |
-| P4 zero reachable value defects (oracle) | **MET on the pre-review build**: invariants 15/15, rows 2195/2195 = `schedule(STANDARD)`, payment, total interest, total paid, months and final payment 15/15 each, extra-payment savings 3/3 | **MET**: identical tallies; the DOM default (320k/6.85%/360) shows $2,096.83, $434,858.31 interest and crossover at month 240, all to the cent |
+| P4 zero reachable value defects (oracle) | **~~MET~~ → MISSED, CORRECTED by 2026-09-28d** (a half-cent tie rounds down). As first written: **MET on the pre-review build**: invariants 15/15, rows 2195/2195 = `schedule(STANDARD)`, payment, total interest, total paid, months and final payment 15/15 each, extra-payment savings 3/3 | **~~MET~~ → MISSED, CORRECTED by 2026-09-28d** (same tie). As first written: **MET**: identical tallies; the DOM default (320k/6.85%/360) shows $2,096.83, $434,858.31 interest and crossover at month 240, all to the cent |
 | P5 V covers the lossy-key corners | **MET**: zero rate (V22–24, V39), final remainder (V7, V12, V39), r = APR/12 in every derivation | n/a |
 | P6 no non-model loss | **MISSED**: the 402 above | met |
 
@@ -4603,3 +4603,52 @@ FAIL assertion E. The real setup must then pass it.
 the real setup passed it ($20.30 ≥ $6.00). **Check 0 PASSED:** gates A–F, pi 0.87.1. Open runs counted
 as 2, not 1: `fret-explorer-20260829-7935db` is still unclosed in the run records (key 404, VM gone).
 It is the known 2026-08-29 housekeeping item, and closing it is left to Ron.
+
+## 2026-09-28d — amort2 judged: approved at review_1, one amendment, exact on every value, and my oracle was wrong where the team key was right
+
+`amort2-20260928-1b3daa`, adw `2526acc7`. **13/13 phases, approved at review_1** (no revision needed).
+The run log reports $1.83, **billed $1.633**. Harvested 4 commits → `refs/sandbox/amort2-20260928-1b3daa`. Torn
+down, key revoked and verified absent. Artifacts: `sweep_amort2.test.ts`, `vkey2.ts`, `probe_dom.test.ts`.
+
+### Predictions (2026-09-28a/c)
+
+| | prediction | result |
+|---|---|---|
+| P1 | every review sweeps every effective `V` | **MET.** 58/58 (V1–V56 + A1's V57–V58), `values_swept` passed, a declared 122-check `value_sweep.ts` |
+| P2 | at least one amendment | **MET.** A1 (builder): V57, the crossover *calendar date*, and V58, a *partial final year* in the annual rollup ("every prepaid schedule has one", but V49/V50 pinned only full years). The reviewer re-derived it in exact decimals, 110/110, and accepted it |
+| P3 | traps cite `V` rows | **MET**, `spec_form` first try |
+| P4 | zero reachable value defects (oracle) | **MET.** 16/16 loans, 2219/2219 rows, every summary, including the tie row below. The DOM shows $2,022.62 / $408,140.64 / $728,140.64 / Month 233 / $1,733.33 |
+| P5 | `V` covers the lossy-key corners | **MET.** Zero rate (V20–21, V33–34), final remainder (V26, V30, V32, V34), r = APR/12 in every derivation |
+| P6 | no non-model loss | **MET.** One `tests_red` correction (the first suite registered no tests, a static import of a not-yet-existing module); the gate caught it and the retry fixed it. That is the gate working, not a loss |
+
+### The oracle defect, and what it turned into
+
+Checking amort2's key against the oracle gave **42/43: V17 ($10k, 15%, 24 mo) total interest: key
+$1,636.82, oracle $1,636.81.** The oracle was the wrong one. At row 19 the balance is 278,600¢, and ×15%/12 the
+exact interest is **3,482.5¢, a true half-cent tie**. Floating point computes 3,482.4999…, and
+`Math.round` took it down. The planner derived its key in exact decimals, so the answer key was right and my
+"independent" oracle was not. Fixed: `interestCents()` is now exact integer arithmetic (BigInt,
+round half up) with a self-test. The loan was **added to GRID after the run** as a labelled regression
+row. Every judgement was re-run on the fixed oracle:
+
+| | tie row (10k/15%/24) | everything else |
+|---|---|---|
+| amort2 (team) | **exact** | exact |
+| amort1c (control) | **MISS**: 1¢ low at row 19, 5 rows and the final payment follow, total interest $1,636.81 | exact |
+| amort1 (team, pre-review) | **MISS**: same 1¢ | exact |
+
+Both keys are now 100% correct: amort1 32/32, amort2 43/43.
+
+### What it means
+
+- **The brief *does* discriminate, but only at the rounding edge.** The textbook formula is common
+  knowledge. Exact rounding on ties is not, and float arithmetic gets it wrong silently: both the
+  control and my own oracle did. amort2 got it right **because its key pinned a loan that hits a
+  tie, derived in exact decimals, and the builder had to match it.** That is the answer-key mechanism
+  working as designed, at N=1. amort1's key had no tie loan, and its build missed the same way the
+  control's did. So the key catches the edge only when it happens to *contain* the edge.
+- A 1¢ defect is small. It is also exactly the class this experiment is about: right-looking, reachable,
+  and unseen by every in-loop check except a key row that pins it.
+- **Lesson for oracles:** an oracle doing money in floats can be *less* right than the thing it judges.
+  Build the next one in exact arithmetic from the start, and treat a key-vs-oracle mismatch as a
+  question about both sides.

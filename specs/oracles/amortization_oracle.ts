@@ -48,6 +48,19 @@ export interface Row {
 const round = (x: number, mode: PaymentRounding) =>
   mode === "nearest" ? Math.round(x) : mode === "up" ? Math.ceil(x - 1e-9) : x;
 
+/**
+ * Interest in whole cents on a whole-cent balance, EXACT: balance x APR / (100 x periodsPerYear),
+ * rounded half up, in integer arithmetic. 2026-09-28: the float form Math.round(bal * r) turned an
+ * exact half-cent tie (278,600c x 15%/12 = 3,482.5c) into 3,482.4999... and rounded it DOWN; the
+ * amort2 planner's exact-decimal key was right and this oracle was wrong (CHANGELOG 2026-09-28d).
+ */
+export function interestCents(balanceCents: number, aprPercent: number, periodsPerYear = 12): number {
+  const [whole, frac = ""] = String(aprPercent).split(".");
+  const num = BigInt(balanceCents) * BigInt(whole + frac);
+  const den = 100n * BigInt(periodsPerYear) * 10n ** BigInt(frac.length);
+  return Number((2n * num + den) / (2n * den)); // floor(x + 1/2) for x >= 0
+}
+
 /** Periodic rate as a fraction, from APR in percent. The first lossy-key trap lives here. */
 export const periodicRate = (aprPercent: number, periodsPerYear = 12) => aprPercent / 100 / periodsPerYear;
 
@@ -69,7 +82,7 @@ export function schedule(loan: Loan, c: Convention = STANDARD): Row[] {
   let bal = loan.principalCents;
   // extra payments shorten the term, so the loop runs to payoff, capped well past n
   for (let n = 1; bal > (c.roundInterest ? 0 : 1e-6) && n <= loan.months * 2; n++) {
-    const interest = c.roundInterest ? Math.round(bal * r) : bal * r;
+    const interest = c.roundInterest ? interestCents(bal, loan.aprPercent, loan.periodsPerYear) : bal * r;
     let principal = pay - interest + extra;
     const last = n === loan.months || principal >= bal;
     if (last && c.adjustFinal) principal = bal;
@@ -151,4 +164,7 @@ export const GRID: Loan[] = [
   { principalCents: 200_000_00, aprPercent: 6, months: 360, extraCents: 200_00 },
   { principalCents: 25_000_00, aprPercent: 4.9, months: 60, extraCents: 100_00 },
   { principalCents: 10_000_00, aprPercent: 12, months: 36, extraCents: 5_000_00 }, // extra overshoots fast
+  // ADDED 2026-09-28 AFTER amort2, as a regression row: an exact half-cent interest tie at row 19
+  // that float arithmetic rounds the wrong way (found by checking amort2's key V17 against the oracle)
+  { principalCents: 10_000_00, aprPercent: 15, months: 24 },
 ];
