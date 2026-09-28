@@ -4533,3 +4533,45 @@ matters is team vs control on P4.
 Both: greenfield pinned explicitly to **`8428cab`** (`fill <id> 8428cab`; the last pushed sync,
 `d6d461c`, predates the brief, so `mount`'s auto-pin would have lacked it), $10 limit. **Check 0
 PASSED on both:** gates A–F, HEAD `8428cab`, brief present, pi 0.87.1 (same as team2).
+
+## 2026-09-28b — amort1/amort1c judged: both engines exact against the oracle; the team arm died in review_1 on an EMPTY ACCOUNT, not a model
+
+### What happened
+
+- **amort1c (tdd control):** 15/15 phases, **approved at review_2**. review_1 rejected it with 7 blocking
+  findings, and revise_1 closed them. The run log reports $1.04. Harvested 4 commits → `refs/sandbox/amort1c-20260928-ba7ad8`.
+- **amort1 (team):** plan → build → test_1 green (89 tests, suite 2 → 16 fixed tests, 73 red
+  generated tests), then **review_1 died on OpenRouter 402 `in_flight_budget_exhausted`**. The run log
+  reports $1.37. **Cause:** the *account* balance. It held $49.70 used of $50 total, about $0.30 left, while the key
+  had $8.65 of its $10 limit remaining. Gate E passes on any positive balance, and two concurrent arms
+  drained it. The factory has no resume-from-phase, so the build was never reviewed or committed.
+  The uncommitted worktree was copied off the VM (`amort1-…-artifacts/worktree.tgz`).
+
+### Predictions
+
+| | amort1 (team) | amort1c (control) |
+|---|---|---|
+| P1 every review sweeps every V | **NOT REACHED** (no review completed) | n/a |
+| P2 at least one amendment | **NOT REACHED**; zero amendments were proposed through build | n/a |
+| P3 traps cite V rows | **MET on the first try**: 10 traps, `spec_form` with no correction | n/a |
+| P4 zero reachable value defects (oracle) | **MET on the pre-review build**: invariants 15/15, rows 2195/2195 = `schedule(STANDARD)`, payment, total interest, total paid, months and final payment 15/15 each, extra-payment savings 3/3 | **MET**: identical tallies; the DOM default (320k/6.85%/360) shows $2,096.83, $434,858.31 interest and crossover at month 240, all to the cent |
+| P5 V covers the lossy-key corners | **MET**: zero rate (V22–24, V39), final remainder (V7, V12, V39), r = APR/12 in every derivation | n/a |
+| P6 no non-model loss | **MISSED**: the 402 above | met |
+
+**The answer key was correct.** All 32 numeric rows of the planner's 50-row `V` table match the oracle
+to the cent (`vkey.ts`), including crossover months, annual rollups, prepayment and lump-sum savings,
+and the 30Y-vs-15Y comparison. Together they imply the `STANDARD` convention.
+
+### What it means
+
+- **This brief does not discriminate on core values.** Both arms, one with the answer key and one
+  without, produced cent-exact engines on every grid loan. The music brief's defects lived in spelling
+  and per-instance UI coverage, where there is no single textbook formula. Amortization *has* one, and
+  both planners and builders know it. So "the levers generalise" is **untested, not supported**: there
+  was nothing for them to catch in the core.
+- Off-oracle observations, recorded and not scored: the control's annual rollup groups by loan year but
+  labels each group with a calendar year (start Jul 2026 → "2026" = Jul 2026–Jun 2027); its biweekly
+  mode is a monthly-accrual approximation (+payment/12 per month); its PMI drops at 80% LTV
+  against the original value.
+- **A harness defect, surfaced:** gate E checks for credit above zero, not for enough credit to cover
+  N arms × the expected run cost. The account had about $2.70 at mount, enough for one arm and not two.
