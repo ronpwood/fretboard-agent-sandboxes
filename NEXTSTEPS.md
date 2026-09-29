@@ -4,7 +4,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently run:** the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
+**Recently run:** the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
 
 **Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
@@ -25,31 +25,23 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. NEXT: the team arm on a third brief, the meeting planner (PREPARED 2026-09-28)
+## 3. NEXT: pick the next lever from the meeting-planner result (CHANGELOG 2026-09-28g)
 
-**The amortization brief is done** (CHANGELOG 2026-09-28a–d). The team arm (amort2) was approved at
-review_1 with one amendment and was exact on every value. The control (amort1c) and the first team
-attempt (amort1, died on an empty account) missed a **half-cent rounding tie** by 1¢. amort2 got it
-right only because its key happened to pin a tie loan. Verdict at N=1: the levers carry to a new
-domain, but **the key catches an edge only when the key contains that edge.**
+**The meeting-planner pair is done.** Both engines were exact on every instant-level value.
+- The team arm (mtg1, approved review_3) shipped one narrow defect: a meeting straddling a spring-forward
+  transition is classified by linear local minutes (16/196,860).
+- The control (mtg1c, approved review_2) shipped wrapped working hours (a night shift is never "core",
+  reachable) and an end-inclusive boundary.
+- The team **corrected a wrong key row itself**: A1's V67 = 930 → A2's 1320, re-verified by the reviewer.
+- The team also turned review findings into DOM key rows (A3/A4).
 
-**Prepared, not mounted:**
-- The brief: `prompts/meeting-planner.md`, greenfield `61a6e45`, **local, not pushed**. The
-  consolidation's sync `b4906f7` sits on top of it, also unpushed. The next `just target sync greenfield
-  --push` carries both. Default node v24 works (memory `pi-on-node-24`); the old "use v22" note was stale.
-- `leak_patterns`: `meeting planner` and `daylight saving` added; the factory export had zero hits beforehand.
-- The oracle: `specs/oracles/meeting_oracle.ts`. It is **rule-based** (US/EU/AU/Lord Howe/NZ DST rules
-  and 30/45-minute offsets), so it is independent of the Intl/tzdb the app will use. It matched tzdb on
-  894,288 instants over 2025–2030, and a planted rule error was caught. Its `PROBES` cover US/EU disagreement
-  weeks, southern DST across New Year, the spring gap, the autumn overlap, and the 30-minute Lord Howe overlap.
-  It is integer milliseconds with no rounding, which avoids the float-tie class.
-
-**Steps:** (1) sync + push; (2) pre-register, reusing P1–P6, with P4 judged by `offsetAt`/`fromWall`/
-`overlap` over the PROBES plus a zone × date grid, and P5 = "the key covers a DST transition, a
-gap/overlap wall time, and a date rollover"; (3) mount the team arm (`execute <id> prompts/meeting-planner.md`, the default)
-plus the control on the same brief (`… "" control`); the amort pair showed the control is where the edge shows up.
-This run is also the **post-consolidation smoke test**: the arm inputs are byte-identical to amort2's
-(CHANGELOG 2026-09-28e); (4) build the sweep adapter once the apps exist.
+**Candidates:**
+- **The edge-class gate, with "spans" in the class list.** A transition *instant* was pinned and a meeting
+  *spanning* one was not. That is the third instance of "the key guards only the edges it contains".
+- **A replicate of the pair**: N=1 each.
+- **The `−1d` overflow**: no render-smoke check covers text overflow. It is a visual defect in the
+  day-shift cells.
+- **Teardown of mtg1/mtg1c** is pending Ron's call. Reconcile billed cost via generation ids BEFORE teardown.
 
 **The next lever (not in this cleanup):** "the key only protects edges it contains". Make the P5-style
 obligation a gate: the key must include a row for each named edge class of the brief's domain.
