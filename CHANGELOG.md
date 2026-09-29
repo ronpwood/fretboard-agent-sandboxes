@@ -4692,3 +4692,85 @@ greenfield by the mirror, and the meeting-planner brief commit survived.
   `gates.py` has drifted from the live one. It is recorded in the spec's Notes.
 - NEXTSTEPS' "run the sync with node v22" line was stale. Host pi is on v24 (memory `pi-on-node-24`),
   and the sync ran clean there.
+
+## 2026-09-28f — PRE-REGISTRATION: mtg1, the team arm on a third brief (the meeting planner), plus a same-brief control
+
+**Approved by Ron before mounting** (2026-09-28, "Approve as written, mount both arms"). Nothing above
+the mount records below changes after this commit.
+
+**The question:** amort2 was exact, but that brief had a textbook formula, so both arms got the core
+right, and the one edge that separated them (a half-cent tie) was caught only because amort2's key
+happened to pin it (2026-09-28d). This brief has **no single formula**: time-zone values are rule
+tables, instants and wall clocks, where a right-looking answer goes wrong at edges. Two questions:
+(a) do the team levers catch value defects in a domain whose defects are edges, not arithmetic?
+(b) does the key cover the edges it needs to (P5), or does the pattern "the key guards only the
+edges it contains" repeat?
+
+**Also the post-consolidation smoke test** (2026-09-28e): both arms' inputs are byte-identical to
+amort2/amort1c. Any harness breakage is the consolidation's, not the model's.
+
+**The brief:** `prompts/meeting-planner.md` in greenfield (`61a6e45`). It has the same constraint
+block as `greenfield.md`, and it names no zones, conventions, DST, or features. The `leak_patterns`
+`meeting planner` and `daylight saving` were added before the sync; the factory export had zero hits.
+
+**The oracle, written first:** `specs/oracles/meeting_oracle.ts` (+ self-test). It is host-only and
+never synced. It is **rule-based**: 17 zones with US/EU/AU/Lord Howe/NZ DST rules and 30/45-minute
+offsets, deliberately independent of the Intl/tzdb the app will read. It matched tzdb on 894,288
+instants over 2025–2030, and a planted rule error was caught. It uses integer milliseconds with no
+rounding. Its exports are `offsetAt`, `toWall`, `fromWall` (0, 1 or 2 instants), `overlap` and
+`difference`, plus the fixed `PROBES`.
+
+**The GRID, fixed now:** `ZONES` (all 17) × { every `PROBES` instant } ∪ `ZONES` × { 12:00 UTC on
+the 15th of each month of 2026 }. That is 17 × 22 = 374 zone-instants. Pairs for differences are
+all ordered pairs of zones at each of those instants. Any zone the app does not offer makes its rows
+N/A, recorded, not a miss.
+
+**The arms:**
+| arm | ADW | roster | prompts |
+|---|---|---|---|
+| `mtg1` | `team` (the default) | `sssf.team.config.yaml` | team prompts |
+| `mtg1c` | `control` (= `tdd`) | `sssf.config.yaml` | the old prompts |
+
+Both run the same brief, greenfield pinned to **`b4906f7`** (the pushed sync, which contains the
+brief), a $10 limit each, and **N=1** each. Expected cost, from the amort pair: about $1–2 per arm
+(amort2 billed $1.633, amort1c $0.928). **Confounds:** N=1; brief × model not separable; pi version
+recorded at mount.
+
+### Mount-time checks
+
+0. Gates A–F pass on both (gate E: credit covers both open runs). Greenfield HEAD = `b4906f7`, tree
+   clean, `prompts/meeting-planner.md` present, pi version recorded.
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument, team):** every review has a `value_check` for every effective `V`, plus a
+  declared `value_sweep.*`.
+- **P2 (team):** at least one amendment is proposed and ruled on.
+- **P3 (team):** every trap in the committed spec cites an existing `V` row. **Recorded:** whether a
+  `spec_form` correction was needed.
+- **P4 (primary, both arms):** zero reachable value defects, judged by our sweep over the GRID:
+  - every instant→wall display the app offers equals `toWall`, including the date;
+  - every offset/difference it shows equals `offsetAt`/`difference` at **that** instant, not "now";
+  - every wall→instant input it accepts lands in `fromWall`. In a spring gap (`fromWall` = []), a
+    silent wrong instant is a defect. A flag, a rejection, or a shift *past* the gap is accepted, and
+    the policy is recorded. In an autumn overlap, either instant is accepted, and which one is recorded;
+  - any common-time/overlap suggestion equals `overlap()` for the same participants and hours, under
+    the step and boundary conventions its `V` table declares (for the control, its spec or UI). If
+    none is declared, judge 15-minute steps, end-exclusive, and record the omission.
+  A feature the app does not offer makes its rows N/A, recorded.
+- **P5 (team, the lever under test):** the planner's `V` table covers this domain's edge classes,
+  with at least one row each for: **a DST transition** (a US/EU disagreement week or a southern-hemisphere
+  season), **a gap or overlap wall time**, and **a date rollover** (a meeting on a different calendar
+  date for some participant). A miss means the key did not generalise to where this domain's traps are.
+- **P6 (robustness, both):** no non-model loss; every `provider_retry` and every timeout is recorded.
+
+### Recorded, not scored
+
+- `V` counts at plan and at the end, and the count added by accepted amendments. Traps, and which edge
+  classes they name. Whether reviewer evidence carries per-instance counts (zones × instants).
+- Whether the app uses Intl/tzdb, a hand-rolled table, or fixed offsets. A fixed-offset app is exactly
+  the defect class P4 sweeps for.
+- The review trajectory, tokens, billed dollars (at teardown, via generation ids) and wall clock.
+  Accept/reject is not a quality ranking (memory: fan-out 3).
+- The sweep adapter is built **after** the apps exist (item 3, step 4). It adapts to each app's API,
+  so it is written blind to neither app's values, only to its function names.
