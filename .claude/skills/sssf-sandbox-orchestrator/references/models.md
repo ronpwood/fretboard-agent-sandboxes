@@ -93,11 +93,11 @@ pricing moves.
 
 | Model | input | output | cacheRead | cacheWrite | Provider under ZDR | In a roster? |
 | --- | --- | --- | --- | --- | --- | --- |
-| `deepseek/deepseek-v4-flash-0731` | 0.09 | 0.18 | 0.018 | 0.0 | **Parasail** (US) | default: builder, scout |
+| `deepseek/deepseek-v4-flash-0731` | 0.09 | 0.18 | 0.018 | 0.0 | **Parasail** (US) | registered only (setup gate D pings it; no roster since the 0731 rosters were archived 2026-09-28) |
 | `openai/gpt-5.6-luna` | 0.1 | 0.6 | 0.01 | 0.125 | **Azure** | default: documenter |
 | `z-ai/glm-5.2` | 0.76 | 2.42 | 0.14 | 0.0 | **CoreWeave** (US) | registered only (was default reviewer until 2026-09-15) |
-| `z-ai/glm-5.3` | 1.4 | 4.4 | 0.26 | 0.0 | 23 ZDR endpoints (2026-09-15) | default: reviewer · open-weights: planner, reviewer |
-| `google/gemini-3.8-flash` | 0.75 | 3.75 | 0.075 | 0.041667 | **Google** | default: planner · top-speed: planner, reviewer · gemniflash: all |
+| `z-ai/glm-5.3` | 1.4 | 4.4 | 0.26 | 0.0 | 23 ZDR endpoints (2026-09-15) | default + team: reviewer |
+| `google/gemini-3.8-flash` | 0.75 | 3.75 | 0.075 | 0.041667 | **Google** | default + team: planner · gemniflash: all |
 | `openai/gpt-5.6-terra` | 1.0 | 6.0 | 0.1 | 1.25 | **Azure** | registered only |
 | `google/gemini-3.6-flash` | 1.5 | 7.5 | 0.15 | 0.0833 | **Google** | registered only (was default planner until 2026-09-15) |
 | `anthropic/claude-sonnet-5` | 2.0 | 10.0 | 0.2 | 2.5 | **Google Vertex** | registered only |

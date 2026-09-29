@@ -30,7 +30,8 @@ LICENSE               MIT.
 ## `just/` — the command surface
 
 ```
-just/adws.just        the `adw` namespace: 14 ADW recipes. Carries `set working-directory`,
+just/adws.just        the `adw` namespace: 15 ADW recipes (+ `default`, and `control`,
+                      an alias of `tdd`, the frozen control arm; `team` is the default arm). Carries `set working-directory`,
                       its own `config`, AND `set positional-arguments` — a module inherits
                       NOTHING, and without that last line $@ is empty and every argument is
                       silently dropped.
@@ -112,7 +113,7 @@ guest/snapshot_run_branch.sh  commit the VM's dirty tree onto sbx/<run-id>, mark
 ## `adws/` — the factory
 
 ```
-adws/adw_*.py         12 workflows. Each opens with a `Phases:` docstring that is its chain
+adws/adw_*.py         14 workflows. Each opens with a `Phases:` docstring that is its chain
                       in one line. Thin on purpose: logic lives in adw_modules/.
 adws/adw_modules/     agents.py (roster + validation), agent_pi.py / agent_cc.py (harness
                       adapters), data_types.py (typed envelopes), gates.py, quality.py
@@ -128,7 +129,9 @@ adws/adw_modules/     agents.py (roster + validation), agent_pi.py / agent_cc.py
                       picture; `--click LABEL` (repeatable) stages it first. Exit 2 (no browser) is a SKIP, never a failure.
   (host) sandbox_mount/host/render_smoke_corpus.sh — calibrates the smoke over every harvested app;
                       run it before promoting any new assertion.
-adws/adw_sssf_config/ sssf.config.yaml (cheap roster) and sssf.frontier.config.yaml.
+adws/adw_sssf_config/ sssf.config.yaml (cheap default; the frozen control's roster),
+                      sssf.team.config.yaml (team arm), sssf.frontier, sssf.gemniflash.
+                      Retired rosters: archive/factory/rosters/.
                       Every model is `openrouter/<id>`; the first slash splits provider
                       from model id.
 adws/adw_data/        runtime: sessions/, prompt_engineering/, harness_engineering/, and

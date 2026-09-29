@@ -68,18 +68,21 @@ just target sync greenfield --dry-run          # read the diff stat and the gate
 just target sync greenfield --push             # outward-facing: ask the user first
 PIN=$(python3 -c 'import json;print(json.load(open(".sandbox/targets/greenfield.json"))["target_sha"])')
 
-ROSTERS=(sssf.config.yaml sssf.asymmetric.config.yaml)   # one per arm, same length as the loop
+# one "roster adw" pair per arm. The team chain only runs on the team roster, so a team fan-out is
+# N replicates, not N models; the same-brief control arm is where the edges show up.
+ARMS=("sssf.team.config.yaml team" "sssf.config.yaml control")
 
-for i in "${!ROSTERS[@]}"; do
-  ROSTER="adws/adw_sssf_config/${ROSTERS[$i]}"
+for i in "${!ARMS[@]}"; do
+  read -r R ADW <<< "${ARMS[$i]}"
+  ROSTER="adws/adw_sssf_config/$R"
   ID=$("$RR" new-id "gf-$i")
   just sbx lifecycle create "$ID" --limit 10 --target greenfield
   just sbx lifecycle fill   "$ID" "$PIN"          # explicit is clearest; omitting it pins to the same sync
   just sbx lifecycle setup  "$ID" "$ROSTER"       # gate C pings THIS arm's models, not the default roster
   just sbx lifecycle observe "$ID"
-  echo "$ID ${ROSTERS[$i]}" >> /tmp/gf.map
+  echo "$ID ${ARMS[$i]}" >> /tmp/gf.map
 done
-# execute: just sbx lifecycle execute "$ID" prompts/greenfield.md "$ROSTER" tdd
+# execute: just sbx lifecycle execute "$ID" prompts/greenfield.md "$ROSTER" "$ADW"
 ```
 
 - **Never re-sync mid-fan-out.** An arm filled after a new sync would start from different bytes.
@@ -115,12 +118,13 @@ differ, you are not comparing models, you are comparing prompts.
 
 ### 2. The roster — `execute`'s and `setup`'s `CONFIG` argument
 
-The repo ships two rosters: `adws/adw_sssf_config/sssf.config.yaml` (starter) and
-`sssf.frontier.config.yaml`. A roster names an agent's coding agent, model, thinking level, tools and
+The repo ships four rosters: `sssf.config.yaml` (default; the frozen control's roster),
+`sssf.team.config.yaml` (the team arm's: same models, team prompts), `sssf.frontier.config.yaml` and
+`sssf.gemniflash.config.yaml`. Retired rosters are in `archive/factory/rosters/`. A roster names an agent's coding agent, model, thinking level, tools and
 prompts — it is the single richest per-run knob.
 
 **Pass the roster as `execute`'s third argument.** The signature is
-`execute RUN_ID PROMPT CONFIG="" ADW="sdlc" *EXTRA`, so the roster is positional and an empty
+`execute RUN_ID PROMPT CONFIG="" ADW="team" *EXTRA`, so the roster is positional and an empty
 `CONFIG` builds the exact command it built before the argument existed:
 
 ```bash
@@ -132,7 +136,7 @@ login shell), records the pid in the run record, and turns the path into `--conf
 module recipe. No `SSSF_CONFIG` env var and no hand-rolled ssh: `ssh vm "cmd"` reads no profile and
 carries no environment, which is why the argument exists.
 
-`ADW` picks the workflow (`sdlc`, `tdd`, …) and is the fourth argument, so pass `CONFIG` — even as
+`ADW` picks the workflow (`team` by default, `control`/`tdd`, `sdlc`, …) and is the fourth argument, so pass `CONFIG` — even as
 `""` — when you want a non-default ADW.
 
 **Gate C only pings the roster you hand to `setup`.** `setup RUN_ID CONFIG=""` forwards the path
@@ -142,7 +146,7 @@ arm you gate is not the arm you run:
 
 ```bash
 just sbx lifecycle setup   "$ID" "adws/adw_sssf_config/$ROSTER"
-just sbx lifecycle execute "$ID" "$PROMPT" "adws/adw_sssf_config/$ROSTER" tdd
+just sbx lifecycle execute "$ID" "$PROMPT" "adws/adw_sssf_config/$ROSTER" "$ADW"
 ```
 
 A gate block that prints `FAIL <model>` and then `[gate] C PASS` is **not** a flaky model — it is

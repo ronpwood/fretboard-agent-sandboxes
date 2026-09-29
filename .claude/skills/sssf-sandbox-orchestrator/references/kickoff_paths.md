@@ -27,7 +27,7 @@ later. **This is the default for real work.**
 ## Path 2 — Agent-mediated: the host asks the in-box orchestrator to kick off the work
 
 ```bash
-just sbx run agent <run-id> "run the redesign in prompts/06... with the top-speed roster, then watch it"
+just sbx run agent <run-id> "run the redesign in prompts/06... with the frontier roster, then watch it"
 ```
 
 The host talks to the **orchestrator agent inside the sandbox** — the resumable Claude Code

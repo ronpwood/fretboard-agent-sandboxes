@@ -68,7 +68,7 @@ Optional (only for a host-side orchestrator via `just local`; the VM image alrea
 ### Step 4 — Verify Configuration
 
 - `.env` exists.
-- Rosters present: list `adws/adw_sssf_config/*.yaml` (expect five: default, deepestseek, frontier, open-weights, top-speed).
+- Rosters present: list `adws/adw_sssf_config/*.yaml` (expect four: default, frontier, gemniflash, team).
 - Model registry present: `sandbox_mount/guest/models.json.tmpl` exists and each model carries a full four-field `cost` block (a partial block drops the whole roster). `just sbx manage doctor` also asserts this.
 - Skills present: `.claude/skills/sssf/SKILL.md` and `.claude/skills/sssf-sandbox-orchestrator/SKILL.md`.
 

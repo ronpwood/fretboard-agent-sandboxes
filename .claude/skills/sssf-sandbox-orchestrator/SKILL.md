@@ -88,7 +88,7 @@ their own contents when run bare.
 | `just sbx lifecycle create RUN_ID [--limit N] [--target NAME]` | mint `sbx-<run-id>` (\$50 default) + boot the VM, in record → VM → key order. Records `target` (default `default`) |
 | `just sbx lifecycle fill RUN_ID [SHA]` | public `git clone` (2.61s, no auth), optional SHA pin, write `.env` with the runtime key |
 | `just sbx lifecycle setup RUN_ID` | `provision.sh` + the five-assertion gate |
-| `just sbx lifecycle execute RUN_ID "PROMPT" [CONFIG] [ADW]` | an ADW (default `sdlc`; e.g. `tdd`) detached inside the box; `""` CONFIG = default roster. Returns a pid, records it |
+| `just sbx lifecycle execute RUN_ID "PROMPT" [CONFIG] [ADW]` | an ADW (default `team`, on the team roster; `control` = the frozen `tdd` control arm) detached inside the box; `""` CONFIG = that ADW's default roster. Returns a pid, records it |
 | `just sbx run cmd RUN_ID '<cmd>'` | generic escape hatch, synchronous, runs in `app/`. Your inspection tool. |
 | `just sbx run agent RUN_ID "PROMPT"` | Claude Code inside the box, resumable session — hand off, then keep talking |
 | `just sbx lifecycle observe RUN_ID` | start both servers, expose 4501, print URLs. Idempotent. |
@@ -111,7 +111,8 @@ with fresh history so no arm can find this repo's reference app through `git log
 ```bash
 just target sync greenfield --dry-run && just target sync greenfield --push   # (ask before --push)
 just sbx mount gf-1 --target greenfield --limit 10    # fill pins to the last pushed sync
-just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd
+just sbx lifecycle execute <run-id> prompts/greenfield.md               # the team arm (the default)
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" control    # the frozen tdd control, same brief
 just sbx manage harvest <run-id>                     # lands in ../greenfield-sandboxes, not here
 ```
 

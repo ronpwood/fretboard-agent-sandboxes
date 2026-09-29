@@ -68,8 +68,9 @@ Both `sdlc` and `tdd` use it, so an A/B between them stays symmetric.
 ## 3. Picking a model roster
 
 Every roster lives at `adws/adw_sssf_config/*.yaml` — `sssf.config.yaml` (the
-default), `sssf.frontier.config.yaml`, `sssf.open-weights.config.yaml`,
-`sssf.deepestseek.config.yaml`, `sssf.top-speed.config.yaml`. See who's in one:
+default, and the frozen control's roster), `sssf.team.config.yaml` (the team arm's),
+`sssf.frontier.config.yaml`, `sssf.gemniflash.config.yaml`. Retired rosters are in
+`archive/factory/rosters/`. See who's in one:
 
 ```
 just obs rosters
@@ -105,8 +106,8 @@ planning phase):
 just sbx lifecycle execute <run-id> "Fix <precise description of the bug and the exact fix>" "" build-test
 ```
 
-`ADW` (4th argument, default `sdlc`) picks the workflow — any recipe name from
-`just adw`: `sdlc`, `simple-sdlc`, `build`, `build-test`, `build-review`,
+`ADW` (4th argument, default `team`) picks the workflow — any recipe name from
+`just adw`: `team`, `control` (alias of `tdd`, the frozen control arm), `sdlc`, `simple-sdlc`, `build`, `build-test`, `build-review`,
 `plan-build`, `plan-build-test-quality`, `quality`, `scout`, `document`, `ask`,
 `prompt`. `build-test` and `build` have **no commit phase** — check
 `git status --porcelain` on the VM afterward and commit by hand if the fix is real:
@@ -206,7 +207,8 @@ just target sync greenfield --push             # commit + push to a PUBLIC repo 
 just sbx mount gf-1 --target greenfield --limit 10
 
 # 3. run the TDD chain ("" = default roster; name a roster file to pick another)
-just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd
+just sbx lifecycle execute <run-id> prompts/greenfield.md               # the team arm (default)
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" control    # the frozen tdd control
 just sbx run cmd <run-id> 'tail -5 run.log'
 just sbx lifecycle refresh <run-id>            # after it finishes, before you trust the review URL
 

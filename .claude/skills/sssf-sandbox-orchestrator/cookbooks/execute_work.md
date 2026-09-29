@@ -123,10 +123,13 @@ log.
 ### Running a different ADW
 
 `execute RUN_ID PROMPT [CONFIG] [ADW] [EXTRA…]` — `ADW` is any recipe name from `just --list adw`
-(`sdlc` by default, `tdd`, `simple-sdlc`, …). Pass `""` for CONFIG to keep the default roster:
+(`team` by default; `control`, the alias of `tdd`; `sdlc`; `simple-sdlc`; …). Pass `""` for CONFIG to keep
+that ADW's default roster. Never pair `team` with a non-team roster: the default planner never writes
+the spec form, so `spec_form` fails it.
 
 ```bash
-just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd     # the TDD chain, default roster
+just sbx lifecycle execute <run-id> prompts/greenfield.md               # the team arm, team roster (default)
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" control    # the frozen tdd control, default roster
 ```
 
 A prompt **path** is resolved inside the VM's checkout — the **target's** repo, not this one. On a

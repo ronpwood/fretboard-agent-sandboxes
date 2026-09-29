@@ -138,13 +138,13 @@ just fretboard test   # the suite the factory runs
   <img src="images/01_factory_spine.svg" alt="The factory spine: a deterministic ADW script sequencing plan, build, and test phases with agents as bounded nodes" width="750">
 </p>
 
-Twelve ADWs (AI Developer Workflows) under `adws/`, each a thin `uv run` script whose docstring is its chain: `adw_simple_sdlc` runs plan, build, test, review, document with three separate commits. Typed envelopes carry context between phases; gates validate every claim, and a failure re-enters the same session as a correction, never a restart. **Agent proposes, code disposes.**
+Fourteen ADWs (AI Developer Workflows) under `adws/`, each a thin `uv run` script whose docstring is its chain: `adw_simple_sdlc` runs plan, build, test, review, document with three separate commits. Typed envelopes carry context between phases; gates validate every claim, and a failure re-enters the same session as a correction, never a restart. **Agent proposes, code disposes.**
 
 <p align="center">
   <img src="images/value/03_core_four.png" alt="An agent is four things: a model, a harness, tools, and a prompt, wired around a central agent node" width="750">
 </p>
 
-Under every phase is the same primitive: an agent is a model, a harness, tools, and a prompt. The factory holds those four constant and swaps only the prompt and the model per phase. Staffing is one config file, swappable per run: five rosters ship in `adws/adw_sssf_config/`, the cheap default, the frontier roster, pure DeepSeek, open-weights, and top-speed. Every model is `openrouter/<id>`, so the ids are identical on your laptop and inside every box.
+Under every phase is the same primitive: an agent is a model, a harness, tools, and a prompt. The factory holds those four constant and swaps only the prompt and the model per phase. Staffing is one config file, swappable per run: four rosters ship in `adws/adw_sssf_config/`: the cheap default, the team roster (same models, team prompts), the frontier roster, and all-Gemini-flash. Retired rosters are in `archive/factory/rosters/`. Every model is `openrouter/<id>`, so the ids are identical on your laptop and inside every box.
 
 The factory has its own standalone codebase at [disler/super-simple-software-factory](https://github.com/disler/super-simple-software-factory), the skill that stamps it into any repo. This repo just runs it.
 
@@ -208,7 +208,8 @@ just sbx lifecycle teardown <run-id>
 just target sync greenfield --dry-run          # regenerate its factory from HEAD: leak-checked, gated
 just target sync greenfield --push             # neutral commit, pushed to a PUBLIC repo; becomes the pin
 just sbx mount gf-1 --target greenfield --limit 10    # fill pins to that sync
-just sbx lifecycle execute <run-id> prompts/greenfield.md "" tdd   # the TDD chain, default roster
+just sbx lifecycle execute <run-id> prompts/greenfield.md               # the team arm (default)
+just sbx lifecycle execute <run-id> prompts/greenfield.md "" control    # the frozen tdd control
 just sbx lifecycle refresh <run-id>            # after it finishes, before trusting the review URL
 just sbx manage harvest <run-id>               # commits land in ../greenfield-sandboxes as refs/sandbox/<run-id>
 ```
