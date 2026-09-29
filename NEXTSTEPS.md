@@ -35,7 +35,18 @@ point for the independent judge in item 3.
 - The team **corrected a wrong key row itself**: A1's V67 = 930 → A2's 1320, re-verified by the reviewer.
 - The team also turned review findings into DOM key rows (A3/A4).
 
-**Candidates:**
+**PAUSED 2026-09-28, pick up here (Ron: "a fresh look in the morning… maybe overdesign").**
+`specs/edge-class-gate.md` stopped after Phase 1. Its calibration (`specs/edge-class-calibration.md`)
+showed the approved design would have **passed** mtg1: the key had spans across work and sleep edges,
+not across DST. Also, 6/31 past defects are whole-range, not edge defects. Three ways forward:
+1. **Model mix on the team harness.** Frontier planner and reviewer, flash builder (the old asymmetric
+   idea, untested since the team prompts). Score on P4 and record cost. Ron's lean: "sharper teams might
+   pull ahead and show cost is one of many variables."
+2. **A lighter lever:** the reviewer writes an independent check of the core engine (an oracle), not only
+   a sweep of the key. Independence is what caught both mtg1 defects.
+3. **Per-limit edge coverage** (the calibrated fix), if the edge gate is still wanted.
+
+**Candidates (before the pause):**
 - **The edge-class gate, with "spans" in the class list.** A transition *instant* was pinned and a meeting
   *spanning* one was not. That is the third instance of "the key guards only the edges it contains".
 - **A replicate of the pair**: N=1 each.

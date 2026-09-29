@@ -4912,3 +4912,20 @@ pings.
 - *Recorded, not scored.* **Both torn down:** spend recorded, artifacts pulled, harvest re-confirmed (4
   commits each), trees clean, keys revoked and verified absent, VMs destroyed, records closed.
   `reap` found no orphans.
+
+## 2026-09-28h — Edge-class gate: calibration run, build PAUSED. The approved design would not have caught mtg1
+
+`specs/edge-class-gate.md` was approved and built through Phase 1 (calibrate on the corpus) only. The
+record is `specs/edge-class-calibration.md`. The extraction was done by two read-only agents; I
+spot-checked the cited lines against the source.
+- **31 shipped or in-loop defects since 09-19c.** 6 are **whole-range** defects (wrong formula or table
+  data: linear fret spacing, a double transpose, CAGED tables, quiz grading, a fall-through), not edge
+  defects. 8 fit two classes. A "classify by mechanism, not by where it is observed" tie-break resolves
+  all 8 (proposed).
+- **`discontinuity` has no shipped instance**, so it is unvalidated.
+- **Decisive:** per-class coverage would have **passed mtg1**. Its key had real `span` rows (V35/V37/V38,
+  across work and sleep edges). The missing row was a span across the **DST limit** specifically. The
+  calibrated fix is per-limit coverage, but Ron paused the build: "maybe we've got into a bit of an
+  overdesign situation". The team's coordination gains hold regardless of the mix, and model mix
+  (frontier plan and review, flash build) may be the more interesting next lever. Next-session options
+  are in NEXTSTEPS item 3.
