@@ -5068,3 +5068,16 @@ the key's size drives every downstream sweep.
     ending exactly at hours end is core. That is correct for intervals and unlike mtg1c's instant-inclusive end.
   - **Wrapped working hours** (start > end, a night shift) have **no row and no declared policy**. That is
     mtg1c's shipped class, so watch it in the sweep.
+
+**Planner working pattern (recorded, not scored; Ron observed heavy scout use live).** Taken from the planner's
+`tool_execution_start` events, not its thinking:
+- **One subagent, on Opus 5.** `subagents.ts` inherits the parent's model unless the model is named, and the
+  planner prompt says to omit it. So the planner's "scout" was `claude-opus-5` at `high` thinking, not the
+  roster's flash `scout` seat. Its task was runtime ground truth (which zones Intl accepts, the exact offset
+  strings for Kolkata/Chatham, and so on). It was continued twice at `low`, to extract findings. Its spend is on
+  the same key and model, so per-generation reconciliation will fold it into "planner".
+- **81 bash calls: 55 were computation** (50 inline `bun -e`/`node -e` evals, 3 scripts written to /tmp, 2
+  scripts run). The rest were reads. The planner computed and cross-checked its expected values by running
+  code, which is what its prompt allows ("a script in /tmp that computes a table of expected values"). The app
+  did not exist yet, so the check is independent of the code under test, but it leans on the runtime's
+  Intl/tzdb rather than a hand rule table. mtg1's planner: compare at judging.
