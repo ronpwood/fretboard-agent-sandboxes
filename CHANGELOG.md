@@ -5125,3 +5125,120 @@ prompt *and the spec* before calling a behaviour unprompted.)
 - So the different look comes from the planner fixing a different information architecture (fewer features,
   pinned more precisely), not from styling choices. Downstream effort: test designer and builder output tokens
   within 4% of mtg1's (85k vs 88k, 80k vs 81k). The planner used 3.6× mtg1's output tokens.
+
+## 2026-09-29c — mix1 judged: 0 value defects in 2,177,633 oracle checks, DST spans included; the Opus reviewer found a real cross-frame bug outside the key
+
+Pre-registration: 2026-09-29b. Sweep: `.sandbox/runs/mix1-20260929-67be72-artifacts/sweep_mix1.ts` (host-only,
+the rule-based oracle, never Intl), with output in `sweep_mix1.out` and `sweep_mix1.mutate.out`. Harvested to
+`refs/sandbox/mix1-20260929-67be72` (4 commits); traces pulled, plus the planner's subagent session
+(`subagents/`, which the trace pull does not collect). The app was exported for Ron's code review to the private
+repo `ronpwood/mix1-meeting-planner`: the 4 team commits replayed onto the blank shell, with `apps/app`
+byte-identical to the harvest and 172/172 tests passing standalone.
+
+| | mix1 (Opus plan+review, flash build) | mtg1 (team, all flash-tier) | mtg1c (control) |
+|---|---|---|---|
+| verdict | approved at review_2 (1 revision) | approved at review_3 (2) | approved at review_2 (1) |
+| review_1 | 11/14 requirements, 151/152 values, 4 blocking (all in `view.ts`) | 13/15, 71/71, 2 blocking | 11/18, 8 blocking |
+| wall clock: plan / test design / build / review_1 / revise_1 / review_2 | 2,018 / 258 / 311 / 2,663 / 249 / 603 s | 457 / 595 / 311 / 141 / 110 / 83 s | — |
+| `V` rows: plan → end | 150 at plan → V1–V156 effective at end (A5 added V152–V156) | 56 → 73 | n/a |
+
+### Predictions
+
+| | mix1 |
+|---|---|
+| **P1** instrument | **MET**: both reviews swept every effective `V` and declared `value_sweep.ts`. review_1's first submission failed `values_swept` on labels (V87 split into two checks; amended rows keyed differently); the in-session retry passed |
+| **P2** amendment | **MET**: 5 proposed, 5 accepted with first-principles reasons. A1/A2 (test designer: 2026-03-10 is a Tuesday, so `off` cannot appear); A3 (builder: V93 unsatisfiable, re-derived independently by the reviewer in `/tmp/p8.ts`); A4 (builder: R11/V144); **A5 (builder, after review_1): V152–V156, the review's findings turned into key rows** |
+| **P3** traps cite `V` | **MET after one correction**: the first `spec_form` failed "no trap listed"; the retry passed 14/14, and the file parses to 16 traps. The cause was not isolated (the gate most likely read the file before the traps were written) |
+| **P4** zero reachable value defects | **MET: 0 in 2,177,633 checks** (below). **Night shifts are recorded as a spec-level policy gap** (Ron's scoring call, 2026-09-29) |
+| **P5** key covers the edge classes (recorded, not a gate) | Transition, gap, overlap and rollover **covered at plan** (V79–V93, V87, V89/V90, V61/V94/V107). **The span-across-a-transition row: MISSED at plan and never added.** Yet C.span is 16,796/16,796 exact, because the classifier reads the wall clock *at the end instant* (`zonedParts(zone, t+d)`), not start + duration in local minutes. The engine was right without the row |
+| **P6** no non-model loss | **MET**: 0 provider retries, 0 timeouts. Two in-session gate retries (planner `spec_form`, reviewer `values_swept`). **Deviation:** the key limit was raised $20 → $50 mid-run (budget only). Host-side incident: a stray second mount was torn down at $0 |
+
+### P4 detail (the oracle, with Africa/Lagos added in the sweep at a fixed +01:00, since the default roster uses it)
+
+| class | checks | result |
+|---|---|---|
+| A. instant → local date, time, offset, `offsetLabel` (17 zones × 22 GRID instants) | 1,496 | exact |
+| B. `deltaMinutes` and `dayDifference`, all ordered pairs at each GRID instant | 12,716 | exact |
+| C. `classify` vs the oracle rule on the **true wall clock of every occupied minute, split at each transition instant**: every 15 min across 29 dates (GRID + every 2026 transition date and the day after) × 6 durations × 4 hour profiles × 17 zones | 2,111,332 | exact |
+| **C.span**: the subset where a transition falls inside the meeting | **16,796** | **exact** |
+| D. `localDayColumns`: count (46/48/50) and every column's instant, label, offset and wall minute | 24,157 | exact |
+| E. `rankAll`: full ranked lists (default roster and a 6-zone DST roster × 29 dates × 4 durations) | 11,136 | exact |
+
+- **Mutation check:** `MUTATE=1` (Kathmandu read as +5:30, and every meeting end read one minute late) turns A, B, C,
+  C.span, D and E red (2,120,213/2,177,633). A.date and B.dayDifference stay green, because a 15-minute shift at
+  mid-day GRID instants cannot move a date. The sweep can see defects of both kinds.
+- **The mtg1/mtg1c classes:** DST-straddle is exact (C.span). End-inclusive is exact: boundaries are hit at
+  15-minute steps, and the spec declares interval bounds (`end <= hoursEnd`), so a meeting ending at hours end is core.
+- **Night shifts (recorded, not a defect under the declared rule):** the hours inputs are free `type="time"`
+  fields with no start < end guard, so a 22:00–06:00 worker can be entered. The spec fixes AWAKE = 07:00–22:00 for
+  everyone and declares no wrapped-hours policy, so that worker is `asleep` for **all 23,338** 60-minute meetings
+  inside her own shift (offered zones, the sweep's instants), and never core at any hour. Confirmed in the
+  rendered DOM (happy-dom, a stored plan with one night-shift member: 14/14 in-shift cells `asleep`).
+  **mtg1 handled wrapping (`toSegments`); mtg1c did not.** Here the cause is the planner's domain rule, not a
+  code bug.
+
+### The reviewer seat (the pre-registered "outside the key" record)
+
+- **review_1 checked far past the key.**
+  - `/tmp/p13.ts` is its own implementation of the spec's rule against `classify`: 12 zones × 10 dates × 48 columns ×
+    5 hour windows × 4 day sets × 3 durations = **345,600 cases, 0 mismatches**.
+  - Day lengths across 30 zones × 7 transition dates are exactly {46, 48, 50}.
+  - An R13 scan for host-clock reads.
+  - Three real-browser Playwright scripts. One of them found **the Auckland bug:** clicking a suggestion selected a
+    different instant in **6/30 viewer zones** (39/240 buttons), all east of UTC. The ranking window is the UTC day
+    (by design, for R11), while the grid is the viewer's local day, and the click mapped between the two wrongly. Zones
+    were chosen by the reviewer (Auckland, Kathmandu, Kiritimati); the key's viewer rows used London and Tokyo.
+  - Also blocking: undated off-day suggestions (31 buttons, 5 zones), no rendered column headers (V87), and
+    name-keyed lookups (R1).
+- **review_2 re-verified with fresh code, not the builder's harness** (`/tmp/rv1.ts`: "written fresh — not the
+  builder-edited harness"): 0/30 zones mis-select, a real-browser re-check, frozen sections byte-identical, and the
+  builder's fixed-suite diff read. Weakest point: little *new* search (two non-blocking notes only).
+- Its prompt says "enumerate; don't sample", so the *form* of the 345,600-case oracle is prompted. Its scope (its own
+  rule implementation over zones the key never named, and a real browser) was the model's choice.
+
+### What happened that the predictions didn't ask about
+
+- **The planner lifted the builder through the spec.**
+  - mix1's `## Approach` told the builder to sweep all 150 rows and read the real DOM, and the flash builder did
+    (`/tmp/sw/sweep.ts`, and a Playwright read of the DST day). It was first misread by me as unprompted
+    (correction in 2026-09-29b).
+  - Downstream output tokens were within 4% of mtg1's on build_1 (80k vs 81k), so the better spec changed *what*
+    the builder spent effort on, not how much.
+- **The spec is semantics-led, not feature-led.** It has 14 requirements pinning states, viewer-zone invariance and
+  host-TZ independence, where mtg1 had 15 feature requirements (presets, ICS, toasts). Ron: the UI "looks very
+  professional", with a very different first-pass look from earlier builders.
+- **The builder took a 4-point rejection and closed it in 249s,** filing A5 so every later sweep enforces the fixes.
+  It had already pushed back once (A3), so it agrees when the evidence is good and argues when it is not.
+
+### What it means (N=1; model and sampling not separable)
+
+- **On value correctness, mix1 is the first arm exact on everything its spec declares,** including the DST-span
+  class that mtg1 shipped, across 2.18M oracle checks. The residual gap is a *policy* the planner chose (a fixed
+  sleep window), not an error in reaching it.
+- **P5's lesson:** the span row was never written, and the engine was right anyway. A design that computes each
+  value from its own instant (the wall clock at the end, not start + duration) removes the class, where a key row
+  would only guard it. That's evidence for the abandoned gate's premise being the wrong lever.
+- **The reviewer seat produced the defect this run would otherwise have shipped.** The Auckland bug lives between
+  two frames (UTC day vs local day), which no single key row pins. It was found by an Opus reviewer choosing
+  adversarial inputs and checking in a real browser. That is the "oracle lever" appearing unprompted in scope.
+
+**Cost, reconciled per generation before teardown (2026-09-29):** all **346/346** generation ids resolved
+(`artifacts/gens/`), summing to **$31.4170** against the key's billed **$31.4177**. The $0.0007 gap is the setup
+gate pings; the dashboard showed 353 requests, $31.42, 47.1M tokens and a 97.1% cache hit rate. The planner's
+subagent ids come from `~/.pi/agent/sessions/subagents/`, which `sbx manage traces` does **not** pull; they were
+pulled by hand. **Python urllib calls to `/api/v1/generation` all failed** (likely UA/TLS) while curl succeeded; use curl.
+
+| seat | model | gens | billed |
+|---|---|---|---|
+| reviewer (2 reviews + 1 label retry) | claude-opus-5 | 107 | **$18.547** |
+| planner | claude-opus-5 | 84 | $10.074 |
+| planner's subagent (inherits the parent model) | claude-opus-5 | 25 | $2.320 |
+| builder (build + revise) | deepseek-v4.1-flash | 91 | $0.314 |
+| test designer | deepseek-v4.1-flash | 33 | $0.138 |
+| documenter | gpt-5.6-luna | 6 | $0.024 |
+| **total** | | **346** | **$31.417** |
+
+- mtg1 billed $1.807 and mtg1c $1.270. **mix1 is 17× mtg1**, and **98.5% of it is the two Opus seats.** The run log
+  estimated $28.87; its per-seat rates under-read the flash builder ("$0.07" for 6.8M tokens).
+- Tokens (in / cacheRead / cacheWrite / out): planner 168 / 9.84M / 190k / 159k; reviewer 5.2k / 17.5M / 565k /
+  249k; builder 303k / 14.1M / 0 / 115k. *Recorded, never scored.*

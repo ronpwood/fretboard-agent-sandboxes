@@ -4,6 +4,7 @@ created: 2026-09-29T10:47:13-07:00
 modified:
   - 2026-09-29T10:47:13-07:00
   - 2026-09-29T11:05:00-07:00
+  - 2026-09-29T13:13:27-07:00
 commits:
   - 84e801a
   - b365252
@@ -81,10 +82,10 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 | Phase | Purpose | Done when | Status |
 |---|---|---|---|
 | [1. Roster](#phase-1-roster) | Add the mix roster; prove it differs from team in two lines | Diff shows exactly the two model lines + header; config loads | `complete` |
-| [2. Pre-register and sync](#phase-2-pre-register-and-sync) | Freeze predictions, sync greenfield, confirm Opus answers | 2026-09-29b committed; sync pushed; the only factory delta is the roster | `wip` |
-| [3. Mount and run](#phase-3-mount-and-run) | One arm on the pinned brief | Check 0 passes; the chain ends with an approved or exhausted review | `idle` |
-| [4. Judge](#phase-4-judge) | P1–P6 against mtg1/mtg1c | 2026-09-29c written, sweep committed host-side | `idle` |
-| [5. Teardown and cost](#phase-5-teardown-and-cost) | Reconcile per generation, tear down, close item 3 | Billed $ per model recorded; VM gone; NEXTSTEPS updated | `idle` |
+| [2. Pre-register and sync](#phase-2-pre-register-and-sync) | Freeze predictions, sync greenfield, confirm Opus answers | 2026-09-29b committed; sync pushed; the only factory delta is the roster | `complete` |
+| [3. Mount and run](#phase-3-mount-and-run) | One arm on the pinned brief | Check 0 passes; the chain ends with an approved or exhausted review | `complete` |
+| [4. Judge](#phase-4-judge) | P1–P6 against mtg1/mtg1c | 2026-09-29c written, sweep committed host-side | `complete` |
+| [5. Teardown and cost](#phase-5-teardown-and-cost) | Reconcile per generation, tear down, close item 3 | Billed $ per model recorded; VM gone; NEXTSTEPS updated | `wip` |
 
 ### Phase 1: Roster
 
@@ -109,8 +110,8 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 #### 1. Write the pre-registration (CHANGELOG 2026-09-29b)
 
-- [ ] The question, the arm table (mix1 vs mtg1 vs mtg1c), and the input delta (two model lines + a new pin).
-- [ ] Predictions, with a miss counting as a result:
+- [x] The question, the arm table (mix1 vs mtg1 vs mtg1c), and the input delta (two model lines + a new pin).
+- [x] Predictions, with a miss counting as a result:
   - **P1 (instrument):** every review sweeps every effective `V` and declares a `value_sweep.*`.
   - **P2:** at least one amendment is proposed and ruled on.
   - **P3:** every trap cites an existing `V`. Record whether `spec_form` needed a correction.
@@ -119,12 +120,12 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
     wall-time row (or declares no wall input), a date-rollover row, **and a span across a transition**, the
     row mtg1 lacked. Record which ones appear at plan, before any amendment.
   - **P6:** no non-model loss; record every retry and timeout.
-- [ ] Recorded, not scored: whether the reviewer runs any check *outside* the key (an independent probe
+- [x] Recorded, not scored: whether the reviewer runs any check *outside* the key (an independent probe
       or oracle). That's the fallback lever's mechanism appearing unprompted. Also record V counts, review
       trajectory, per-seat tokens, wall clock, and billed $ per model.
-- [ ] Confounds: N=1; model × sampling are not separable against mtg1's N=1; a new greenfield pin (factory
+- [x] Confounds: N=1; model × sampling are not separable against mtg1's N=1; a new greenfield pin (factory
       identical); pi version at mount.
-- [ ] A spending limit set before mounting: **$20** (opus-5 at $5/$25 per M; mtg1's glm reviewer alone was 77
+- [x] A spending limit set before mounting: **$20** (opus-5 at $5/$25 per M; mtg1's glm reviewer alone was 77
       generations; gf2-3 asymmetric billed $7.73).
 - [x] Ron approves before the mount; nothing above the mount record changes after that commit.
 
@@ -139,57 +140,57 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 - [x] `git -C ../greenfield-sandboxes diff --stat b4906f7 HEAD` — the only changed path is `adws/adw_sssf_config/sssf.team-mix.config.yaml`
 - [x] `git -C ../greenfield-sandboxes grep -il 'meeting planner\|daylight saving' HEAD -- adws just sandbox_mount` — no hits (no leak)
 - [x] `curl -s https://openrouter.ai/api/v1/chat/completions -H "Authorization: Bearer $OPENROUTER_API_KEY" -H 'Content-Type: application/json' -d '{"model":"anthropic/claude-opus-5","max_tokens":8,"messages":[{"role":"user","content":"ping"}]}' | jq -r '.choices[0].message.content // .error.message'` — opus-5 answers on OpenRouter (setup gate D doesn't ping it)
-- [ ] `git log -1 --format=%s -- CHANGELOG.md` — the pre-registration commit exists and comes before the mount
+- [x] `git log -1 --format=%s -- CHANGELOG.md` — the pre-registration commit exists and comes before the mount
 
 ### Phase 3: Mount and run
 
 #### 1. Mount
 
-- [ ] `just sbx mount mix1 --limit 20 --target greenfield`
+- [x] `just sbx mount mix1 --limit 20 --target greenfield`
 
 #### 2. Execute on the mix roster
 
-- [ ] `just sbx lifecycle execute <run-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-mix.config.yaml team`
-- [ ] Append the mount record (run id, adw id, pid, pin, pi version, resolved command) to 2026-09-29b.
-- [ ] While it runs, note in-flight observations with timestamps before any outcome (the 2026-09-28f form):
+- [x] `just sbx lifecycle execute <run-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-mix.config.yaml team`
+- [x] Append the mount record (run id, adw id, pid, pin, pi version, resolved command) to 2026-09-29b.
+- [x] While it runs, note in-flight observations with timestamps before any outcome (the 2026-09-28f form):
       V count at plan, and P5 classes present at plan.
 
 #### Validation — Phase 3
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Check 0: gates A–F pass (gate E: credit covers the open run), greenfield HEAD = the Phase 2 sha, tree clean, brief present
-- [ ] `ssh <vm>.exe.xyz "grep -m1 -- '--config' app/run.log"` — the run resolved `adw_team_sdlc.py --config adws/adw_sssf_config/sssf.team-mix.config.yaml`
-- [ ] Trace check: the planner's and reviewer's generations report model `anthropic/claude-opus-5`, and the builder's report `deepseek/deepseek-v4.1-flash` (judge the tool/generation records, not summarized thinking)
-- [ ] The chain ended: approved, or review cap reached; `just sbx manage harvest <run-id>` landed the commits
+- [x] Check 0: gates A–F pass (gate E: credit covers the open run), greenfield HEAD = the Phase 2 sha, tree clean, brief present
+- [x] `ssh <vm>.exe.xyz "grep -m1 -- '--config' app/run.log"` — the run resolved `adw_team_sdlc.py --config adws/adw_sssf_config/sssf.team-mix.config.yaml`
+- [x] Trace check: the planner's and reviewer's generations report model `anthropic/claude-opus-5`, and the builder's report `deepseek/deepseek-v4.1-flash` (judge the tool/generation records, not summarized thinking)
+- [x] The chain ended: approved, or review cap reached; `just sbx manage harvest <run-id>` landed the commits
 
 ### Phase 4: Judge
 
 #### 1. Build the sweep adapter
 
-- [ ] Copy `sweep_mtg1.ts` → `sweep_mix1.ts` and adapt it only to mix1's function names and API. Keep the
+- [x] Copy `sweep_mtg1.ts` → `sweep_mix1.ts` and adapt it only to mix1's function names and API. Keep the
       oracle (`specs/oracles/meeting_oracle.ts`), GRID and rules unchanged.
-- [ ] Also run the mtg1 DST-straddle probe and the mtg1c wrapped-hours and end-inclusive probes against
+- [x] Also run the mtg1 DST-straddle probe and the mtg1c wrapped-hours and end-inclusive probes against
       mix1, so all three apps face the same failure classes.
 
 #### 2. Write CHANGELOG 2026-09-29c
 
-- [ ] A P1–P6 table with mtg1/mtg1c columns carried from 2026-09-28g. P4 detail with instance counts.
-- [ ] What happened that the predictions didn't ask about. What it means, at N=1.
+- [x] A P1–P6 table with mtg1/mtg1c columns carried from 2026-09-28g. P4 detail with instance counts.
+- [x] What happened that the predictions didn't ask about. What it means, at N=1.
 
 #### Validation — Phase 4
 
 > **Loop gate.** Do not start Phase 5 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `bun test specs/oracles/meeting_oracle.test.ts` — the oracle's self-test still passes (planted rule error caught)
-- [ ] `bun run .sandbox/runs/mix1-*-artifacts/sweep_mix1.ts` — prints per-class tallies; a mutation check (one planted wrong offset in the adapter's call) turns them red (memory: exact oracle + mutation test)
-- [ ] Every P4 finding is re-checked by hand at one instance, in the DOM, before it's written up
+- [x] `bun test specs/oracles/meeting_oracle.test.ts` — the oracle's self-test still passes (planted rule error caught)
+- [x] `bun .sandbox/runs/mix1-20260929-67be72-artifacts/sweep_mix1.ts <app>` (2,177,633/2,177,633; MUTATE=1 red) — prints per-class tallies; a mutation check (one planted wrong offset in the adapter's call) turns them red (memory: exact oracle + mutation test)
+- [x] Every P4 finding is re-checked by hand at one instance, in the DOM, before it's written up
 
 ### Phase 5: Teardown and cost
 
 #### 1. Reconcile, then tear down
 
-- [ ] Resolve every generation id and sum billed $ per model **before** teardown (memory: toolchain-unpin).
+- [x] Resolve every generation id and sum billed $ per model **before** teardown (memory: toolchain-unpin).
       The total must match the key's billed usage within setup-ping noise.
 - [ ] `just sbx lifecycle teardown <run-id>` then `just sbx manage reap` — no orphans; key revoked.
 
