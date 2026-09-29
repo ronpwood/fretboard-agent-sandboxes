@@ -5045,3 +5045,26 @@ non-model loss, not a result. The key was patched via the provisioning API and t
 Inputs, models, prompts and predictions are unchanged. **The expected-cost estimate ($4–10) was wrong by
 roughly 4×.** Record that for the model-mix cost question: the frontier planner wrote a far bigger key, and
 the key's size drives every downstream sweep.
+
+**In-flight observation, recorded 2026-09-29T11:31:54-07:00 BEFORE any outcome** (the test designer is running; no build, no review):
+- The planner's first submission failed `spec_form` ("no trap listed"). The retry passed with 14/14 checks.
+  The file on disk parses to 16 traps. Most likely the gate read it before the traps were written; this is
+  **not a gate defect**.
+- The committed spec `3859d1a` (`specs/4052031f_timezone-meeting-planner.md`) has **150 `V` rows** (mtg1: 56).
+  The design is a 30-minute grid over the viewer's local day with a meeting duration (default 60) that
+  re-ranks. Each member gets working hours, and cells are classified core/fringe/unsocial/asleep/off.
+- **P5 at plan:**
+  - DST transition **covered**, including US/EU disagreement weeks: V88, V91–V93, V127–V129, and grid day
+    lengths V79–V82 (46/50 columns).
+  - Gap wall time **covered**: V87 (no `02:00` label on US spring-forward day).
+  - Overlap **covered**: V89/V90 (two `01:00` columns with different offsets).
+  - Date rollover **covered**: V61, V94, V107.
+  - **A meeting spanning a transition: ABSENT.** No classification row has a duration crossing a
+    transition instant. V92 pins the *display* across the gap (30 real minutes → 90 wall minutes), not the
+    classification of a meeting across it. This is the **same row mtg1 lacked**, and the prediction that the
+    frontier planner writes it unprompted is **not met at plan**.
+- **Also recorded:**
+  - Bounds are declared inclusive in interval form (`start >= hoursStart and end <= hoursEnd`), so a meeting
+    ending exactly at hours end is core. That is correct for intervals and unlike mtg1c's instant-inclusive end.
+  - **Wrapped working hours** (start > end, a night shift) have **no row and no declared policy**. That is
+    mtg1c's shipped class, so watch it in the sweep.
