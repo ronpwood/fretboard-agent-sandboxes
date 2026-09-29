@@ -5036,3 +5036,12 @@ pi 0.87.1 (gate F DRIFT against the 0.85.1 image row is the known pending lock b
 **Host-side incident, not a run loss:** a stray second `sbx mount mix1` was started by mistake and killed at
 once. It had already created `mix1-20260929-58351b` (VM + key). It was torn down with `--no-harvest` before
 anything ran on it: $0 spend, key revoked and verified absent, VM destroyed, record closed.
+
+**DEVIATION, budget only (2026-09-29T11:31:05-07:00, Ron: "yes raise now"):** the key limit was raised from
+**$20 to $50** mid-run, during the planner's `spec_form` retry, **before any outcome**. At the time the key had
+used $12.22, all of it on the planner (77 turns before its first submission; a 70 KB spec with 150 `V` rows,
+against mtg1's 56). With three Opus reviews still to come, $20 would have cut the run off in a review: a P6
+non-model loss, not a result. The key was patched via the provisioning API and the run record updated.
+Inputs, models, prompts and predictions are unchanged. **The expected-cost estimate ($4–10) was wrong by
+roughly 4×.** Record that for the model-mix cost question: the frontier planner wrote a far bigger key, and
+the key's size drives every downstream sweep.
