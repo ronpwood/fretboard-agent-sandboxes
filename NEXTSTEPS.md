@@ -39,6 +39,18 @@ anyway.
 are unchanged, and only the planner and reviewer seats move to `claude-opus-5`. It is scored on P4 against
 mtg1/mtg1c, with cost recorded, not scored. N=1 first (memory: small N before fan-out).
 
+**Possible follow-up arm: `mix2`, the inverse (Ron, 2026-09-29).** Flash planner and reviewer, Opus builder, on
+the same brief. It completes the grid: mtg1 = flash/flash, mix1 = Opus plan+review / flash build, mix2 = flash
+plan+review / Opus build. Ron's hypothesis: Opus's ambition carries across roles, so handed a thin key it will
+write many amendments and new tests.
+- Candidate predictions: builder amendments ≥ 5 (mtg1: 3); `V` rows added by amendment ≥ 30% of the key; the
+  DST-span row arrives by amendment.
+- Recorded: does the flash reviewer reject *any* Opus amendment? Only the reviewer rules, so a flash reviewer
+  facing many well-argued amendments may approve them without scrutiny. That failure mode only shows up here.
+- Budget: $30–50 (mix1's build_1 was 7.6M cached / 80k output tokens, which is about $6+ per pass at Opus rates).
+- **Pre-register only after mix1 is judged**, using mix1's actual numbers. mix1's Opus reviewer (amendment
+  rulings, checks outside the key) is already a partial answer on "ambition regardless of role".
+
 **The fallback lever, if mix1 still ships a value defect that only an independent check would find:** the
 reviewer writes its own engine oracle instead of only sweeping the key. Independence is what caught both
 mtg1 defects.
