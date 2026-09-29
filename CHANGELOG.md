@@ -4652,3 +4652,43 @@ Both keys are now 100% correct: amort1 32/32, amort2 43/43.
 - **Lesson for oracles:** an oracle doing money in floats can be *less* right than the thing it judges.
   Build the next one in exact arithmetic from the start, and treat a key-vs-oracle mismatch as a
   question about both sides.
+
+## 2026-09-28e — Consolidation: the team arm is the default, tdd is the frozen control, six rosters archived
+
+Built from `specs/team-default-consolidation.md` (NEXTSTEPS item 2b). Base `4711419`, host commit
+`edc2507`, greenfield sync `b4906f7` (local, **not pushed**; item 3's `sync --push` carries it).
+
+**Decisions (Ron):**
+- Scope is rosters only; every ADW stays. The ADW cut is a later item.
+- `frontier` and `gemniflash` stay live.
+- "Team is the default" lands on `sbx lifecycle execute`'s `ADW` default. `sdlc` was the old
+  default. A bare `just adw` still lists the recipes.
+- The control keeps its name `tdd`, plus `alias control := tdd`. Renaming it would orphan every
+  historical reference.
+
+**What changed:**
+- `target_sync.forbidden_patterns()` now turns only `archive/<name>-YYYYMMDD-HHMMSS` entries into
+  leak patterns. Before, *any* directory name under `archive/` became one. So a natural layout
+  such as `archive/adw_sssf_config/` would have made every synced file "leak" (exit 2).
+- `git mv` moved six rosters to `archive/factory/rosters/`: asymmetric, deepestseek, inverse,
+  open-weights, top-speed and dsflash41. The five-roster demo prompt moved to
+  `archive/factory/prompts/demo/`.
+- `0731` stays registered in `models.json.tmpl`. Setup gate D still pings it by name.
+- Operational docs and the orchestrator skill now show `team` as the default and `"" control`
+  for the control arm. The fan-out cookbook now loops over `roster adw` pairs.
+
+**Byte-identity (the condition that keeps item 3 a clean smoke test):** `git diff 4711419` covers
+`adws/adw_modules`, `adws/adw_data`, both chains, both of their rosters and `models.json.tmpl`. It is
+empty on the host. Diffing greenfield's pre-sync `61a6e45` against the post-sync HEAD over the same
+paths is also empty. Byte compares between host and greenfield of those files are identical.
+
+**Sync:** all gates passed (manifest, build, test, rosters). The six rosters were deleted from
+greenfield by the mirror, and the meeting-planner brief commit survived.
+
+**Found on the way, not fixed:**
+- The team chain rejects any roster but its own, because `spec_form` needs the team planner.
+  So a team fan-out is N replicates, not N models. The fan-out cookbook now says so.
+- `.claude/skills/sssf/templates/` (the installer's copy) has neither `tdd` nor `team`, and its
+  `gates.py` has drifted from the live one. It is recorded in the spec's Notes.
+- NEXTSTEPS' "run the sync with node v22" line was stale. Host pi is on v24 (memory `pi-on-node-24`),
+  and the sync ran clean there.

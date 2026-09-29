@@ -4,7 +4,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently run:** the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
+**Recently run:** the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
 
 **Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
@@ -25,28 +25,6 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 2b. FIRST: consolidate the codebase around the team arm (decided 2026-09-28)
-
-Ron is leaning towards deferring to the team model. The evidence: team2 (music) shipped 0 defects,
-and amort2 was exact where the control shipped the half-cent tie (CHANGELOG 2026-09-26g, 2026-09-28d).
-That meets the "after a second brief" bar, at N=1 per brief. Write it as a `plan` spec first, then build.
-
-**Three conditions:**
-1. **Make team the default, but don't delete the old path.** `just adw` runs team. The `tdd` ADW and the
-   default roster become a **frozen, named control**. Every finding so far came from a same-brief control
-   (the tie showed up only because amort1c existed).
-2. **Cut aggressively everywhere else, archiving rather than deleting** (`archive/` convention), after
-   an inventory of what references what. Candidates: the five `0731` rosters that nothing runs
-   (asymmetric, deepestseek, inverse, open-weights, top-speed), the `dsflash41` duplicate, and ADWs no
-   experiment has used in weeks. Re-check the "Do NOT tidy" rules below: `0731` stays *registered* in
-   models.json even if its rosters are archived.
-3. **Keep the refactor from confounding the next run.** The team arm's prompts, config and gates must
-   come out **byte-identical** (verify with a diff). Then the meeting-planner run (item 3) doubles as
-   the post-cleanup smoke test.
-
-**The next lever (not in this cleanup):** "the key only protects edges it contains". Make the P5-style
-obligation a gate: the key must include a row for each named edge class of the brief's domain.
-
 ## 3. NEXT: the team arm on a third brief, the meeting planner (PREPARED 2026-09-28)
 
 **The amortization brief is done** (CHANGELOG 2026-09-28a–d). The team arm (amort2) was approved at
@@ -56,8 +34,9 @@ right only because its key happened to pin a tie loan. Verdict at N=1: the lever
 domain, but **the key catches an edge only when the key contains that edge.**
 
 **Prepared, not mounted:**
-- The brief: `prompts/meeting-planner.md`, greenfield `61a6e45`, **local commit, not pushed**. The next
-  `just target sync greenfield --push` carries it (run it with nvm node v22 on PATH, see memory).
+- The brief: `prompts/meeting-planner.md`, greenfield `61a6e45`, **local, not pushed**. The
+  consolidation's sync `b4906f7` sits on top of it, also unpushed. The next `just target sync greenfield
+  --push` carries both. Default node v24 works (memory `pi-on-node-24`); the old "use v22" note was stale.
 - `leak_patterns`: `meeting planner` and `daylight saving` added; the factory export had zero hits beforehand.
 - The oracle: `specs/oracles/meeting_oracle.ts`. It is **rule-based** (US/EU/AU/Lord Howe/NZ DST rules
   and 30/45-minute offsets), so it is independent of the Intl/tzdb the app will use. It matched tzdb on
@@ -67,13 +46,16 @@ domain, but **the key catches an edge only when the key contains that edge.**
 
 **Steps:** (1) sync + push; (2) pre-register, reusing P1–P6, with P4 judged by `offsetAt`/`fromWall`/
 `overlap` over the PROBES plus a zone × date grid, and P5 = "the key covers a DST transition, a
-gap/overlap wall time, and a date rollover"; (3) mount the team arm, plus the tdd control on the same
-brief (the amort pair showed the control is where the edge shows up); (4) build the sweep adapter
-once the apps exist.
+gap/overlap wall time, and a date rollover"; (3) mount the team arm (`execute <id> prompts/meeting-planner.md`, the default)
+plus the control on the same brief (`… "" control`); the amort pair showed the control is where the edge shows up.
+This run is also the **post-consolidation smoke test**: the arm inputs are byte-identical to amort2's
+(CHANGELOG 2026-09-28e); (4) build the sweep adapter once the apps exist.
+
+**The next lever (not in this cleanup):** "the key only protects edges it contains". Make the P5-style
+obligation a gate: the key must include a row for each named edge class of the brief's domain.
 
 **Still open, not blocking:** unsatisfiable-test detection (`tests_red` cannot tell "red, the code is
-missing" from "can never pass"). A replicate on the music brief. Promoting the team arm to the
-default only after the meeting-planner brief. A same-brief amortization replicate would say whether
+missing" from "can never pass"). A replicate on the music brief. A same-brief amortization replicate would say whether
 amort2 pinning a tie was luck.
 
 ## 4. Still open, not in a spec
@@ -86,9 +68,16 @@ amort2 pinning a tie was luck.
 - **Planner-specificity postmortem** (exploratory, 2026-09-24b): plans for harn4/5/6 frozen blind;
   harn7's hash taken after its outcome. Low priority at N=2.
 
+- **The ADW cut** (deferred from 2b, CHANGELOG 2026-09-28e): 12 upstream composables that no experiment
+  runs. The sssf and orchestrator skills (including `just_command_model.md`) reference them heavily, so
+  it needs its own inventory. `adw_prompt.py` stays regardless (provision.sh).
+- **`.claude/skills/sssf/templates/`**: the installer's copy has neither `tdd` nor `team` and a drifted
+  `gates.py`. Re-template it, or retire it with the ADW cut.
+
 ## 5. A 0731 control roster, if any A/B is wanted
 
-The default runs v4.1 and nothing runs `0731`. Build one only when an A/B needs it.
+The default runs v4.1 and no live roster runs `0731`. The five 0731 rosters are in
+`archive/factory/rosters/`; restore one only when an A/B needs it.
 
 ## 6. `specs/context-rot-and-self-compact.md` — a later experiment, gated
 
@@ -99,13 +88,14 @@ idle, note returned as the next turn) may never complete in print mode. Stage 3 
 A/B, builder seat only. Its prerequisite, the context curve, is built (CHANGELOG 2026-09-23g).
 
 
-# CURRENT STATE — DeepSeek V4.1 is the default; the other rosters are still on 0731
+# CURRENT STATE — DeepSeek V4.1 is the default; no live roster uses 0731
 
 **Read this before touching a roster or the model registry.** The reasoning behind the partial
 rollout is in CHANGELOG "2026-09-20 → 2026-09-23 — why the v4.1 rollout stopped at the default
-roster". Promote further only after a harness-fixed re-run, one roster at a time.
+roster". The 0731 rosters were archived on 2026-09-28 (CHANGELOG 2026-09-28e), not promoted.
+A restored one (`git mv` back from `archive/factory/rosters/`) still runs on 0731.
 
-### Registered globally; the default and one sibling use v4.1
+### Registered globally; every live roster that uses DeepSeek uses v4.1
 
 `sandbox_mount/guest/models.json.tmpl` carries **both** flash models:
 
@@ -117,14 +107,14 @@ roster". Promote further only after a harness-fixed re-run, one roster at a time
 | roster | defaults.model |
 |---|---|
 | **`sssf.config.yaml` (default)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) |
-| `sssf.dsflash41.config.yaml` | `deepseek-v4.1-flash` (now a duplicate of the default, left on purpose) |
-| `sssf.asymmetric` / `deepestseek` / `inverse` / `open-weights` / `top-speed` | `deepseek-v4-flash-0731` |
+| `sssf.team.config.yaml` (the team arm, `execute`'s default ADW) | the default roster's models, team prompts |
 | `sssf.frontier` | `claude-opus-5` |
 | `sssf.gemniflash` | `gemini-3.8-flash` |
 
 ### Do NOT "tidy" these
 
-- **`0731` stays registered** even after any promotion — a swap must be
+- **`0731` stays registered** although no live roster uses it. Setup gate D pings it by name
+  (`setup.just:319`), and archived rosters must stay restorable. It stays even after any promotion — a swap must be
   revertible without re-provisioning. Same rule that kept `glm-5.2` and
   `gemini-3.6-flash` on 2026-09-15.
 - **The `input` fields differ on purpose.** `0731` is genuinely text-only; v4.1

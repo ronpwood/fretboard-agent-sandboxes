@@ -3,8 +3,10 @@ plan: team-default-consolidation
 created: 2026-09-28T17:58:29-07:00
 modified:
   - 2026-09-28T17:58:29-07:00
+  - 2026-09-28T18:11:05-07:00
 commits:
   - 4711419
+  - edc2507
 agents:
   - claude-opus-5-5
 sessions:
@@ -12,7 +14,7 @@ sessions:
 back_refs:
   - specs/team-ownership-prompts.md — built the team arm this plan makes the default; its inputs must come out byte-identical
 forward_refs: []
-status: building
+status: complete
 ---
 
 # Plan: Make the team arm the default, freeze tdd as the control, and archive the dead rosters
@@ -127,7 +129,7 @@ Nothing is deleted. The six rosters and the demo prompt are **moved** with `git 
 
 ## Implementation Phases
 
-Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete · ``- [ ] `fail` `` failed (with reason).
+Status markers: `- [ ]` idle · ``- [x] `wip` `` in progress · `- [x]` complete · ``- [x] `fail` `` failed (with reason).
 
 | Phase | Purpose | Done when | Status |
 |---|---|---|---|
@@ -135,7 +137,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 | [2. Archive the rosters](#phase-2-archive-the-rosters) | Move six rosters + the dead demo | 4 rosters remain; byte-identity diff empty | `complete` |
 | [3. Flip the defaults](#phase-3-flip-the-defaults) | team is the default workflow; tdd is the named control | `just --dry-run` shows `adw_team_sdlc.py` for execute's default | `complete` |
 | [4. Docs](#phase-4-docs) | Operational docs match the code | no live doc names an archived roster or `"" tdd` as the default | `complete` |
-| [5. Prove it on greenfield](#phase-5-prove-it-on-greenfield) | Sync passes; greenfield's arm inputs unchanged | sync exit 0; greenfield diff of arm inputs empty | `wip` |
+| [5. Prove it on greenfield](#phase-5-prove-it-on-greenfield) | Sync passes; greenfield's arm inputs unchanged | sync exit 0; greenfield diff of arm inputs empty | `complete` |
 
 ### Phase 1: Unblock the archive
 
@@ -212,25 +214,25 @@ existing NEXTSTEPS note says v22).
 
 #### 1. Sync
 
-- [ ] Commit phases 1–4 on host `main`.
-- [ ] Note greenfield's HEAD, which should be `61a6e45` or later: `git -C ../greenfield-sandboxes rev-parse --short HEAD`.
-- [ ] `just target sync greenfield` (no `--push`).
+- [x] Commit phases 1–4 on host `main`.
+- [x] Note greenfield's HEAD, which should be `61a6e45` or later: `git -C ../greenfield-sandboxes rev-parse --short HEAD`.
+- [x] `just target sync greenfield` (no `--push`).
 
 #### Validation — Phase 5
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] The sync exits 0. The leak check, manifest, `bun build`, `bun test` and roster validation all pass.
-- [ ] `git -C ../greenfield-sandboxes diff --stat <pre-sync HEAD> HEAD -- adws/adw_modules adws/adw_data adws/adw_team_sdlc.py adws/adw_tdd_sdlc.py adws/adw_sssf_config/sssf.team.config.yaml adws/adw_sssf_config/sssf.config.yaml sandbox_mount/guest/models.json.tmpl` prints nothing. This proves the arms greenfield will run are byte-identical.
-- [ ] `ls ../greenfield-sandboxes/adws/adw_sssf_config/` — the same four rosters (the mirror deleted the six)
-- [ ] `git -C ../greenfield-sandboxes log -1 --format=%s -- prompts/meeting-planner.md` — the meeting-planner brief commit survived the sync
+- [x] The sync exits 0. The leak check, manifest, `bun build`, `bun test` and roster validation all pass.
+- [x] `git -C ../greenfield-sandboxes diff --stat <pre-sync HEAD> HEAD -- adws/adw_modules adws/adw_data adws/adw_team_sdlc.py adws/adw_tdd_sdlc.py adws/adw_sssf_config/sssf.team.config.yaml adws/adw_sssf_config/sssf.config.yaml sandbox_mount/guest/models.json.tmpl` prints nothing. This proves the arms greenfield will run are byte-identical.
+- [x] `ls ../greenfield-sandboxes/adws/adw_sssf_config/` — the same four rosters (the mirror deleted the six)
+- [x] `git -C ../greenfield-sandboxes log -1 --format=%s -- prompts/meeting-planner.md` — the meeting-planner brief commit survived the sync
 
 ## Global Validation
 
-- [ ] The byte-identity diff against `4711419` prints nothing on host `main`
-- [ ] `git status` is clean, and `git log --stat 4711419..HEAD` shows only the files in Relevant Files plus the moves
-- [ ] NEXTSTEPS: item 2b is removed, item 3 is updated so step (3) mounts `team` (default) plus `control` on the same brief, and the CURRENT STATE table is corrected
-- [ ] The CHANGELOG entry records the base SHA, the four decisions and the byte-identity result
+- [x] The byte-identity diff against `4711419` prints nothing on host `main`
+- [x] `git status` is clean, and `git log --stat 4711419..HEAD` shows only the files in Relevant Files plus the moves
+- [x] NEXTSTEPS: item 2b is removed, item 3 is updated so step (3) mounts `team` (default) plus `control` on the same brief, and the CURRENT STATE table is corrected
+- [x] The CHANGELOG entry records the base SHA, the four decisions and the byte-identity result
 
 ## Notes
 
@@ -274,7 +276,33 @@ assuming it.
 ## Amendments
 
 <details>
-<summary>— no amendments yet</summary>
+<summary>2026-09-28T18:11:05-07:00 — build deviations: more doc call sites, a corrected grep filter, a Phase 1 command fix, node v24</summary>
 
-Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+The build ran as planned, and every gate passed. Where it departed from the spec:
+
+- **More doc files than listed.** The Phase 4 grep found live references the inventory had missed,
+  all fixed:
+  - `.claude/commands/install.md:71`: "expect five rosters".
+  - `.claude/commands/prime.md:25`: `"" tdd`.
+  - `references/kickoff_paths.md:30`: top-speed example → frontier.
+  - `references/models.md`, three rows. The "In a roster?" column was stale: 0731 is now
+    "registered only", and glm-5.3 and gemini-3.8 are "default + team".
+  - `PLAYBOOK.md:109`: default `sdlc`.
+  - `execute.just:9`: header comment.
+  - `fan_out_n.md:123`: signature.
+  - `README.md:147`: "five rosters ship".
+- **`fan_out_n.md` loop reshaped.** It now loops over `"roster adw"` pairs (`ARMS=(…team… …control…)`),
+  not over roster names. This follows the Notes finding that team only runs on the team roster.
+- **The `tdd` recipe's comment was reordered.** `just --list` shows a recipe's *last* comment line,
+  so the description now ends with "FROZEN CONTROL: …" instead of a spec path.
+- **The Phase 1 validation command was wrong.** It needed `uv run --with pyyaml --with pydantic`
+  and `target_sync.load_config('greenfield')`. The asserts are unchanged, and they passed.
+- **The Phase 4 grep filters were wrong.** `grep -rn … .` prints paths without a `./` prefix, so
+  `^\./(…)` excluded nothing. Both commands were corrected in place to `^(\./)?(…)`.
+- **Phase 5 node.** It ran on default node v24, not v22. Memory `pi-on-node-24` (2026-09-28)
+  supersedes the NEXTSTEPS note. The sync gates passed, including rosters.
+- **Sync result.** Greenfield `b4906f7` ("factory sync 2026-09-29", on `61a6e45`), not pushed.
+  The greenfield identity diff `61a6e45..HEAD` over the arm inputs is empty. Byte compares
+  host↔greenfield of both chains, both rosters, `adw_modules` and `prompt_engineering_team` are
+  identical.
 </details>
