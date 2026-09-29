@@ -4808,3 +4808,96 @@ defaults.
 - Also seen: the builder took the prompted screenshot (team builder system.md:91) and fixed a real grid
   misalignment (`display: contents` on `participant-row`). This was verified in the tree, not just in the
   thinking stream. Ron saw it live.
+
+## 2026-09-28g — mtg1/mtg1c judged: both engines exact on every instant; each ships one narrow classification defect; the team key was corrected BY the team
+
+Pre-registration: 2026-09-28f. Sweeps: `.sandbox/runs/mtg1-…-artifacts/sweep_mtg1.ts` and
+`mtg1c-…-artifacts/sweep_mtg1c.ts` (host-only). Both are judged by the rule-based oracle, never by Intl.
+Harvested to `refs/sandbox/mtg1-20260929-37d9cd` and `refs/sandbox/mtg1c-20260929-5a3b60`, with traces pulled.
+
+| | mtg1 (team) | mtg1c (control) |
+|---|---|---|
+| verdict | approved at review_3 (2 revisions) | approved at review_2 (1 revision) |
+| review_1 | 13/15 requirements, 2 UI blockers, values 71/71 | 11/18 requirements, 8 blockers (2 engine, 6 plan features skipped) |
+| build_1 | 311s | 1,984s |
+| run log | $2.24, 21.8M tokens | $1.21, 14.2M tokens |
+
+*Billed dollars come at teardown via generation ids. Recorded, not scored.*
+
+### Predictions
+
+| | mtg1 (team) | mtg1c (control) |
+|---|---|---|
+| **P1** instrument | **MET**: every review swept every effective `V` (71 → 72 → 73 rows) and declared a sweep; `values_swept` passed ×3 | n/a |
+| **P2** amendment | **MET**: 4 proposed, 4 ruled (A1 test_designer, A2–A4 builder), all accepted; A1's V67 was superseded by A2 | n/a |
+| **P3** traps cite `V` | **MET**; no `spec_form` correction was needed (passed first time, 14 checks) | n/a |
+| **P4** zero reachable value defects | **MISSED, narrowly**: 1 class, 16 instances in 196,860 checks | **MISSED**: 2 classes (below) in 86,122 checks |
+| **P5** key covers the edge classes | **MISSED**: rollover yes (V5, V14–V19); a DST transition only after A1 (V57/V58 are the transition instants; the plan's own table had seasons only); gap/overlap wall time never (the design has no wall input, so the gap/overlap P4 rows are N/A) | n/a |
+| **P6** no non-model loss | **MET**: 0 retries, 0 timeouts | **MET**: 1 `provider_retry` (planner JSON error, recovered in-session) |
+
+### P4 detail
+
+**Both engines are exact on every instant-level value.**
+- Instant→wall date, time and offset, the label or display, `dayShift`/`dayOffset` and day of week:
+  **374/374** on each check, for both arms.
+- Pairwise differences: **6,358/6,358** for both arms.
+- Team fairness span: **2,584/2,584**.
+- Both use `Intl` with IANA ids and hardcode no offsets, so the fixed-offset trap was avoided by both.
+
+**mtg1: 16 instances, one mechanism, a spring-forward straddle.**
+- `getAvailabilityStatus` classifies a meeting from its local *start* plus linear minutes. The oracle reads
+  the real wall clock at every minute.
+- Example: New York, sleep from 03:00, 90m at 2026-03-08T06:00Z. That is 01:00 EST, and the real clock jumps
+  to 03:00 at +60m, so the meeting ends 03:29 inside sleep. The app says `shoulder`; the truth is `sleeping`.
+- It is reachable via the date picker plus the member edit form (A3).
+- All 16 instances fall on the US (03-08) and EU (03-29) spring nights. The autumn direction cannot fail
+  at durations ≤ 120m.
+- **The key protected the edge it contained:** V57/V58 pin the transition *instants* (exact). No row pins
+  a meeting *spanning* one.
+
+**mtg1c: its spec declares start-point classification (duration unused), so it is judged under that convention.**
+- The fall-through (`classifyHour` labelled off-shift daytime as "core") was **caught by review_1 by
+  probe** and fixed in revise_1. The final code has 0 core-outside-window instances.
+- **Wrapped working hours are never "core".** `t >= start && t <= end` cannot hold when start > end.
+  - A 22:00–06:00 night shift is shown not working at every hour: 5,168 instances.
+  - It is **reachable**: the add and edit hours inputs are free `type="time"` fields with no start < end
+    guard (`main.ts` `parseTimeInput`).
+  - The team app handles wrapping (`toSegments`).
+- **End-inclusive core:** a start exactly at the end minute (17:00 on a 9–17 day) shows "Core Work",
+  1,216 instances. Inclusivity is undeclared ("between 09:00 – 17:00"), so the pre-registered
+  end-exclusive default applies. **Tallied separately**; it is the weaker of the two findings.
+
+### What happened that the predictions didn't ask about
+
+- **A wrong row got into the key, and the team fixed it.**
+  - The test designer's A1 proposed V67 = 930 min (Kathmandu taken as +5:30, "Auckland not extreme").
+    It was recorded before the outcome (2026-09-28f, in-flight #1).
+  - The builder re-derived **1320**, the same value as the host. It named the source of the error
+    (Kolkata's offset) and filed A2.
+  - The reviewer re-verified A2 independently (NZ DST ended 2025-04-06) and checked the suite edit by
+    `git diff`. This is the first observed case of the **amendment channel correcting the key itself**.
+    NEXTSTEPS' "unsatisfiable test" case arose unprompted, and the team handled it.
+- **The team turned review findings into DOM-checkable key rows** (A3: V71 edit, V72 highlight; A4: V73
+  stale edit id), each ruled on and swept. This is the conversion into pitches that NEXTSTEPS item 2 said
+  no agent made. One call was made by a single seat: review_2 accepted the builder's column-wide highlight
+  over review_1's "that cell and no other".
+- **The control built against the red suite and skipped 6 plan features**, even at 6.4× the build time
+  (its builder prompt says "the red suite is the finish line"). Its reviewer caught all 6, and one
+  revision closed them.
+- **An off-oracle visual defect** (team): `−1d` badges overflow their cells ("17:00 −1d18:00 −1d…"),
+  exactly in the day-shift cells. The prompted screenshot caught a grid-alignment bug but not this, and
+  no render-smoke check covers text overflow. Ron flagged the design as strong.
+- **The consolidation smoke test passed:** the bare `execute` ran team, `"" control` ran tdd, and neither
+  chain showed a harness fault.
+
+### What it means (N=1 per arm)
+
+- **Neither arm was exact, and they failed differently.** The team's defect needs a DST night plus odd
+  sleep hours plus a ≥90m meeting. The control's needs only a night shift, a normal real-world
+  configuration. On reachable severity the team arm is ahead, but both engines are exact where every
+  textbook check looks.
+- **The "key only guards edges it contains" pattern held a third time**, now at an adjacent edge: the
+  transition instant was pinned, the meeting spanning it was not.
+- **The P5-style gate (NEXTSTEPS: key rows per named edge class)** would have demanded a "meeting across a
+  transition" row only if the class list names it. The class list has to say *spans*, not just
+  *transitions*.
