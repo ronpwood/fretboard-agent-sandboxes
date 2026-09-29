@@ -126,18 +126,18 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
       identical); pi version at mount.
 - [ ] A spending limit set before mounting: **$20** (opus-5 at $5/$25 per M; mtg1's glm reviewer alone was 77
       generations; gf2-3 asymmetric billed $7.73).
-- [ ] Ron approves before the mount; nothing above the mount record changes after that commit.
+- [x] Ron approves before the mount; nothing above the mount record changes after that commit.
 
 #### 2. Sync greenfield
 
-- [ ] `just target sync greenfield --push` — pushes the roster; record the new target sha.
+- [x] `just target sync greenfield --push` — pushes the roster; record the new target sha. → `0f790db` from host `15a156f`
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `git -C ../greenfield-sandboxes diff --stat b4906f7 HEAD` — the only changed path is `adws/adw_sssf_config/sssf.team-mix.config.yaml`
-- [ ] `git -C ../greenfield-sandboxes grep -il 'meeting planner\|daylight saving' HEAD -- adws just sandbox_mount` — no hits (no leak)
+- [x] `git -C ../greenfield-sandboxes diff --stat b4906f7 HEAD` — the only changed path is `adws/adw_sssf_config/sssf.team-mix.config.yaml`
+- [x] `git -C ../greenfield-sandboxes grep -il 'meeting planner\|daylight saving' HEAD -- adws just sandbox_mount` — no hits (no leak)
 - [x] `curl -s https://openrouter.ai/api/v1/chat/completions -H "Authorization: Bearer $OPENROUTER_API_KEY" -H 'Content-Type: application/json' -d '{"model":"anthropic/claude-opus-5","max_tokens":8,"messages":[{"role":"user","content":"ping"}]}' | jq -r '.choices[0].message.content // .error.message'` — opus-5 answers on OpenRouter (setup gate D doesn't ping it)
 - [ ] `git log -1 --format=%s -- CHANGELOG.md` — the pre-registration commit exists and comes before the mount
 

@@ -4945,7 +4945,7 @@ code is removed. The calibration record stays as evidence.
 
 ## 2026-09-29b — PRE-REGISTRATION: mix1, the team arm with a frontier planner and reviewer (model mix)
 
-**Approved by Ron before mounting:** _pending_. Nothing above the mount record changes after the approval
+**Approved by Ron before mounting** (2026-09-29, "Approve as written, mount it"). Nothing above the mount record changes after the approval
 commit. Plan: `specs/model-mix-team-arm.md`.
 
 **The question:** mtg1 (team, all flash-tier) shipped one narrow value defect. A meeting straddling a
@@ -4964,8 +4964,9 @@ tools are unchanged. The team roster and the frozen control are untouched.
 **The brief, oracle and GRID are verbatim from 2026-09-28f:** `prompts/meeting-planner.md`, with
 `specs/oracles/meeting_oracle.ts` rule-based, independent of Intl/tzdb, and the 17 × 22 zone-instant GRID
 with all ordered pairs. **The factory is identical to mtg1's.** `git diff dfdfe4e 84e801a` over the sync paths
-is empty, so the re-sync adds only the roster file, and the greenfield pin moves from `b4906f7` to the new
-sync commit.
+is empty, so the re-sync adds only the roster file, and the greenfield pin moves from `b4906f7` to
+**`0f790db`** (synced from host `15a156f`). `git diff --stat b4906f7 0f790db` shows one file, the roster, and the
+leak grep over the synced paths has zero hits.
 
 | arm | ADW | roster | status |
 |---|---|---|---|
@@ -4980,7 +4981,7 @@ over three reviews, and gf2-3 (asymmetric, old harness) billed $7.73.
 
 ### Mount-time checks
 
-0. Gates A–F pass (gate E: credit covers the open run). Greenfield HEAD = the new sync sha, tree clean,
+0. Gates A–F pass (gate E: credit covers the open run). Greenfield HEAD = `0f790db`, tree clean,
    the brief is present, and the pi version is recorded. The run log resolves `--config
    adws/adw_sssf_config/sssf.team-mix.config.yaml`. The traces show the planner and reviewer generations on
    `anthropic/claude-opus-5` and the builder's on `deepseek/deepseek-v4.1-flash`.
