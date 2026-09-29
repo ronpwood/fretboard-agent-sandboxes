@@ -41,7 +41,7 @@ point for the independent judge in item 3.
 - **A replicate of the pair**: N=1 each.
 - **The `−1d` overflow**: no render-smoke check covers text overflow. It is a visual defect in the
   day-shift cells.
-- **Teardown of mtg1/mtg1c** is pending Ron's call. Reconcile billed cost via generation ids BEFORE teardown.
+- mtg1/mtg1c torn down 2026-09-28; billed $1.807 / $1.270, reconciled per generation.
 
 **The next lever (not in this cleanup):** "the key only protects edges it contains". Make the P5-style
 obligation a gate: the key must include a row for each named edge class of the brief's domain.

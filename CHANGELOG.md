@@ -4901,3 +4901,14 @@ Harvested to `refs/sandbox/mtg1-20260929-37d9cd` and `refs/sandbox/mtg1c-2026092
 - **The P5-style gate (NEXTSTEPS: key rows per named edge class)** would have demanded a "meeting across a
   transition" row only if the class list names it. The class list has to say *spans*, not just
   *transitions*.
+
+**Cost, reconciled per generation before teardown (2026-09-28):** every one of 258 (mtg1) and 186 (mtg1c)
+generation ids resolved, and they sum to each key's billed usage within **$0.0007**, which is the setup gate
+pings.
+- **mtg1 billed $1.807** against a run-log estimate of $2.24 (+24%). glm-5.3 $0.985 over 77 gens (three
+  reviews), gemini-3.8 $0.493, deepseek-v4.1 $0.312, gpt-5.6-luna $0.017.
+- **mtg1c billed $1.270** against an estimate of $1.21 (−5%). glm-5.3 $0.537, deepseek $0.468, gemini $0.250,
+  luna $0.015.
+- *Recorded, not scored.* **Both torn down:** spend recorded, artifacts pulled, harvest re-confirmed (4
+  commits each), trees clean, keys revoked and verified absent, VMs destroyed, records closed.
+  `reap` found no orphans.
