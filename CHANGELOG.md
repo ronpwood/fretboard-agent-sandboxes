@@ -4774,3 +4774,12 @@ recorded at mount.
   Accept/reject is not a quality ranking (memory: fan-out 3).
 - The sweep adapter is built **after** the apps exist (item 3, step 4). It adapts to each app's API,
   so it is written blind to neither app's values, only to its function names.
+
+**Mounted** `mtg1-20260929-37d9cd`, adw `bcca0d92`, pid 1708, `team` ADW via the **bare default**
+(`execute <id> prompts/meeting-planner.md`), which resolved to `adw_team_sdlc.py --config sssf.team.config.yaml`.
+**Mounted** `mtg1c-20260929-5a3b60`, adw `288d8ab7`, pid 1705, `"" control`, which resolved to
+`adw_tdd_sdlc.py --config sssf.config.yaml`. Both: greenfield pinned to **`b4906f7`**, $10 limit.
+**Check 0 PASSED on both:** gates A–F (gate E: account credit covers both open runs), HEAD `b4906f7`,
+tree clean, brief present, VM pi 0.87.1 (same as team2/amort2; gate F DRIFT against the 0.85.1 image
+row is the known pending toolchain.lock bump). This is the first live use of the post-consolidation
+defaults.
