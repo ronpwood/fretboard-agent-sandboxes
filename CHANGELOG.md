@@ -5102,3 +5102,26 @@ thinking live: "I'll write my own playwright script… reads DST cells"). Verifi
   columns. The host agrees with the derivation. Process note, **the same as mtg1's A2**: the builder edited the
   red test in place (the viewer is now `Europe/London`) before any ruling. Judge the reviewer's rulings on A1–A3.
 - Grading command at that point: 166/166 pass, lint/typecheck/build clean.
+
+**CORRECTION to in-flight #2 (2026-09-29T11:47:00-07:00; still before any review outcome):** the builder's independent sweep was **not
+unprompted**. mix1's committed spec, in `## Approach`, instructs: *"Write a sweep that walks every row of
+`## Expected values` and prints the failures — 150 rows, all of them. For the rendered rows, read the real DOM
+through `loadApp()`"*. It also describes the real-browser `render` check. The Playwright script is the
+builder's own way of carrying out a spec instruction; the obligation came from the planner. So the "agency gap
+closed by the flash builder" claim is withdrawn. Read it as a **planner effect passed through the spec**, which is
+a concrete mechanism for the model-mix question. (The same error as the hfix correction, 2026-09-23: check the
+prompt *and the spec* before calling a behaviour unprompted.)
+
+**Spec comparison, mix1 vs mtg1 (Ron: the first-pass UI "is a very different look"):**
+- mtg1's spec (gemini, 19 KB) is **feature-led**: 15 requirements including presets, ICS and Google Calendar
+  export, a copy-invite toast, a 12/24h toggle, fairness insight and a 0–100 score. It *suggested* a palette and
+  emoji icons.
+- mix1's (Opus, 70 KB) is **semantics-led**: 14 requirements pinning five named cell states, a machine-readable
+  state (R7), viewer-zone invariance (R11) and no host-TZ dependence (R13). The grid is 30-minute columns over
+  the viewer's real local day (46/48/50 columns). Visual design is left entirely to the builder, apart from
+  "five distinct colours".
+- mix1's Approach carries a **measured runtime-facts table** (from its Opus subagent) and an explicit
+  verification method.
+- So the different look comes from the planner fixing a different information architecture (fewer features,
+  pinned more precisely), not from styling choices. Downstream effort: test designer and builder output tokens
+  within 4% of mtg1's (85k vs 88k, 80k vs 81k). The planner used 3.6× mtg1's output tokens.
