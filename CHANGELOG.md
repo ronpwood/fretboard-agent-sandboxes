@@ -4942,3 +4942,86 @@ code is removed. The calibration record stays as evidence.
 - **What stays open:** the pattern itself. Two lighter levers remain: model mix (frontier planner and
   reviewer, flash builder, on the team harness), which is planned next in `specs/model-mix-team-arm.md`, and
   a reviewer that writes an independent engine oracle.
+
+## 2026-09-29b — PRE-REGISTRATION: mix1, the team arm with a frontier planner and reviewer (model mix)
+
+**Approved by Ron before mounting:** _pending_. Nothing above the mount record changes after the approval
+commit. Plan: `specs/model-mix-team-arm.md`.
+
+**The question:** mtg1 (team, all flash-tier) shipped one narrow value defect. A meeting straddling a
+spring-forward transition was classified by linear local minutes (16/196,860). Its key pinned the transition
+*instants* but no *span* across one, and its reviewer swept every `V` and approved. The structural fix was
+abandoned (2026-09-29a). **Do sharper models at the two judgement seats (the planner, who writes the key,
+and the reviewer, who judges against it) move the team arm on value defects, and at what cost?** Cost is
+recorded, not scored.
+
+**The one variable:** `adws/adw_sssf_config/sssf.team-mix.config.yaml`, a copy of `sssf.team.config.yaml`.
+Comments aside, it differs in **exactly two lines**: planner `gemini-3.8-flash` → `claude-opus-5`, reviewer
+`glm-5.3` → `claude-opus-5`. Thinking stays `high` on both. The test designer, builder and scout stay on
+`deepseek-v4.1-flash`, and the documenter on `gpt-5.6-luna`. Prompts, chain (`adw_team_sdlc.py`), gates and
+tools are unchanged. The team roster and the frozen control are untouched.
+
+**The brief, oracle and GRID are verbatim from 2026-09-28f:** `prompts/meeting-planner.md`, with
+`specs/oracles/meeting_oracle.ts` rule-based, independent of Intl/tzdb, and the 17 × 22 zone-instant GRID
+with all ordered pairs. **The factory is identical to mtg1's.** `git diff dfdfe4e 84e801a` over the sync paths
+is empty, so the re-sync adds only the roster file, and the greenfield pin moves from `b4906f7` to the new
+sync commit.
+
+| arm | ADW | roster | status |
+|---|---|---|---|
+| `mix1` | `team` | `sssf.team-mix.config.yaml` | this run |
+| `mtg1` | `team` | `sssf.team.config.yaml` | judged 2026-09-28g, the comparison |
+| `mtg1c` | `control` (= `tdd`) | `sssf.config.yaml` | judged 2026-09-28g, the comparison |
+
+The run is launched with `just sbx lifecycle execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-mix.config.yaml team`,
+with a **$20 key limit** (the account budget was raised by Ron on 2026-09-29) and **N=1**.
+**Expected cost:** roughly $4–10. Opus runs at $5/$25 per M; mtg1's glm reviewer alone was 77 generations
+over three reviews, and gf2-3 (asymmetric, old harness) billed $7.73.
+
+### Mount-time checks
+
+0. Gates A–F pass (gate E: credit covers the open run). Greenfield HEAD = the new sync sha, tree clean,
+   the brief is present, and the pi version is recorded. The run log resolves `--config
+   adws/adw_sssf_config/sssf.team-mix.config.yaml`. The traces show the planner and reviewer generations on
+   `anthropic/claude-opus-5` and the builder's on `deepseek/deepseek-v4.1-flash`.
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument):** every review has a `value_check` for every effective `V`, plus a declared
+  `value_sweep.*`.
+- **P2:** at least one amendment is proposed and ruled on.
+- **P3:** every trap in the committed spec cites an existing `V` row. **Recorded:** whether a `spec_form`
+  correction was needed.
+- **P4 (primary):** zero reachable value defects, judged by our sweep over the GRID under the 2026-09-28f
+  rules verbatim. The instant→wall display equals `toWall` including the date; offsets and differences are
+  taken at **that** instant; wall→instant inputs land in `fromWall` (gap: a flag, a rejection or a shift
+  past it is accepted; overlap: either instant); common-time suggestions equal `overlap()` under the
+  declared conventions (15-minute steps, end-exclusive if undeclared). A feature not offered is N/A,
+  recorded. **Also swept:** the three mtg1/mtg1c defect classes (DST-straddle span classification, wrapped
+  working hours, end-inclusive core), so all three apps face the same known classes.
+- **P5 (recorded against mtg1; not a gate):** at plan, before any amendment, the key has a row each for a
+  DST transition, a gap/overlap wall time (or it declares no wall input), a date rollover, **and a meeting
+  spanning a transition**, which is the row mtg1 lacked. The prediction is that the frontier planner writes
+  the span row unprompted. A miss is informative: it says the planner seat alone does not close the
+  "the key guards only the edges it contains" pattern.
+- **P6 (robustness):** no non-model loss; every `provider_retry` and every timeout is recorded.
+
+### Recorded, not scored
+
+- **Whether the reviewer checks anything outside the key:** an independent probe, oracle or derivation
+  that is not a `V` row. That is the fallback lever (a reviewer oracle) appearing unprompted, and it separates
+  "the planner seat mattered" from "the reviewer seat mattered".
+- `V` counts at plan and at the end; amendments and their rulings; traps and the edge classes they name.
+- The review trajectory. Accept/reject is not a quality ranking (fan-out 3).
+- Tokens per seat, split into uncached input, cached and output (Anthropic cache ratios distort raw totals,
+  2026-08-22). Wall clock. Billed $ per model, reconciled per generation before teardown.
+- Whether the app uses Intl/tzdb, a hand-rolled table or fixed offsets.
+
+### Confounds
+
+- N=1 against mtg1's N=1, so model and sampling are not separable. A P4 separation is a direction, and it earns
+  a replicate before any roster change.
+- The greenfield pin moves, but the factory diff is one roster file, verified at sync. The pi version is
+  recorded at mount.
+- Two seats move together, so an improvement can't be attributed to one seat except through P5 (planner)
+  and the outside-the-key record (reviewer).

@@ -3,8 +3,10 @@ plan: model-mix-team-arm
 created: 2026-09-29T10:47:13-07:00
 modified:
   - 2026-09-29T10:47:13-07:00
+  - 2026-09-29T11:05:00-07:00
 commits:
   - 84e801a
+  - b365252
 agents:
   - claude-opus-5-5
 sessions:
@@ -13,7 +15,7 @@ back_refs:
   - specs/team-ownership-prompts.md — the team arm (prompts, chain, gates) this run holds fixed
   - specs/team-default-consolidation.md — the frozen control and the "team roster = default models + team prompts" contract this arm deliberately breaks in two seats
 forward_refs: []
-status: draft
+status: building
 ---
 
 # Plan: Model mix on the team harness (mix1): frontier planner and reviewer, flash builder
@@ -78,8 +80,8 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 | Phase | Purpose | Done when | Status |
 |---|---|---|---|
-| [1. Roster](#phase-1-roster) | Add the mix roster; prove it differs from team in two lines | Diff shows exactly the two model lines + header; config loads | `idle` |
-| [2. Pre-register and sync](#phase-2-pre-register-and-sync) | Freeze predictions, sync greenfield, confirm Opus answers | 2026-09-29b committed; sync pushed; the only factory delta is the roster | `idle` |
+| [1. Roster](#phase-1-roster) | Add the mix roster; prove it differs from team in two lines | Diff shows exactly the two model lines + header; config loads | `complete` |
+| [2. Pre-register and sync](#phase-2-pre-register-and-sync) | Freeze predictions, sync greenfield, confirm Opus answers | 2026-09-29b committed; sync pushed; the only factory delta is the roster | `wip` |
 | [3. Mount and run](#phase-3-mount-and-run) | One arm on the pinned brief | Check 0 passes; the chain ends with an approved or exhausted review | `idle` |
 | [4. Judge](#phase-4-judge) | P1–P6 against mtg1/mtg1c | 2026-09-29c written, sweep committed host-side | `idle` |
 | [5. Teardown and cost](#phase-5-teardown-and-cost) | Reconcile per generation, tear down, close item 3 | Billed $ per model recorded; VM gone; NEXTSTEPS updated | `idle` |
@@ -88,10 +90,10 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 #### 1. Create the mix roster
 
-- [ ] `cp adws/adw_sssf_config/sssf.team.config.yaml adws/adw_sssf_config/sssf.team-mix.config.yaml`
-- [ ] Planner `model:` → `openrouter/anthropic/claude-opus-5 # mix: frontier planner`
-- [ ] Reviewer `model:` → `openrouter/anthropic/claude-opus-5 # mix: frontier reviewer`
-- [ ] Prepend a header: what differs (two seats), what is held (everything else, thinking included), and
+- [x] `cp adws/adw_sssf_config/sssf.team.config.yaml adws/adw_sssf_config/sssf.team-mix.config.yaml`
+- [x] Planner `model:` → `openrouter/anthropic/claude-opus-5 # mix: frontier planner`
+- [x] Reviewer `model:` → `openrouter/anthropic/claude-opus-5 # mix: frontier reviewer`
+- [x] Prepend a header: what differs (two seats), what is held (everything else, thinking included), and
       why (the judgement seats; the builder stays flash). **Don't name the brief's domain.**
       `meeting planner` and `daylight saving` are leak patterns, and `adws/` is synced.
 
@@ -99,9 +101,9 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `diff <(grep -v '^#' adws/adw_sssf_config/sssf.team.config.yaml) <(grep -v '^#' adws/adw_sssf_config/sssf.team-mix.config.yaml)` — exactly two changed lines, both `model:`, planner and reviewer
-- [ ] `uv run python -c "import sys; sys.path.insert(0,'adws'); from adw_modules import agents; c=agents.load_config('adws/adw_sssf_config/sssf.team-mix.config.yaml'); print({a.name: a.model for a in c.agents})"` — loads; planner/reviewer resolve to opus-5, and builder/test_designer/scout to the v4.1 default (adjust the attribute names to `agents.py` if they differ)
-- [ ] `grep -n '"anthropic/claude-opus-5"' sandbox_mount/guest/models.json.tmpl` — the model is registered for the guest (memory: models must be in models.json.tmpl)
+- [x] `diff <(grep -v '^#' adws/adw_sssf_config/sssf.team.config.yaml) <(grep -v '^#' adws/adw_sssf_config/sssf.team-mix.config.yaml)` — exactly two changed lines, both `model:`, planner and reviewer
+- [x] `uv run -q --with pyyaml --with pydantic --with rich --with python-dotenv python -c "import sys; sys.path.insert(0,'adws'); from adw_modules import agents; c=agents.load_config('adws/adw_sssf_config/sssf.team-mix.config.yaml'); print({a.name: a.model for a in c.agents})"` — loads; planner/reviewer resolve to opus-5, and builder/test_designer/scout to the v4.1 default (the ADW's inline deps, since `uv run` bare lacks yaml/dotenv)
+- [x] `grep -n '"anthropic/claude-opus-5"' sandbox_mount/guest/models.json.tmpl` — the model is registered for the guest (memory: models must be in models.json.tmpl)
 
 ### Phase 2: Pre-register and sync
 
@@ -136,7 +138,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 - [ ] `git -C ../greenfield-sandboxes diff --stat b4906f7 HEAD` — the only changed path is `adws/adw_sssf_config/sssf.team-mix.config.yaml`
 - [ ] `git -C ../greenfield-sandboxes grep -il 'meeting planner\|daylight saving' HEAD -- adws just sandbox_mount` — no hits (no leak)
-- [ ] `curl -s https://openrouter.ai/api/v1/chat/completions -H "Authorization: Bearer $OPENROUTER_API_KEY" -H 'Content-Type: application/json' -d '{"model":"anthropic/claude-opus-5","max_tokens":8,"messages":[{"role":"user","content":"ping"}]}' | jq -r '.choices[0].message.content // .error.message'` — opus-5 answers on OpenRouter (setup gate D doesn't ping it)
+- [x] `curl -s https://openrouter.ai/api/v1/chat/completions -H "Authorization: Bearer $OPENROUTER_API_KEY" -H 'Content-Type: application/json' -d '{"model":"anthropic/claude-opus-5","max_tokens":8,"messages":[{"role":"user","content":"ping"}]}' | jq -r '.choices[0].message.content // .error.message'` — opus-5 answers on OpenRouter (setup gate D doesn't ping it)
 - [ ] `git log -1 --format=%s -- CHANGELOG.md` — the pre-registration commit exists and comes before the mount
 
 ### Phase 3: Mount and run
