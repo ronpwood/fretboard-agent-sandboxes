@@ -6,7 +6,8 @@ closes, write its result entry in the changelog and delete it here.
 
 **Recently run:** the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
 
-**Recently closed:** the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
+**Recently closed:** the edge-class gate, abandoned after Phase 1 (CHANGELOG 2026-09-28h, 2026-09-29a).
+Before that, the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
 2026-09-24f). The render smoke's D now re-finds hidden controls (CHANGELOG 2026-09-24a). Earlier:
 harn2/harn3 and the harness-signals spec (CHANGELOG 2026-09-23d–i).
 
@@ -25,41 +26,29 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. NEXT: pick the next lever from the meeting-planner result (CHANGELOG 2026-09-28g)
+## 3. NEXT: model mix on the team harness (`specs/model-mix-team-arm.md`)
 
-**The meeting-planner pair is done.** Both engines were exact on every instant-level value.
-- The team arm (mtg1, approved review_3) shipped one narrow defect: a meeting straddling a spring-forward
-  transition is classified by linear local minutes (16/196,860).
-- The control (mtg1c, approved review_2) shipped wrapped working hours (a night shift is never "core",
-  reachable) and an end-inclusive boundary.
-- The team **corrected a wrong key row itself**: A1's V67 = 930 → A2's 1320, re-verified by the reviewer.
-- The team also turned review findings into DOM key rows (A3/A4).
+**Where the meeting-planner pair left it (CHANGELOG 2026-09-28g):** both engines were exact on every instant.
+The team arm (mtg1) shipped one narrow DST-straddle classification defect (16/196,860). The control (mtg1c)
+shipped wrapped working hours and an end-inclusive boundary. The team corrected a wrong key row itself (A2).
 
-**PAUSED 2026-09-28, pick up here (Ron: "a fresh look in the morning… maybe overdesign").**
-`specs/edge-class-gate.md` stopped after Phase 1. Its calibration (`specs/edge-class-calibration.md`)
-showed the approved design would have **passed** mtg1: the key had spans across work and sleep edges,
-not across DST. Also, 6/31 past defects are whole-range, not edge defects. Three ways forward:
-1. **Model mix on the team harness.** Frontier planner and reviewer, flash builder (the old asymmetric
-   idea, untested since the team prompts). Score on P4 and record cost. Ron's lean: "sharper teams might
-   pull ahead and show cost is one of many variables."
-2. **A lighter lever:** the reviewer writes an independent check of the core engine (an oracle), not only
-   a sweep of the key. Independence is what caught both mtg1 defects.
-3. **Per-limit edge coverage** (the calibrated fix), if the edge gate is still wanted.
+**The edge-class gate is ABANDONED (CHANGELOG 2026-09-29a):** overdesign, and it would have passed mtg1
+anyway.
 
-**Candidates (before the pause):**
-- **The edge-class gate, with "spans" in the class list.** A transition *instant* was pinned and a meeting
-  *spanning* one was not. That is the third instance of "the key guards only the edges it contains".
-- **A replicate of the pair**: N=1 each.
-- **The `−1d` overflow**: no render-smoke check covers text overflow. It is a visual defect in the
-  day-shift cells.
-- mtg1/mtg1c torn down 2026-09-28; billed $1.807 / $1.270, reconciled per generation.
+**Next:** one arm, `mix1`, on the same brief and the same greenfield pin as mtg1. The team prompts and chain
+are unchanged, and only the planner and reviewer seats move to `claude-opus-5`. It is scored on P4 against
+mtg1/mtg1c, with cost recorded, not scored. N=1 first (memory: small N before fan-out).
 
-**The next lever (not in this cleanup):** "the key only protects edges it contains". Make the P5-style
-obligation a gate: the key must include a row for each named edge class of the brief's domain.
+**The fallback lever, if mix1 still ships a value defect that only an independent check would find:** the
+reviewer writes its own engine oracle instead of only sweeping the key. Independence is what caught both
+mtg1 defects.
 
-**Still open, not blocking:** unsatisfiable-test detection (`tests_red` cannot tell "red, the code is
-missing" from "can never pass"). A replicate on the music brief. A same-brief amortization replicate would say whether
-amort2 pinning a tie was luck.
+**Still open, not blocking:**
+- Unsatisfiable-test detection: `tests_red` cannot tell "red because the code is missing" from "can never
+  pass". mtg1's A1/A2 showed the team handling one unprompted.
+- A replicate of the mtg pair, or of the music brief.
+- A same-brief amortization replicate, to say whether amort2 pinning the tie was luck.
+- The `−1d` badge overflow: no render-smoke check covers text overflow.
 
 ## 4. Still open, not in a spec
 

@@ -14,7 +14,7 @@ back_refs:
   - specs/team-ownership-prompts.md — the team spec form, `spec_form`, and the amendment channel this plan extends
   - specs/team-default-consolidation.md — the frozen-control contract this plan must keep
 forward_refs: []
-status: building
+status: abandoned
 ---
 
 # Plan: The edge-class gate: the answer key must cover every edge dimension, or say why not

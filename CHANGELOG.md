@@ -4929,3 +4929,16 @@ spot-checked the cited lines against the source.
   overdesign situation". The team's coordination gains hold regardless of the mix, and model mix
   (frontier plan and review, flash build) may be the more interesting next lever. Next-session options
   are in NEXTSTEPS item 3.
+
+## 2026-09-29a — Edge-class gate ABANDONED; next lever is model mix on the team harness
+
+Ron set `specs/edge-class-gate.md` to `abandoned` ("I think we're overdesigning on that one"). It stopped after
+Phase 1 (2026-09-28h), and Phase 1 was documents only (the spec and `specs/edge-class-calibration.md`), so no
+code is removed. The calibration record stays as evidence.
+- **Why it was dropped:** per-class coverage would have passed mtg1, and 6 of the 31 corpus defects are
+  whole-range, not edge defects. Only per-limit coverage would have caught mtg1's DST-straddle. That means
+  more machinery for one more instance of "the key guards only the edges it contains", and each new domain
+  would need its own list of limits.
+- **What stays open:** the pattern itself. Two lighter levers remain: model mix (frontier planner and
+  reviewer, flash builder, on the team harness), which is planned next in `specs/model-mix-team-arm.md`, and
+  a reviewer that writes an independent engine oracle.
