@@ -5081,3 +5081,24 @@ the key's size drives every downstream sweep.
   code, which is what its prompt allows ("a script in /tmp that computes a table of expected values"). The app
   did not exist yet, so the check is independent of the code under test, but it leans on the runtime's
   Intl/tzdb rather than a hand rule table. mtg1's planner: compare at judging.
+
+**In-flight observation #2, recorded 2026-09-29T11:40:06-07:00 during build_1, before any review** (Ron flagged the builder's
+thinking live: "I'll write my own playwright script… reads DST cells"). Verified from the builder's
+`tool_execution_start/end` records, not its thinking:
+- **Independent value sweep, unprompted in its form:** `/tmp/sw/sweep.ts`, "re-derives expected values
+  with a SEPARATE implementation (Intl directly, and the spec rule re-coded here)". It covered 44 zone rows,
+  11 grid rows and 192 cells cross-classified. Its first run failed V72 on a tally-shape mismatch (a missing
+  zero-count key) in the *sweep*; the builder normalised it and re-ran to 0 failures.
+- **A real-browser check of the served app** (`/tmp/sw/browser.py`, PEP-723 Playwright, `uv run`). The
+  first attempt failed to start the server (a `--port` flag); the builder fixed it with `PORT` env. It then
+  read the DOM on the US spring-forward day: the NY member at 06:30Z → `01:30`, 07:00Z → `03:00`, no
+  `02:xx` label, 192 cells, 5 distinct legend colours, **0 page errors**. That is the served app, not happy-dom.
+  Only the observe server (pid 1584) was left running, with no duplicate servers. This is the "how is the app
+  served" agency gap (2026-09-23) **closed by the flash builder**: its prompt asks for a screenshot, not a
+  scripted DOM read.
+- **Amendments so far:** A1 and A2 (test designer: 2026-03-10 is a Tuesday, so `off` cannot appear on the
+  default grid; V135/V136 reworded). **A3 (builder): V93 is unsatisfiable as written.** London's 2026-03-29
+  01:00Z switch precedes NY's local day, which starts at 04:00Z on EDT, so it cannot appear among NY-day
+  columns. The host agrees with the derivation. Process note, **the same as mtg1's A2**: the builder edited the
+  red test in place (the viewer is now `Europe/London`) before any ruling. Judge the reviewer's rulings on A1–A3.
+- Grading command at that point: 166/166 pass, lint/typecheck/build clean.
