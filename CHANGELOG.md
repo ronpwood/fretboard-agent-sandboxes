@@ -5026,3 +5026,13 @@ over three reviews, and gf2-3 (asymmetric, old harness) billed $7.73.
   recorded at mount.
 - Two seats move together, so an improvement can't be attributed to one seat except through P5 (planner)
   and the outside-the-key record (reviewer).
+
+**Mounted** `mix1-20260929-67be72`, adw `4052031f`, pid 1705, `team` ADW via
+`execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-mix.config.yaml team`, with a $20 limit.
+The run log's first agent line confirms `planner openrouter/anthropic/claude-opus-5`. The recipe echo shows the
+module-default `--config` first; the passed `--config` comes last and wins in argparse.
+**Check 0 PASSED:** gates A–F (setup "GATE PASSED"), VM HEAD `0f790db`, tree clean, brief and roster present,
+pi 0.87.1 (gate F DRIFT against the 0.85.1 image row is the known pending lock bump, as in mtg1).
+**Host-side incident, not a run loss:** a stray second `sbx mount mix1` was started by mistake and killed at
+once. It had already created `mix1-20260929-58351b` (VM + key). It was torn down with `--no-harvest` before
+anything ran on it: $0 spend, key revoked and verified absent, VM destroyed, record closed.
