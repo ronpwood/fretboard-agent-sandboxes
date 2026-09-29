@@ -16,7 +16,7 @@ back_refs:
   - specs/team-ownership-prompts.md — the team arm (prompts, chain, gates) this run holds fixed
   - specs/team-default-consolidation.md — the frozen control and the "team roster = default models + team prompts" contract this arm deliberately breaks in two seats
 forward_refs: []
-status: building
+status: complete
 ---
 
 # Plan: Model mix on the team harness (mix1): frontier planner and reviewer, flash builder
@@ -85,7 +85,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 | [2. Pre-register and sync](#phase-2-pre-register-and-sync) | Freeze predictions, sync greenfield, confirm Opus answers | 2026-09-29b committed; sync pushed; the only factory delta is the roster | `complete` |
 | [3. Mount and run](#phase-3-mount-and-run) | One arm on the pinned brief | Check 0 passes; the chain ends with an approved or exhausted review | `complete` |
 | [4. Judge](#phase-4-judge) | P1–P6 against mtg1/mtg1c | 2026-09-29c written, sweep committed host-side | `complete` |
-| [5. Teardown and cost](#phase-5-teardown-and-cost) | Reconcile per generation, tear down, close item 3 | Billed $ per model recorded; VM gone; NEXTSTEPS updated | `wip` |
+| [5. Teardown and cost](#phase-5-teardown-and-cost) | Reconcile per generation, tear down, close item 3 | Billed $ per model recorded; VM gone; NEXTSTEPS updated | `complete` |
 
 ### Phase 1: Roster
 
@@ -192,25 +192,25 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 - [x] Resolve every generation id and sum billed $ per model **before** teardown (memory: toolchain-unpin).
       The total must match the key's billed usage within setup-ping noise.
-- [ ] `just sbx lifecycle teardown <run-id>` then `just sbx manage reap` — no orphans; key revoked.
+- [x] `just sbx lifecycle teardown <run-id>` then `just sbx manage reap` — no orphans; key revoked.
 
 #### 2. Close the queue item
 
-- [ ] Add cost to 2026-09-29c, recorded and not scored. Delete NEXTSTEPS item 3, or replace it with the
+- [x] Add cost to 2026-09-29c, recorded and not scored. Delete NEXTSTEPS item 3, or replace it with the
       follow-up the result calls for (replicate, oracle lever, or promote the mix).
 
 #### Validation — Phase 5
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `sandbox_mount/host/run_record.py list | jq '.[] | select(.run_id|startswith("mix1")) | {spend, closed_at}'` — spend recorded, record closed
-- [ ] `ssh exe.dev ls --json | jq '.vms[].vm_name' | grep -c mix1` — 0
+- [x] `sandbox_mount/host/run_record.py list | jq '.[] | select(.run_id|startswith("mix1")) | {spend, closed_at}'` — spend recorded, record closed
+- [x] `ssh exe.dev ls --json | jq '.vms[].vm_name' | grep -c mix1` — 0
 
 ## Global Validation
 
-- [ ] `git diff 84e801a -- adws/adw_sssf_config/sssf.team.config.yaml adws/adw_sssf_config/sssf.config.yaml adws/adw_data/prompt_engineering_team adws/adw_team_sdlc.py adws/adw_tdd_sdlc.py` — empty: the team arm and the frozen control are untouched
-- [ ] `grep -n '2026-09-29b\|2026-09-29c' CHANGELOG.md` — pre-registration and result both exist, in order
-- [ ] `grep -n 'mix1' NEXTSTEPS.md` — item 3 is closed or rewritten to the follow-up
+- [x] `git diff 84e801a -- adws/adw_sssf_config/sssf.team.config.yaml adws/adw_sssf_config/sssf.config.yaml adws/adw_data/prompt_engineering_team adws/adw_team_sdlc.py adws/adw_tdd_sdlc.py` — empty: the team arm and the frozen control are untouched
+- [x] `grep -n '2026-09-29b\|2026-09-29c' CHANGELOG.md` — pre-registration and result both exist, in order
+- [x] `grep -n 'mix1' NEXTSTEPS.md` — item 3 is closed or rewritten to the follow-up
 
 ## Notes
 

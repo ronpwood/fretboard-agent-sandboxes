@@ -5242,3 +5242,6 @@ pulled by hand. **Python urllib calls to `/api/v1/generation` all failed** (like
   estimated $28.87; its per-seat rates under-read the flash builder ("$0.07" for 6.8M tokens).
 - Tokens (in / cacheRead / cacheWrite / out): planner 168 / 9.84M / 190k / 159k; reviewer 5.2k / 17.5M / 565k /
   249k; builder 303k / 14.1M / 0 / 115k. *Recorded, never scored.*
+- **Torn down 2026-09-29:** spend recorded ($31.4177), artifacts pulled (sweep, 346 generation records, the subagent
+  session), harvest re-confirmed (4 commits), tree clean, key revoked and verified absent, VM destroyed, record
+  closed. `reap` found no orphans.

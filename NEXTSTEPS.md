@@ -4,7 +4,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently run:** the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
+**Recently run:** mix1, the model-mix team arm (CHANGELOG 2026-09-29b–c): 0 value defects, the reviewer found a cross-frame bug, $31.42. Before that, the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
 
 **Recently closed:** the edge-class gate, abandoned after Phase 1 (CHANGELOG 2026-09-28h, 2026-09-29a).
 Before that, the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
@@ -26,41 +26,40 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. NEXT: model mix on the team harness (`specs/model-mix-team-arm.md`)
+## 3. NEXT: choose the follow-up to mix1 (CHANGELOG 2026-09-29c)
 
-**Where the meeting-planner pair left it (CHANGELOG 2026-09-28g):** both engines were exact on every instant.
-The team arm (mtg1) shipped one narrow DST-straddle classification defect (16/196,860). The control (mtg1c)
-shipped wrapped working hours and an end-inclusive boundary. The team corrected a wrong key row itself (A2).
+**mix1 is done and torn down.** Opus planner and reviewer, flash builder, on the meeting-planner brief:
+- **0 value defects in 2,177,633 oracle checks**, including 16,796 meetings that span a DST transition (the class
+  mtg1 shipped). The engine reads the wall clock at the meeting's end instant, so the class never arises.
+- **The Opus reviewer found the defect the run would otherwise have shipped:** clicking a suggestion selected the
+  wrong instant in 6/30 viewer zones (a UTC-day ranking window vs the viewer's local-day grid). It was found in a
+  real browser with zones the key never named. The builder closed it in one revision and wrote it into the key
+  (A5, V152–V156).
+- **Recorded gap:** night shifts. The spec fixes "awake 07:00–22:00", so a 22:00–06:00 worker is always `asleep`
+  (mtg1 handled wrapping). It's a spec-level policy, not a code bug.
+- **Billed $31.417** (mtg1: $1.807): the reviewer $18.55, the planner $12.39 including its Opus subagent, the
+  flash seats $0.48. The app is in the private repo `ronpwood/mix1-meeting-planner` for Ron's code review.
 
-**The edge-class gate is ABANDONED (CHANGELOG 2026-09-29a):** overdesign, and it would have passed mtg1
-anyway.
-
-**Next:** one arm, `mix1`, on the same brief and the same greenfield pin as mtg1. The team prompts and chain
-are unchanged, and only the planner and reviewer seats move to `claude-opus-5`. It is scored on P4 against
-mtg1/mtg1c, with cost recorded, not scored. N=1 first (memory: small N before fan-out).
-
-**Possible follow-up arm: `mix2`, the inverse (Ron, 2026-09-29).** Flash planner and reviewer, Opus builder, on
-the same brief. It completes the grid: mtg1 = flash/flash, mix1 = Opus plan+review / flash build, mix2 = flash
-plan+review / Opus build. Ron's hypothesis: Opus's ambition carries across roles, so handed a thin key it will
-write many amendments and new tests.
-- Candidate predictions: builder amendments ≥ 5 (mtg1: 3); `V` rows added by amendment ≥ 30% of the key; the
-  DST-span row arrives by amendment.
-- Recorded: does the flash reviewer reject *any* Opus amendment? Only the reviewer rules, so a flash reviewer
-  facing many well-argued amendments may approve them without scrutiny. That failure mode only shows up here.
-- Budget: $30–50 (mix1's build_1 was 7.6M cached / 80k output tokens, which is about $6+ per pass at Opus rates).
-- **Pre-register only after mix1 is judged**, using mix1's actual numbers. mix1's Opus reviewer (amendment
-  rulings, checks outside the key) is already a partial answer on "ambition regardless of role".
-
-**The fallback lever, if mix1 still ships a value defect that only an independent check would find:** the
-reviewer writes its own engine oracle instead of only sweeping the key. Independence is what caught both
-mtg1 defects.
+**Candidates for the next run:**
+1. **mix2, the inverse** (Ron, 2026-09-29): flash planner and reviewer, Opus builder, same brief. It completes the
+   grid; the hypothesis is that Opus's ambition carries across roles. Now it can be pre-registered with mix1's
+   numbers:
+   - Predict builder amendments ≥ 5 (mix1's builder filed 3; mtg1's filed 3), and new `V` rows by amendment
+     ≥ 30% of the key.
+   - Record whether the flash reviewer rejects any Opus amendment.
+   - Budget: the builder is the biggest token consumer (mix1: 14.1M cached / 115k output over build + revise),
+     so plan on $30–50.
+2. **Reviewer-only mix:** flash planner and builder, Opus reviewer. mix1 suggests the reviewer seat is where the
+   value was found (the Auckland bug), at 59% of the cost. This isolates that seat for about $19.
+3. **The oracle lever on the flash roster:** tell the (glm) reviewer to write its own rule implementation and to
+   probe zones the key doesn't name. That's the cheapest test of whether mix1's reviewer *behaviour* transfers
+   without the model.
 
 **Still open, not blocking:**
-- Unsatisfiable-test detection: `tests_red` cannot tell "red because the code is missing" from "can never
-  pass". mtg1's A1/A2 showed the team handling one unprompted.
-- A replicate of the mtg pair, or of the music brief.
-- A same-brief amortization replicate, to say whether amort2 pinning the tie was luck.
-- The `−1d` badge overflow: no render-smoke check covers text overflow.
+- Unsatisfiable-test detection. It arose again unprompted (A3, V93) and the team handled it.
+- `sbx manage traces` misses the planner's subagent sessions (`~/.pi/agent/sessions/subagents/`). Add that path.
+- Night shifts: whether any brief's key should name "a member whose hours wrap midnight".
+- A replicate of any pair. Everything here is N=1.
 
 ## 4. Still open, not in a spec
 
