@@ -5389,3 +5389,27 @@ so **the positive roster check is the reviewer's first `agent_sessions` row show
 recorded when review_1 starts. Gate C pinged the default config's models, not this roster's; `claude-opus-5.5`
 passed the same ZDR ping from the host earlier on 2026-09-30.
 **P6 log:** planner `provider_retry` 1/2 in the first minutes ("JSON error injected into SSE stream"), same session.
+Retry 2/2 followed at about 11 minutes ("The operation was aborted"). Its resend was progressing (974 trace events,
+last written 3s before the check at 14:09Z). The budget is per send; a surviving error would fall to the plan phase's
+`retries=1`, so the run was not at risk yet.
+
+**In-flight observation, recorded 2026-09-30T14:2xZ BEFORE any outcome** (the test designer is running; no build, no review):
+- The committed spec `43c40ff` (`specs/f0851b2c_timezone-meeting-planner.md`, 26 KB) has **53 `V` rows** (mtg1: 56 at
+  plan; mix1: 150) and **8 traps**, as bullets citing `V` rows.
+- The design: 48 slots of 30 minutes over "the 24 hours of the meeting date". Controls are a **date input**, durations
+  15–120m and a **reference timezone selector**. Each participant has work and sleep hours, and slots are classified
+  work/personal/sleep **across the whole meeting duration** (trap 5, V21–V28). That is the same mechanism mtg1
+  classified with linear local minutes, so the DST-straddle class is reachable in this design.
+- **P5 at plan: MET as predicted (the expected miss).**
+  - **No row pins a meeting spanning a DST transition.** Every duration row is at 2025-06-15 or 2025-01-15.
+  - DST coverage is **seasonal only**: summer/winter pairs (V1–V15), and the US/UK disagreement weeks at an ordinary
+    instant (V16/V17, 2025-03-15). No row sits on a transition night, and none pins a transition instant; mtg1 had
+    those only after A1.
+  - **Gap/overlap wall time:** no row. The design has a date input and no time-of-day input. The only wall-clock
+    inputs are participants' work and sleep hours, which classify rather than convert. Provisionally **N/A** under
+    the 2026-09-28f rules, to be confirmed against the built app.
+  - **Date rollover:** covered (V6, V10, V14, V18, V19, V48).
+- **Not a prediction; recorded because mix1's bug lived here:** a *reference timezone selector* over "the 24 hours
+  of the meeting date" invites the day grid to follow the reference zone. That is the same frame choice as mix1's
+  Auckland cross-frame bug (a UTC-day ranking window against a local-day grid). A reference-zone day on a DST night
+  has 46 or 50 half-hour slots, not 48, and no row pins that.
