@@ -13,6 +13,58 @@ harn2/harn3 and the harness-signals spec (CHANGELOG 2026-09-23d–i).
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
 
+## 1. IDEAS (Ron, 2026-09-30, after the bare Sonnet 5.5 run): draft → complete, and MVP → production
+
+Not designed yet. Ron is thinking these over; nothing is pre-registered. Background: CHANGELOG 2026-09-30e.
+Bare Sonnet 5.5 reached a correct, clean, 31/32 **MVP** in 2 min for $0.33. Bare Opus 5 reached a
+**deploy-ready** app in 37 min for $4.28, with the same rubric score.
+
+### 1a. Arm: Sonnet draft → Opus complete (Ron's idea)
+
+One bare Sonnet 5.5 turn on the verbatim brief, then **one** bare Opus turn on the same VM and session tree,
+kicked off with something like "this is a working draft; bring it to production quality". Compare it against the
+bare Opus 5 arm (and a bare Opus 5.5 arm if we want the model held constant).
+
+**The question:** does a cheap, correct skeleton make Opus faster, cheaper or better, or does it anchor Opus to
+Sonnet's smaller design?
+
+My initial thoughts:
+- **Anchoring is the real risk and the interesting measurement.** Opus built 24 files of its own architecture. Given
+  8 files, it may extend instead of rethinking. Measure it: file survival (how much of Sonnet's code is still there),
+  and "would you use it?" against the Opus-only app.
+- **The second prompt is the new variable.** Keep it one fixed sentence, pre-registered, with no feature list, or the
+  arm is measuring our prompt, not the pipeline.
+- **Attribute cost per stage:** a Shelley balance read between turns (turn 1 ≈ $0.33 is now known).
+- **We need a completeness measure first,** or this arm just ties at 31 again. Cheap options: feature inventory
+  against the Opus 5 app's surface; test count and whether audio/fretboard/keyboard are asserted; "would you use it?"
+  as the primary outcome, recorded first.
+- **Cheapest control to run alongside:** one Sonnet turn told to verify in a real browser (tests whether P2's miss was
+  posture that a sentence can fix).
+
+### 1b. Idea: a team whose assignment is "take this MVP to production" (Ron's idea)
+
+Instead of the team arm building from a blank brief, the input is a Sonnet MVP (repo + brief). The team's charter is
+**hardening**, not invention.
+
+My initial thoughts:
+- **This fits the team arm's strengths.** The planner's frozen Expected-values table and the reviewer's value sweep are
+  a *verification* machine. An existing app gives the planner something concrete to key against (current values
+  → expected), and gives the reviewer a baseline to diff.
+- **"Production" needs a written definition, or the reviewer can't rule on it.** Candidates: every output channel
+  asserted (the untested `OPEN_MIDI` is the live example), a real-browser pass, accessibility/keyboard, error states,
+  deploy artifact, docs. That list *is* the pre-registration.
+- **It maps to how the framework would be used for real** (memory: framework → production direction, 2026-09-29): most real
+  work is brownfield. This is the first brownfield arm on a greenfield brief, and it tests the charter prompts on
+  someone else's code.
+- **The draft is a fixed input:** save the bare-s55 snapshot (`refs/sandbox/bare-s55-20260930-f887d0`) as the canonical
+  starting tree, so every hardening arm starts byte-identical and the Sonnet draft's sampling noise is out of the
+  comparison.
+- **Watch for the scope trap:** "production" invites feature creep. Rubric item 15 (restraint) and a "no new features
+  unless the brief implies them" line in the charter keep it honest.
+- **The economics argument:** if a $0.33 draft + team hardening beats Opus-from-scratch on "would you use it?" at
+  similar cost, the factory's value is in the second half of the lifecycle. That is a cleaner story than "the chain
+  beats one agent", which the bare arms keep contesting.
+
 ## 2. Close the value-detection gap: BUILT as the team arm, untested (CHANGELOG 2026-09-26a)
 
 Reachable value defects shipped in 2 of 4 runs, both in tables that no agent converted into pitches.
