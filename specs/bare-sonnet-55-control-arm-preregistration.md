@@ -11,7 +11,7 @@ back_refs:
   - specs/bare-claude-control-arm-results.md — the 31/32 baseline and the 32-point procedure
   - NEXTSTEPS.md — item 1 (2026-09-30)
 forward_refs: []
-status: open
+status: complete
 ---
 
 # Bare Sonnet 5.5 control arm — pre-registration

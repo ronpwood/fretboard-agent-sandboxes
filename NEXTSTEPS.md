@@ -4,7 +4,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently run:** mix1, the model-mix team arm (CHANGELOG 2026-09-29b–c): 0 value defects, the reviewer found a cross-frame bug, $31.42. Before that, the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
+**Recently run:** the bare Sonnet 5.5 control arm (CHANGELOG 2026-09-30e): 31/32 in 2 min for $0.33, tying bare Opus 5 on the rubric; Ron: "Opus was ready to deploy, Sonnet did a great MVP". Before that, mix1, the model-mix team arm (CHANGELOG 2026-09-29b–c): 0 value defects, the reviewer found a cross-frame bug, $31.42. Before that, the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
 
 **Recently closed:** the edge-class gate, abandoned after Phase 1 (CHANGELOG 2026-09-28h, 2026-09-29a).
 Before that, the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
@@ -12,29 +12,6 @@ Before that, the N=3 replicate set, closed at 2 valid runs by decision (CHANGELO
 harn2/harn3 and the harness-signals spec (CHANGELOG 2026-09-23d–i).
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
-
-## 1. NEXT (Ron, 2026-09-30, later today): bare Sonnet 5.5 on the Circle of Fifths brief
-
-Repeat the bare Claude Code control arm (CHANGELOG 2026-09-19, `specs/bare-claude-control-arm-*.md`) with
-`claude-sonnet-5-5` in place of `claude-opus-5`: how far has the Sonnet line moved against the Opus 5 bare arm
-(**31/32, 37 min, one turn, $4.28**)?
-
-Conditions to hold identical, or state as a deviation in the pre-registration:
-- **Brief:** `prompts/greenfield.md` is byte-identical between the Opus pin `59b1738` and today's `6f54f9e` (checked
-  2026-09-30). **The app shell is not:** `app.test.ts` was revised and `test-dom.ts` was added. **Pin the VM to
-  `59b1738`** (`lifecycle create` → `fill <id> 59b1738` → `setup` → `observe`) for a byte-identical start, or run on
-  the current pin and record the shell delta.
-- **Kickoff:** one `just sbx run agent <id> "<prompt>"` turn; no equip line, no skill preamble.
-- **Model — needs a small recipe change first:** `sbx run agent` passes no `--model`, so the Opus run got Claude
-  Code's default of that day (2.1.261 → `claude-opus-5`). The VM image now runs 2.1.284, whose default may be Opus
-  5.5. Add an optional model argument that threads `--model claude-sonnet-5-5` through, and confirm from the
-  session log that Sonnet actually served. Check first that exe.dev's gateway serves `claude-sonnet-5-5` at all.
-- **Scoring:** the same 32-point scorecard (19 + 12 + the structural red-suite point), with every gate re-run
-  rather than believed. Carry over the value checks rmix1 taught: a real-browser read, and no `Intl`-name labels.
-- **Stop rule:** as before, void as a "no shared tooling" control if it runs anything under `adws/` (the Opus arm
-  did: `render_smoke.py`). `render_smoke --eval` makes that more tempting now.
-- **Cost:** this lane bills exe.dev's gateway, which no rate table of ours holds (memory: Shelley lane). Cost it by
-  a balance delta, as the Opus arm was. Recorded, never scored.
 
 ## 2. Close the value-detection gap: BUILT as the team arm, untested (CHANGELOG 2026-09-26a)
 

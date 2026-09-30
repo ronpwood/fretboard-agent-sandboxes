@@ -5642,3 +5642,36 @@ HEAD (`835da75`) held the spec unchanged since `43c40ff`.
 **Not done:** the `sbx run cmd` regex-quoting trap stays in NEXTSTEPS. The greenfield factory is **not re-synced**;
 the next greenfield run's sync will carry `gates.py`, `render_smoke.py`, `team.md` and the reviewer prompt, and its
 pre-registration must name them as factory changes.
+
+## 2026-09-30e — bare Sonnet 5.5 control arm: 31/32 in 2 minutes for $0.33, ties Opus 5 on the rubric, loses on "would you use it?"
+
+NEXTSTEPS 1 closed. Pre-registered in `specs/bare-sonnet-55-control-arm-preregistration.md` (commit `0ef0698`,
+before the run); full scorecard in `specs/bare-sonnet-55-control-arm-results.md`.
+
+**Run** `bare-s55-20260930-f887d0`: greenfield pinned to `59b1738` (byte-identical to the Opus 5 arm's start), one
+`just sbx run agent` turn with the verbatim brief, and `--model claude-sonnet-5-5` through the new optional `MODEL`
+argument. The transcript confirms Sonnet served all 10 messages. Deviation: Claude Code 2.1.284 vs 2.1.272.
+
+**Verdict (Ron, before scoring):** "The quality of Opus was ready to deploy, Sonnet did a great MVP." Cost and speed
+"very impressive".
+
+**Result:** A 19/20 + B 12/12 = **31/32, identical to Opus 5**, in **2 min 6 s** (vs 37 min), **$0.33** Shelley delta
+(vs $4.28), 5 tool calls, 616 lines / 8 files (vs 4,358 / 24), 10 tests / 322 asserts (vs 101 / 21,358). Every gate
+re-run by me: tests, oxlint, the factory's exact tsc argv, build, and a scripted real-browser interaction pass with
+0 errors. Theory is correct across all 24 keys (signatures and accidental order, spelling incl. E♯, diatonic chords).
+**T2 pass** (C major → `[48,52,55,60,64]`; all 36 triads correct, root in bass). **T1 strict fail:** the test asserts
+`voicingPcs` (`OPEN_STRINGS`), but audio plays `voicingMidi` from a separate, untested `OPEN_MIDI` table.
+**Stop rule not tripped:** no `adws/`, no skill.
+
+**Predictions:** P1 (≥28) met · **P2 (runtime truth) falsified**, no browser at all · P3 half (T2 yes, T1 no) ·
+P4 (no commit) met · P5 (<37 min) met by ~18x.
+
+**Findings:**
+1. **Rubric saturation is now decisive.** Two arms with a >7x surface gap and a "deploy vs MVP" expert split score
+   the same 31. The rubric measures correct + coherent, not complete. "Would you use it?" is the discriminator.
+2. **Browser self-verification is model posture, not harness.** Same harness and prompt: Opus 5 screenshotted
+   itself; Sonnet 5.5 never looked, and said so. This revises the 2026-09-19 "harness, not model" reading.
+3. **Sonnet 5.5 is a credible $0.33 draft.** Candidate arms: Sonnet-draft → Opus-complete, and a one-turn Sonnet told
+   to verify in a browser.
+
+**Also:** `just sbx run agent` gained an optional third argument, `MODEL`. Empty keeps the prior behaviour.
