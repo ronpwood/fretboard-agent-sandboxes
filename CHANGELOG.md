@@ -5270,3 +5270,105 @@ Audited every runtime pin against OpenRouter + pi.dev live catalogs. **No pin wa
   deepseek price ≠ billed, so reconcile from generation ids on the next run rather than `--fix`.
 - **Not exercised:** a full ADW run on any changed roster. Opus 5.5's effort default is `medium` (Opus 5 was `high`);
   every roster sets `thinking` explicitly, so this should be moot — confirm in the next team-mix run's trace.
+
+## 2026-09-30b — PRE-REGISTRATION: rmix1, the team arm with a frontier reviewer only
+
+**Approved by Ron before mounting** (2026-09-30, "Approve as written, sync and mount it"). Nothing above the mount
+record changes after the approval commit.
+
+**The question:** mix1 moved the planner and the reviewer to Opus together and shipped 0 value defects
+(2026-09-29c). Its reviewer found the one defect the run would otherwise have shipped (the Auckland
+cross-frame bug, found in a real browser in zones the key never named), and the reviewer was 59% of the bill.
+Two seats moved together, so mix1 cannot say which seat earned the result. **With the planner and the builder
+held at mtg1's flash tier, does a frontier reviewer alone move the team arm on value defects?** Cost is
+recorded, not scored.
+
+**The one variable:** `adws/adw_sssf_config/sssf.team-rev.config.yaml`, a copy of `sssf.team.config.yaml`.
+Comments aside, it differs in **exactly one line**: reviewer `glm-5.3` → `claude-opus-5.5`, thinking `high`.
+Against `sssf.team-mix.config.yaml` it differs only in the planner line (`gemini-3.8-flash` vs `claude-opus-5.5`).
+The planner stays `gemini-3.8-flash`; the test designer, builder and scout stay `deepseek-v4.1-flash`; the
+documenter is `gpt-6-luna`. Prompts, chain (`adw_team_sdlc.py`), gates and tools are unchanged.
+
+**The brief, oracle and GRID are verbatim from 2026-09-28f:** `prompts/meeting-planner.md`, with
+`specs/oracles/meeting_oracle.ts` (rule-based, independent of Intl/tzdb) and the 17 × 22 zone-instant GRID
+with all ordered pairs.
+
+**The factory moves by more than the roster**, and that is stated here rather than discovered later. Since
+mix1's pin (`0f790db`, synced from host `15a156f`), `git diff --stat 15a156f HEAD` over the sync paths is the
+2026-09-30 model refresh (four roster files plus five new registry entries), plus the new roster once it is
+committed. For this arm, the one effective change beyond the reviewer line is the **documenter**
+(`gpt-5.6-luna` → `gpt-6-luna`), which runs after the final review and does not touch app code. The sync must
+show exactly those paths, and the leak grep over the synced paths must have zero hits. The new greenfield pin
+is recorded in the approval commit.
+
+| arm | ADW | roster | reviewer | status |
+|---|---|---|---|---|
+| `rmix1` | `team` | `sssf.team-rev.config.yaml` | `claude-opus-5.5` | this run |
+| `mtg1` | `team` | `sssf.team.config.yaml` | `glm-5.3` | judged 2026-09-28g, **the clean comparison** (same planner and builder models) |
+| `mix1` | `team` | `sssf.team-mix.config.yaml` | `claude-opus-5` | judged 2026-09-29c; comparison mixes seat **and** Opus version |
+
+Launched with `just sbx lifecycle execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-rev.config.yaml team`,
+a **$40 key limit**, and **N=1**.
+**Expected cost:** roughly $8–20. mix1's reviewer billed $18.55 on Opus 5 ($5/$25) over three reviews of a
+150-row key. Opus 5.5 is $4/$20, and a flash planner wrote 56 rows at plan in mtg1 (71–73 by the end), so the
+sweeps should be smaller. mix1's own estimate was off by about 4×; the $40 limit is about 2× mix1's reviewer
+spend so that a third review cannot be cut off.
+
+### Mount-time checks
+
+0. Gates A–F pass (gate E: credit covers the open run). Greenfield HEAD = the pin recorded at approval, the
+   tree is clean, the brief is present, and the pi version is recorded. The run log resolves `--config
+   adws/adw_sssf_config/sssf.team-rev.config.yaml`. The traces show the reviewer's generations on
+   `anthropic/claude-opus-5.5`, the planner's on `google/gemini-3.8-flash`, and the builder's on
+   `deepseek/deepseek-v4.1-flash`. **Also recorded:** the reasoning effort sent for the reviewer. Opus 5.5
+   defaults to `medium` where Opus 5 defaulted to `high`, and the roster sets `thinking: high`; the trace
+   should show `high`.
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument):** every review has a `value_check` for every effective `V`, plus a declared
+  `value_sweep.*`.
+- **P2:** at least one amendment is proposed and ruled on.
+- **P3:** every trap in the committed spec cites an existing `V` row. **Recorded:** whether a `spec_form`
+  correction was needed.
+- **P4 (primary):** zero reachable value defects, judged by our sweep over the GRID under the 2026-09-28f
+  rules verbatim, as in mix1 (2026-09-29b P4). **Also swept:** the three known classes (DST-straddle span
+  classification, wrapped working hours, end-inclusive core).
+- **P5 (planner seat unchanged, so a MISS is expected):** at plan, before any amendment, the key has **no**
+  row for a meeting spanning a DST transition. This is the row mtg1's flash planner lacked and mix1's Opus
+  planner wrote. If the flash planner writes it anyway, mtg1's miss was sampling, not the seat, and that
+  weakens mix1's planner-seat reading.
+- **P7 (the seat question):** in at least one review, the Opus reviewer checks something **outside the key**:
+  an independent probe, oracle or derivation that is not a `V` row. mix1's reviewer did this. A miss says the
+  behaviour needed the Opus planner's richer key to prompt it.
+- **P6 (robustness):** no non-model loss; every `provider_retry` and every timeout is recorded.
+
+### How the result reads
+
+| P4 | P7 | reading |
+|---|---|---|
+| met | met | The reviewer seat carries most of mix1's value at a fraction of the cost; the leading candidate for the frozen roster |
+| missed | met | The reviewer looked outside the key but the defect slipped past; seat helps, not sufficient alone |
+| met | missed | Clean app without reviewer independence; closer to sampling luck than a seat effect (mtg1 was also close) |
+| missed | missed | The reviewer seat alone does not reproduce mix1; the planner seat, or both together, carried it |
+
+### Recorded, not scored
+
+- `V` counts at plan and at the end; amendments and their rulings; traps and the edge classes they name.
+- For every finding the reviewer raises: whether it was a `V` sweep or an outside-the-key probe, and whether
+  the builder turned it into a key row.
+- The review trajectory. Accept/reject is not a quality ranking (fan-out 3).
+- Tokens per seat, split into uncached input, cached and output. Wall clock. Billed $ per model, reconciled
+  per generation before teardown.
+- Whether the app uses Intl/tzdb, a hand-rolled table or fixed offsets.
+
+### Confounds
+
+- N=1 against mtg1's N=1 and mix1's N=1, so model and sampling are not separable. A P4 separation is a
+  direction, and it earns a replicate before any roster freeze.
+- **The Opus version differs from mix1** (`claude-opus-5.5` vs `claude-opus-5`, chosen on 2026-09-30 because
+  5.5 is the model the rosters will freeze on). Against mix1, the seat and the model version move together;
+  against mtg1, only the reviewer seat moves.
+- The documenter model differs from mtg1 and mix1 (runs after the final review, touches no app code).
+- The greenfield pin moves by the 2026-09-30 refresh as well as the roster; this is verified at sync. The pi
+  version is recorded at mount.

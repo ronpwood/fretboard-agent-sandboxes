@@ -26,7 +26,14 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. NEXT: choose the follow-up to mix1 (CHANGELOG 2026-09-29c)
+## 3. NOW: rmix1, the reviewer-only mix — pre-registration APPROVED 2026-09-30 (CHANGELOG 2026-09-30b)
+
+**Chosen 2026-09-30:** candidate 2 below. Flash planner and builder, `claude-opus-5.5` reviewer, roster
+`sssf.team-rev.config.yaml`, $40 key limit, N=1. Next steps: Ron approves the draft → `just target sync greenfield
+--push` (the diff must be the 2026-09-30 refresh plus the new roster) → record the pin in the approval commit →
+mount. mix2 and the oracle lever stay open as candidates 1 and 3.
+
+### mix1 recap (CHANGELOG 2026-09-29c)
 
 **mix1 is done and torn down.** Opus planner and reviewer, flash builder, on the meeting-planner brief:
 - **0 value defects in 2,177,633 oracle checks**, including 16,796 meetings that span a DST transition (the class
@@ -49,7 +56,7 @@ point for the independent judge in item 3.
    - Record whether the flash reviewer rejects any Opus amendment.
    - Budget: the builder is the biggest token consumer (mix1: 14.1M cached / 115k output over build + revise),
      so plan on $30–50.
-2. **Reviewer-only mix:** flash planner and builder, Opus reviewer. mix1 suggests the reviewer seat is where the
+2. **Reviewer-only mix — CHOSEN as rmix1 (2026-09-30b):** flash planner and builder, Opus reviewer. mix1 suggests the reviewer seat is where the
    value was found (the Auckland bug), at 59% of the cost. This isolates that seat for about $19.
 3. **The oracle lever on the flash roster:** tell the (glm) reviewer to write its own rule implementation and to
    probe zones the key doesn't name. That's the cheapest test of whether mix1's reviewer *behaviour* transfers
@@ -91,7 +98,7 @@ idle, note returned as the next turn) may never complete in print mode. Stage 3 
 A/B, builder seat only. Its prerequisite, the context curve, is built (CHANGELOG 2026-09-23g).
 
 
-# CURRENT STATE — DeepSeek V4.1 is the default; no live roster uses 0731
+# CURRENT STATE — DeepSeek V4.1 is the default; Opus 5.5 in the frontier seats; no live roster uses 0731
 
 **Read this before touching a roster or the model registry.** The reasoning behind the partial
 rollout is in CHANGELOG "2026-09-20 → 2026-09-23 — why the v4.1 rollout stopped at the default
@@ -104,15 +111,22 @@ A restored one (`git mv` back from `archive/factory/rosters/`) still runs on 073
 
 | id | input | $/M in/out |
 |---|---|---|
-| `deepseek/deepseek-v4-flash-0731` | `["text"]` | 0.14 / 0.28 *(registry; live is 0.04/0.08 — see drift below)* |
-| `deepseek/deepseek-v4.1-flash` | **`["text","image"]`** | 0.15 / 0.60 *(matches live exactly)* |
+| `deepseek/deepseek-v4-flash-0731` | `["text"]` | 0.14 / 0.28 *(registry; live published 0.01/1.28 on 2026-09-30 — see drift below)* |
+| `deepseek/deepseek-v4.1-flash` | **`["text","image"]`** | 0.15 / 0.60 *(registry; live published 0.02/0.40 on 2026-09-30 — see drift below)* |
 
-| roster | defaults.model |
-|---|---|
-| **`sssf.config.yaml` (default)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) |
-| `sssf.team.config.yaml` (the team arm, `execute`'s default ADW) | the default roster's models, team prompts |
-| `sssf.frontier` | `claude-opus-5` |
-| `sssf.gemniflash` | `gemini-3.8-flash` |
+| roster | defaults.model | seats that differ |
+|---|---|---|
+| **`sssf.config.yaml` (default / control)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) | planner `gemini-3.8-flash`, reviewer `glm-5.3`, documenter `gpt-6-luna` |
+| `sssf.team.config.yaml` (the team arm, `execute`'s default ADW) | `deepseek-v4.1-flash` | same seats as the default, team prompts |
+| `sssf.team-mix.config.yaml` (mix1) | `deepseek-v4.1-flash` | planner + reviewer `claude-opus-5.5` (mix1 itself ran `claude-opus-5`), documenter `gpt-6-luna` |
+| `sssf.team-rev.config.yaml` (rmix1, pre-registered) | `deepseek-v4.1-flash` | reviewer `claude-opus-5.5` only; otherwise the team roster |
+| `sssf.frontier` | `claude-opus-5.5` | builder + documenter `kimi-k3`, scout `gpt-6-sol` |
+| `sssf.gemniflash` | `gemini-3.8-flash` | none |
+
+Model refresh 2026-09-30 (CHANGELOG 2026-09-30): `claude-opus-5` → `claude-opus-5.5`, `gpt-5.6-luna` →
+`gpt-6-luna`, `gpt-5.6-sol` → `gpt-6-sol`; every swapped-out id stays registered. `claude-sonnet-5.5` and
+`gpt-6.1-sol` are registered only. Host `~/.pi/agent/models.json` needs its own entry for any model used on the
+host — pi's built-in openrouter entry for opus-5.5 returns 404.
 
 ### Do NOT "tidy" these
 
@@ -124,7 +138,9 @@ A restored one (`git mv` back from `archive/factory/rosters/`) still runs on 073
   is genuinely multimodal. Making them match would re-introduce the bug that
   blinded the 2026-09-20 treatment arm.
 - **Registry rate drift is known and deliberate**, not stale: `check_rates.py`
-  flags `0731` (0.14/0.28 vs live 0.04/0.08), `kimi-k3`, `glm-5.2` and `glm-5.3`.
-  The deepseek keep-catalog-vs-use-measured decision is still open from
-  2026-09-07g. **Do not `--fix` it casually** — it changes what every historical
-  run's cost means. The v4.1 entry needs no such decision; it matches live.
+  flags `0731`, `v4.1-flash` and `glm-5.2` (2026-09-30; `kimi-k3` and `glm-5.3` now
+  match). OpenRouter's *published* deepseek price has not matched what it bills (0731
+  estimates ran ~1.95x high on 2026-09-07), and the published prices moved again on
+  2026-09-30, so the keep-catalog-vs-use-measured decision from 2026-09-07g is still
+  open and now covers v4.1 too. **Do not `--fix` it casually** — it changes what every
+  historical run's cost means. Reconcile from generation ids after a run.
