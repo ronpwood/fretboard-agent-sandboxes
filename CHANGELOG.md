@@ -5301,6 +5301,11 @@ committed. For this arm, the one effective change beyond the reviewer line is th
 show exactly those paths, and the leak grep over the synced paths must have zero hits. The new greenfield pin
 is recorded in the approval commit.
 
+**Synced 2026-09-30T13:56Z:** the greenfield pin moves from `0f790db` to **`6f54f9e`** (synced from host `11063ac`, the
+approval commit). `git diff --stat 0f790db 6f54f9e` shows exactly six files: the new roster and the five refresh
+files. The leak check (8 patterns) is clean, and the manifest, build, test and rosters gates pass. The pin is recorded
+here in a follow-up commit, before mounting, because approval came before the sync.
+
 | arm | ADW | roster | reviewer | status |
 |---|---|---|---|---|
 | `rmix1` | `team` | `sssf.team-rev.config.yaml` | `claude-opus-5.5` | this run |
