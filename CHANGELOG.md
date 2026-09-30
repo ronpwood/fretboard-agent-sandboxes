@@ -5458,3 +5458,11 @@ amendments: the ruling gate passed vacuously, and the coverage gate checked agai
 heading is back after review_1 (line 335, A1–A4 beneath it). **Fix candidate:** `amendments_ruled` and
 `values_swept` should fail when `## Amendments` is missing from a `plan.md` whose committed spec had it, rather
 than read the absence as "none". The reviewer's own diligence covered it this time.
+
+**revise_1 (14:41–14:45Z, 174s):** the builder claims all four blockers fixed. The changes: a curated abbreviation
+map (CET/EET/BRT/MSK …), one instant per column on the non-UTC reference timeline, and fixes for the date guard and
+the clipboard. The durable suite grew 2 → 11. There are 3 departures and 2 open questions. **A4 (builder) turns the
+review_1 findings into key rows V58–V68:** the abbreviations, the reference-NY overlap bar, the cursor column and
+the click-date case. These are exactly the reviewer's proposed rows, so outside-the-key findings became `V` rows. A4
+is labelled "(build)" in `plan.md` but answers review_1. `## Amendments` is present again, with A1–A4 beneath it.
+Run-log estimates so far total about $3, well inside the $40 key.
