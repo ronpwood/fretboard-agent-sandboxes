@@ -5393,7 +5393,7 @@ Retry 2/2 followed at about 11 minutes ("The operation was aborted"). Its resend
 last written 3s before the check at 14:09Z). The budget is per send; a surviving error would fall to the plan phase's
 `retries=1`, so the run was not at risk yet.
 
-**In-flight observation, recorded 2026-09-30T14:2xZ BEFORE any outcome** (the test designer is running; no build, no review):
+**In-flight observation, recorded 2026-09-30T07:10:30-07:00 (commit time) BEFORE any outcome** (the test designer is running; no build, no review):
 - The committed spec `43c40ff` (`specs/f0851b2c_timezone-meeting-planner.md`, 26 KB) has **53 `V` rows** (mtg1: 56 at
   plan; mix1: 150) and **8 traps**, as bullets citing `V` rows.
 - The design: 48 slots of 30 minutes over "the 24 hours of the meeting date". Controls are a **date input**, durations
