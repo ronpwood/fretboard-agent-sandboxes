@@ -5425,3 +5425,35 @@ inside the run.
 - Build, 248s (mtg1: 311s): 7 files, and the durable suite grew 2 → 7. The spec is still frozen at `43c40ff`. The
   builder declares **2 departures and 2 open questions**. test_1 passed lint, typecheck, tests and the render
   smoke (4/4).
+
+**review_1 (14:24–14:41Z, 1,024s; run log $2.76, 2.1M tokens): NOT APPROVED.** 8/12 requirements, 57/57 effective
+`V` rows (V1–V53 plus A2's V54–V57). The reviewer ruled on **A1–A3** (all accepted). A3 is the builder's: it fixes a
+sign error in the generated V17 test and moves no value. A4 (builder) appears after the reviewer note. **Four
+blocking findings, all outside the key** ("the answer key is fully green, but four defects outside it give users
+wrong or broken output"):
+1. **R8, wrong abbreviations.** The zone label is the initials of the long name, so European winter time shows
+   `CEST`/`EEST`, São Paulo shows `BST` and Moscow `MST`. The reviewer probed 23 catalogue zones × {Jan, Jun}: 8 wrong or
+   ambiguous.
+2. **R3/R7, the cross-frame class.** Under a non-UTC reference zone:
+   - the overlap bar is evaluated at UTC hours while the header, rows and clicks use reference-zone hours (10/24
+     columns disagree with the trio at reference = NY);
+   - the time cursor is placed by the UTC slot, so it sits in the wrong column;
+   - clicking a column that falls on the previous UTC day selects the wrong **date** (the user picks June 15 and gets
+     June 14).
+   This is the frame mismatch flagged in the in-flight P5 note, and the same class as mix1's Auckland bug.
+3. **R3:** clearing the date input removes the whole app (`RangeError`, `#app` emptied).
+4. **R10:** "Copied to clipboard!" shows when the clipboard API is missing, and is never reset.
+The reviewer lists 13 proposed new `V` rows for these findings (the builder's to file as amendments). It rendered
+32 preset × date × slot states in the real DOM. It did **not** mention the DST-span class (no finding, no probe noted
+in `review.md`).
+**P7 evidence (judged at the end, not scored now):** findings 1 and 2 come from probes over zones and reference frames
+that no `V` row names.
+
+**Finding, a gate blind spot (not fixed mid-run):** at review_1 `amendments_ruled` passed as "none proposed", and
+`values_swept` counted **53** `V` ids while the reviewer swept 57. Both parse `plan.md` via `team_spec`, and at
+review time `plan.md` had **no literal `## Amendments` heading**. The reviewer notes A1–A3 lived under Team notes,
+though the committed spec and the plan-time `spec_form` had the heading. With the heading gone, the parser saw no
+amendments: the ruling gate passed vacuously, and the coverage gate checked against the pre-amendment key. The
+heading is back after review_1 (line 335, A1–A4 beneath it). **Fix candidate:** `amendments_ruled` and
+`values_swept` should fail when `## Amendments` is missing from a `plan.md` whose committed spec had it, rather
+than read the absence as "none". The reviewer's own diligence covered it this time.
