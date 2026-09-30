@@ -5421,7 +5421,8 @@ last written 3s before the check at 14:09Z). The budget is per send; a surviving
 inside the run.
 **Before review (no outcome):**
 - Test design: 85 red tests, one per requirement plus one assertion per V1–V53. All gates passed, with no retries
-  and **0 amendments** (mtg1's test designer filed A1).
+  and ~~**0 amendments**~~. **CORRECTED at review_1:** the test designer filed **A1 and A2** (A2 adds V54–V57). I had
+  read the committed spec's empty `## Amendments`, but amendments live in the runtime `context_handoff/plan.md`.
 - Build, 248s (mtg1: 311s): 7 files, and the durable suite grew 2 → 7. The spec is still frozen at `43c40ff`. The
   builder declares **2 departures and 2 open questions**. test_1 passed lint, typecheck, tests and the render
   smoke (4/4).
