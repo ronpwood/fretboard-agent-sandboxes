@@ -5495,7 +5495,7 @@ budget (3 reviews, 2 revisions) ran out. Run log: 28.5M tokens, **$5.79** estima
 **Next:** judge P4. Adapt `sweep_mix1.ts` to this app's API (`localSlot`, `availabilityFor`, `evaluateSlot`) and run the
 2026-09-28f rules plus the three known classes over the GRID against the snapshot.
 
-## 2026-09-30c — rmix1 judged: P4 MISSED on three narrow classes (the DST span returns, a reference column in the spring gap, and London winter in a real browser); P7 MET: every blocker the reviewer raised was outside the key
+## 2026-09-30c — rmix1 judged: P4 MISSED on three narrow classes (the DST span returns, a reference column in the spring gap, and London winter in Google Chrome 154); P7 MET: every blocker the reviewer raised was outside the key
 
 Pre-registration: 2026-09-30b. The sweep is `.sandbox/runs/rmix1-20260930-ee1896-artifacts/sweep_rmix1.ts` (host-only),
 run against the harvested UNAPPROVED snapshot `6806635` (`refs/sandbox/rmix1-20260930-ee1896`). It is judged by the
@@ -5550,14 +5550,19 @@ in every review, but defects slipped past. The seat helps; it is not sufficient 
 - **Live repro:** clicking "01:00" and "02:00" both select `06:00 UTC`; "03:00" selects 07:00Z (EDT), correctly.
 - EU and southern gaps land at or past the gap and pass (11/11). Overlap walls land on a valid instant (19/19).
 
-**3. London in winter, off the oracle but a KEY row (V13), in a real browser.**
-- Chromium en-US names London's winter zone "GMT+00:00" (long) and "GMT+0" (short). Neither is in the app's map or
+**3. London in winter, off the oracle but a KEY row (V13), in Google Chrome 154 stable.**
+- **CORRECTED 2026-09-30d:** this reproduces in *Google Chrome 154.0.8037.92* (the installed browser, which the
+  Playwright MCP launches by default), **not** in Playwright's bundled HeadlessChrome 153, which says "Greenwich Mean
+  Time" / "GMT" like bun and renders `GMT` correctly. The first write-up said "a real browser", which overstated it.
+- Chrome 154 en-US names London's winter zone "GMT+00:00" (long) and "GMT+0" (short). Neither is in the app's map or
   passes its `^[A-Z]{2,5}$` check, so it falls back to **"UTC+0"**. V13 pins `GMT`.
 - Under bun all 46 zone × season labels are right; that is what the reviewer's 46/46 and 70/70 measured. In the
   browser: **45/46**, and London is in the default "Transatlantic" preset.
 - **The value sweep ran on an unfaithful double of the delivered runtime** (bun/happy-dom ICU ≠ Chromium ICU), the
   fan-out 2 lesson in a new place. The abbreviation labels are not in the oracle (A checks the offset label), so
-  this was found by the live check, not the sweep.
+  this was found by the live check, not the sweep. The durable lesson is not "sweep in a browser"; it is that
+  **`Intl` display names are not stable values** (they differ by engine and by browser version), so a user-visible
+  label derived from them cannot be proven in any one runtime.
 
 **Recorded, not scored:**
 - **W, wrapped work hours:** a 22:00–06:00 night shift is never `work`. All 18,721 wholly-inside meetings come out
@@ -5599,3 +5604,41 @@ reaches that phase. **The Opus reviewer was 83% of the bill.** Against mix1's re
 key): 5.5's price and a 53–70-row key cut it about 3.7×. *Recorded, never scored.*
 - **Torn down 2026-09-30:** spend recorded ($5.9351), artifacts pulled, harvest re-confirmed (3 commits), tree clean,
   key revoked and verified absent, VM destroyed, record closed. `reap` found no orphans.
+
+## 2026-09-30d — three harness levers from rmix1: heading guards, the frozen-spec diff, and real-browser value reads (with an honest scope)
+
+**1. The `## Amendments` blind spot, root-caused, then fixed.** The rmix1 trace settles the cause: at review_1 the
+reviewer's read of `plan.md` had no `## Amendments` heading and no code fences, and A1–A3 sat under
+`## Team notes`. The heading was dropped (most likely by the test designer appending A1). It was not a parser
+misreading a fence. The fix (`gates.py`):
+- `spec_frozen`, which runs after **every** agent phase, now also checks that every section heading the committed spec
+  had is still present. A dropped heading comes back to the phase that dropped it.
+- `amendments_ruled` and `values_swept` fail on a missing `## Amendments` instead of reading it as "none proposed".
+- **Calibrated on the corpus:** every team-form `plan.md` in `.sandbox/traces` (team1, team2, mtg1, mix1, rmix1; 5/5).
+  The new checks pass on each real file and all three gates fail on each copy with the heading deleted. 0 unexpected.
+
+**2. The frozen-spec diff** (`team.md`, the shared charter). It now says where the committed copy is:
+`specs/<adw_id>_<slug>.md` (found with `git ls-files specs/`), unchanged until the run ends. The command is
+`diff <(git show HEAD:specs/<file>) <context_handoff_dir>/plan.md`, and the charter adds that a row count does not
+prove values unchanged. The gate list now names the headings check. Verified against rmix1's history: at review time
+HEAD (`835da75`) held the spec unchanged since `43c40ff`.
+
+**3. Real-browser value reads, and what they do NOT fix.**
+- `render_smoke.py --eval FILE [--hash H ...]` loads the real bundle in Chromium once per hash, evaluates one JS
+  function in the page and prints `[{hash, result, errors}]`. Exit 1 if the page or the script threw. It shares a new
+  `_start_server()` with the gate path.
+- Tested: the gate's baseline is unchanged (PASS on the rmix1 app); a planted throwing script exits 1; the tool reads
+  rendered card values.
+- The reviewer prompt tells it to read page-rendered `V` values this way (it has `bash`, and it ran `render_smoke`
+  throughout rmix1).
+- **Scope correction found while testing:** `--eval` would **not** have caught rmix1's London `UTC+0`. Playwright's
+  bundled HeadlessChrome 153 and bun both say "Greenwich Mean Time" / `GMT`. Only the installed Google Chrome 154 says
+  "GMT+00:00" / "GMT+0" (confirmed by launching both from one script). `Intl` display names differ between engines
+  *and* between versions of one browser, so no single runtime proves a value built from them.
+- The reviewer prompt therefore also says that **a user-visible value derived from `Intl` display names is a finding**.
+  That is the lever that addresses the class; the browser read covers happy-dom's other gaps (no layout, not a real
+  DOM). CHANGELOG 2026-09-30c finding 3 was corrected accordingly ("Google Chrome 154", not "a real browser").
+
+**Not done:** the `sbx run cmd` regex-quoting trap stays in NEXTSTEPS. The greenfield factory is **not re-synced**;
+the next greenfield run's sync will carry `gates.py`, `render_smoke.py`, `team.md` and the reviewer prompt, and its
+pre-registration must name them as factory changes.

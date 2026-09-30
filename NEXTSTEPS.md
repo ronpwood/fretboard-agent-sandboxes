@@ -35,11 +35,12 @@ passed in bun). **P7 met strongly:** 6 blockers across 3 reviews, all outside th
 but it does not close time-arithmetic edge classes on its own. mix1's clean DST-span result came from its
 engine design, not a review catch. Torn down 2026-09-30.
 
-**Harness levers it surfaced (cheap, before the next arm):**
-- `amendments_ruled` / `values_swept` fail on a missing `## Amendments` heading (they passed vacuously at review_1).
-- Reviewer prompt: the frozen source is `git show <plan_sha>:specs/<adw_id>_*.md` (it believed it could not diff).
-- Value sweeps in the delivered runtime: the reviewer's bun/happy-dom sweep passed V13, which Chromium fails.
-- `sbx run cmd` still mangles `|` inside a quoted regex (the known escaping trap; it cost a watcher here).
+**Harness levers it surfaced — three DONE 2026-09-30d (not yet synced to greenfield):**
+- DONE: heading guards in `spec_frozen` / `amendments_ruled` / `values_swept` (calibrated 5/5).
+- DONE: the charter names the committed spec and the `diff <(git show HEAD:specs/…)` command.
+- DONE, with narrowed scope: `render_smoke --eval` for real-browser value reads, plus the reviewer rule that
+  user-visible values derived from `Intl` display names are a finding (Chrome 154 ≠ bundled Chromium 153 ≠ bun).
+- OPEN: `sbx run cmd` still mangles `|` inside a quoted regex (the known escaping trap; it cost a watcher here).
 
 ### Earlier: the rmix1 choice (2026-09-30)
 
