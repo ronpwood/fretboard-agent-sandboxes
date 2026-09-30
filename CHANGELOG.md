@@ -5675,3 +5675,6 @@ P4 (no commit) met · P5 (<37 min) met by ~18x.
    to verify in a browser.
 
 **Also:** `just sbx run agent` gained an optional third argument, `MODEL`. Empty keeps the prior behaviour.
+
+**Torn down 2026-09-30:** VM destroyed, key revoked (OpenRouter spend $0.0005, unused by this lane). Final Shelley
+balance $5.95 allowance / $105.95 available, unchanged since the after-reading, so the $0.33 delta stands.
