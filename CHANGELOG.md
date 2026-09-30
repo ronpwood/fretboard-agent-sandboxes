@@ -5413,3 +5413,15 @@ last written 3s before the check at 14:09Z). The budget is per send; a surviving
   of the meeting date" invites the day grid to follow the reference zone. That is the same frame choice as mix1's
   Auckland cross-frame bug (a UTC-day ranking window against a local-day grid). A reference-zone day on a DST night
   has 46 or 50 half-hour slots, not 48, and no row pins that.
+
+**Check 0 completed at review_1 (14:22Z):** the run log's reviewer line and `agent_sessions` show
+`openrouter/anthropic/claude-opus-5.5`; the planner is on `gemini-3.8-flash` and the test designer and builder on
+`deepseek-v4.1-flash`. **The roster resolved as `sssf.team-rev.config.yaml`.** The reviewer's pi session records
+`thinkingLevel: "high"`. The effort pi puts on the wire is not in the trace; that is the strongest evidence from
+inside the run.
+**Before review (no outcome):**
+- Test design: 85 red tests, one per requirement plus one assertion per V1–V53. All gates passed, with no retries
+  and **0 amendments** (mtg1's test designer filed A1).
+- Build, 248s (mtg1: 311s): 7 files, and the durable suite grew 2 → 7. The spec is still frozen at `43c40ff`. The
+  builder declares **2 departures and 2 open questions**. test_1 passed lint, typecheck, tests and the render
+  smoke (4/4).
