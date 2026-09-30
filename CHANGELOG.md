@@ -5583,3 +5583,19 @@ in every review, but defects slipped past. The seat helps; it is not sufficient 
   - The reviewer's frozen-spec diff hint (`git show <plan_sha>:specs/<adw_id>_*.md`).
   - A value sweep that runs in the delivered runtime (Playwright Chromium), not only bun/happy-dom.
 - Billed $ comes at teardown, reconciled per generation. The run log says $5.79 (mix1 billed $31.42).
+
+**Cost, reconciled per generation before teardown (2026-09-30):** all **279/279** generation ids resolved
+(`artifacts/gens/`, via curl with the host account key; no planner subagent sessions this run). They sum to
+**$5.9343** against the key's billed **$5.9351**; the $0.0008 gap is the setup gate pings.
+
+| seat | model | gens | billed | prompt / cached / out / reasoning tokens |
+|---|---|---|---|---|
+| reviewer | `claude-opus-5.5` | 56 | **$4.953** | 6.10M / 5.92M / 145k / 84k |
+| planner | `gemini-3.8-flash` | 59 | $0.625 | 2.21M / 1.86M / 59k / 32k |
+| test designer + builder | `deepseek-v4.1-flash` | 164 | $0.356 | 19.77M / 19.53M / 195k / 100k |
+
+The run-log estimate was $5.79 (2.4% low). There were no documenter generations: a build that is not accepted never
+reaches that phase. **The Opus reviewer was 83% of the bill.** Against mix1's reviewer ($18.55 on Opus 5, 150-row
+key): 5.5's price and a 53–70-row key cut it about 3.7×. *Recorded, never scored.*
+- **Torn down 2026-09-30:** spend recorded ($5.9351), artifacts pulled, harvest re-confirmed (3 commits), tree clean,
+  key revoked and verified absent, VM destroyed, record closed. `reap` found no orphans.
