@@ -5245,3 +5245,25 @@ pulled by hand. **Python urllib calls to `/api/v1/generation` all failed** (like
 - **Torn down 2026-09-29:** spend recorded ($31.4177), artifacts pulled (sweep, 346 generation records, the subagent
   session), harvest re-confirmed (4 commits), tree clean, key revoked and verified absent, VM destroyed, record
   closed. `reap` found no orphans.
+
+## 2026-09-30 — model refresh: Opus 5.5 into team-mix and frontier, gpt-6-luna documenter, gpt-6-sol frontier scout
+
+Audited every runtime pin against OpenRouter + pi.dev live catalogs. **No pin was missing or retired.**
+
+- **Swapped (approved):** `claude-opus-5` → `claude-opus-5.5` in team-mix (planner, reviewer) and frontier
+  (default, planner, reviewer) — $5/$25 → $4/$20, same 1M/128K. `gpt-5.6-luna` → `gpt-6-luna` as documenter in
+  control, team, team-mix — $0.20/$1.20 → $0.10/$0.50. Frontier scout `gpt-5.6-sol` → `gpt-6-sol` (same price).
+- **Registered only:** `claude-sonnet-5.5` (seat tests), `gpt-6.1-sol` (released 2026-09-29). All swapped-out ids stay
+  registered — revert is a one-word config edit.
+- **Kept:** `deepseek-v4.1-flash`, `gemini-3.8-flash`, `glm-5.3` (`-prime`/`-flashx` are variants), `kimi-k3`.
+- **Verified:** new registry rates match OpenRouter (`check_rates.py`); all five configs pass `agents.validate()`;
+  gate C's exact ZDR ping returns `pong` for all five new ids. A real `pi` call with one `read` tool call succeeded
+  for opus-5.5 and sonnet-5.5 (`thinking: high`, via the rendered tmpl under `PI_CODING_AGENT_DIR`), gpt-6-luna
+  (`medium`) and gpt-6-sol (`high`). gpt-6.1-sol's pi call hit an upstream 429 (routing resolved, pool saturated).
+- **Host pi trap:** host `pi` 0.87.1 reaches `openrouter/anthropic/claude-opus-5.5` through its *built-in* catalog
+  entry, which returns **404**; `claude-opus-5` works only because host `~/.pi/agent/models.json` registers it on
+  `openai-completions`. The VM gets the tmpl, so VM runs are fine; host-side pi use of 5.5 needs the same entries.
+- **Not fixed:** `check_rates.py` still flags deepseek-v4-flash-0731, v4.1-flash, glm-5.2 — OpenRouter's published
+  deepseek price ≠ billed, so reconcile from generation ids on the next run rather than `--fix`.
+- **Not exercised:** a full ADW run on any changed roster. Opus 5.5's effort default is `medium` (Opus 5 was `high`);
+  every roster sets `thinking` explicitly, so this should be moot — confirm in the next team-mix run's trace.

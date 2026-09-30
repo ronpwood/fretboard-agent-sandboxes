@@ -27,12 +27,12 @@ model**. Nothing else changes between N runs.
 | builder | *(inherits the default)* `deepseek/deepseek-v4-flash-0731` | medium | $0.09 / $0.18 |
 | scout | *(inherits the default)* `deepseek/deepseek-v4-flash-0731` | medium | $0.09 / $0.18 |
 | reviewer | `openrouter/z-ai/glm-5.3` | high | $1.40 / $4.40 |
-| documenter | `openrouter/openai/gpt-5.6-luna` | medium | $0.10 / $0.60 |
+| documenter | `openrouter/openai/gpt-6-luna` | medium | $0.10 / $0.50 |
 
 ### `adws/adw_sssf_config/sssf.frontier.config.yaml` — the frontier roster
 
 Also known as the sota roster, the big models. `defaults.model:
-openrouter/anthropic/claude-opus-5`, `thinking: high` across the board. **Nothing but the roster
+openrouter/anthropic/claude-opus-5.5`, `thinking: high` across the board. **Nothing but the roster
 changes** — same ADW scripts, same prompts, same gates, same trace. Swapping the file in is the
 whole migration:
 
@@ -43,10 +43,10 @@ uv run adws/adw_plan_build_test.py "<request>" \
 
 | Agent | Model | Rate in/out per M | Cast for |
 | --- | --- | --- | --- |
-| planner | `openrouter/anthropic/claude-opus-5` | $5.00 / $25.00 | 1M context; the plan is the highest-leverage artifact |
+| planner | `openrouter/anthropic/claude-opus-5.5` | $4.00 / $20.00 | 1M context; the plan is the highest-leverage artifact |
 | builder | `openrouter/moonshotai/kimi-k3` | $3.00 / $15.00 | 1M context, strong tool use; the only agent that writes code |
-| scout | `openrouter/openai/gpt-5.6-sol` | $5.00 / $30.00 | search-heavy recon |
-| reviewer | `openrouter/anthropic/claude-opus-5` | $5.00 / $25.00 | judgement against a spec — the same strength that earns it the plan |
+| scout | `openrouter/openai/gpt-6-sol` | $2.00 / $10.00 | search-heavy recon |
+| reviewer | `openrouter/anthropic/claude-opus-5.5` | $4.00 / $20.00 | judgement against a spec — the same strength that earns it the plan |
 | documenter | `openrouter/moonshotai/kimi-k3` | $3.00 / $15.00 | a long diff read end to end, then written up once |
 
 Both rosters write to the **same** `adws/adw_data/sssf.db`, so runs sit side by side in the
@@ -84,17 +84,17 @@ Two ids that cost a verification cycle:
 
 ---
 
-## The ten registered models
+## The registered models
 
 `sandbox_mount/guest/models.json.tmpl` → written to `~/.pi/agent/models.json` by
 `provision.sh` step 5/10, `chmod 600` because it holds a live key. Ten models, one provider
-block. Per-million-token rates, pulled live from OpenRouter 2026-08-04 — regenerate when
+block. Per-million-token rates, originally pulled live from OpenRouter 2026-08-04 — regenerate when
 pricing moves.
 
 | Model | input | output | cacheRead | cacheWrite | Provider under ZDR | In a roster? |
 | --- | --- | --- | --- | --- | --- | --- |
 | `deepseek/deepseek-v4-flash-0731` | 0.09 | 0.18 | 0.018 | 0.0 | **Parasail** (US) | registered only (setup gate D pings it; no roster since the 0731 rosters were archived 2026-09-28) |
-| `openai/gpt-5.6-luna` | 0.1 | 0.6 | 0.01 | 0.125 | **Azure** | default: documenter |
+| `openai/gpt-5.6-luna` | 0.1 | 0.6 | 0.01 | 0.125 | **Azure** | registered only (was default documenter until 2026-09-30) |
 | `z-ai/glm-5.2` | 0.76 | 2.42 | 0.14 | 0.0 | **CoreWeave** (US) | registered only (was default reviewer until 2026-09-15) |
 | `z-ai/glm-5.3` | 1.4 | 4.4 | 0.26 | 0.0 | 23 ZDR endpoints (2026-09-15) | default + team: reviewer |
 | `google/gemini-3.8-flash` | 0.75 | 3.75 | 0.075 | 0.041667 | **Google** | default + team: planner · gemniflash: all |
@@ -103,14 +103,23 @@ pricing moves.
 | `anthropic/claude-sonnet-5` | 2.0 | 10.0 | 0.2 | 2.5 | **Google Vertex** | registered only |
 | `x-ai/grok-4.5` | 2.0 | 6.0 | 0.3 | 0.0 | **xAI** | registered only |
 | `moonshotai/kimi-k3` | 3.0 | 15.0 | 0.3 | 0.0 | **Moonshot AI** | frontier: builder, documenter |
-| `anthropic/claude-opus-5` | 5.0 | 25.0 | 0.5 | 6.25 | **Google Vertex** | frontier: planner, reviewer |
-| `openai/gpt-5.6-sol` | 5.0 | 30.0 | 0.5 | 6.25 | *not in the ZDR verification table* | frontier: scout |
+| `anthropic/claude-opus-5` | 5.0 | 25.0 | 0.5 | 6.25 | **Google Vertex** | registered only (was frontier planner/reviewer until 2026-09-30) |
+| `openai/gpt-5.6-sol` | 5.0 | 30.0 | 0.5 | 6.25 | *not in the ZDR verification table* | registered only (was frontier scout until 2026-09-30) |
+| `openai/gpt-6-luna` | 0.1 | 0.5 | 0.01 | 0.125 | **Azure** (2026-09-30) | default + team + team-mix: documenter |
+| `openai/gpt-6-sol` | 2.0 | 10.0 | 0.2 | 2.5 | **Azure** (2026-09-30) | frontier: scout |
+| `openai/gpt-6.1-sol` | 2.0 | 10.0 | 0.1 | 2.5 | **Azure** (2026-09-30) | registered only |
+| `anthropic/claude-opus-5.5` | 4.0 | 20.0 | 0.2 | 5.0 | **Amazon Bedrock** (2026-09-30) | frontier: all Opus seats · team-mix: planner, reviewer |
+| `anthropic/claude-sonnet-5.5` | 2.0 | 10.0 | 0.2 | 2.5 | **Google** (2026-09-30) | registered only |
 
 Three models are registered but unused by either roster (`gpt-5.6-terra`,
 `claude-sonnet-5`, `grok-4.5`) so they can be swapped into a config without re-provisioning the
 sandbox. Nine were verified ZDR-capable on 2026-08-04 — every one returned `pong` under
 `provider: {"zdr": true, "data_collection": "deny"}`. `gpt-5.6-sol` is registered and used by the
 frontier scout but was not in that nine; its ZDR routing is unverified.
+
+2026-09-30 model refresh: the five `*-5.5` / `gpt-6*` rows were added and each returned `pong`
+under the same ZDR body (provider shown is the one that answered). Swapped-out ids stay
+registered so any revert is a one-word config edit.
 
 ### The cost block is mandatory and all-or-nothing
 
