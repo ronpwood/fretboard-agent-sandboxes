@@ -5263,6 +5263,9 @@ Audited every runtime pin against OpenRouter + pi.dev live catalogs. **No pin wa
 - **Host pi trap:** host `pi` 0.87.1 reaches `openrouter/anthropic/claude-opus-5.5` through its *built-in* catalog
   entry, which returns **404**; `claude-opus-5` works only because host `~/.pi/agent/models.json` registers it on
   `openai-completions`. The VM gets the tmpl, so VM runs are fine; host-side pi use of 5.5 needs the same entries.
+  **Fixed same day:** opus-5.5 and sonnet-5.5 added to host `~/.pi/agent/models.json` (same rates as the tmpl;
+  backup `models.json.bak-20260930`); host opus-5.5 now completes a `read` tool call at `thinking: high` ($0.0102).
+  Listing them needs `OPENROUTER_API_KEY` in the environment — pi hides a provider without its key.
 - **Not fixed:** `check_rates.py` still flags deepseek-v4-flash-0731, v4.1-flash, glm-5.2 — OpenRouter's published
   deepseek price ≠ billed, so reconcile from generation ids on the next run rather than `--fix`.
 - **Not exercised:** a full ADW run on any changed roster. Opus 5.5's effort default is `medium` (Opus 5 was `high`);
