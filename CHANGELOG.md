@@ -5494,3 +5494,92 @@ budget (3 reviews, 2 revisions) ran out. Run log: 28.5M tokens, **$5.79** estima
 
 **Next:** judge P4. Adapt `sweep_mix1.ts` to this app's API (`localSlot`, `availabilityFor`, `evaluateSlot`) and run the
 2026-09-28f rules plus the three known classes over the GRID against the snapshot.
+
+## 2026-09-30c — rmix1 judged: P4 MISSED on three narrow classes (the DST span returns, a reference column in the spring gap, and London winter in a real browser); P7 MET: every blocker the reviewer raised was outside the key
+
+Pre-registration: 2026-09-30b. The sweep is `.sandbox/runs/rmix1-20260930-ee1896-artifacts/sweep_rmix1.ts` (host-only),
+run against the harvested UNAPPROVED snapshot `6806635` (`refs/sandbox/rmix1-20260930-ee1896`). It is judged by the
+rule-based oracle, never by Intl. **MUTATE=1 goes red** on A, C and E, so the sweep can fail. Live-browser repros
+were run against the running VM app in Playwright Chromium (en-US).
+
+### Predictions
+
+| | rmix1 |
+|---|---|
+| **P1** instrument | **MET**: every review swept every effective `V` (57 → 68 → 70) and declared `value_sweep.ts`. At review_1 the gate's own count was 53, because of the `## Amendments` blind spot (2026-09-30b). |
+| **P2** amendment | **MET**: 5 proposed, 5 accepted (A1/A2 test designer, A3–A5 builder). A4 and A5 turned reviewer findings into rows V58–V70. |
+| **P3** traps cite `V` | **MET**; no `spec_form` correction was needed. |
+| **P4** zero reachable value defects | **MISSED, narrowly**: 3 classes (below). Every other check is exact. |
+| **P5** no DST-span row at plan | **MET as predicted** (the expected miss; recorded in flight before any outcome). |
+| **P7** reviewer checks outside the key | **MET, strongly**: all 6 blocking findings across 3 reviews came from probes no `V` row names (23 zones × 2 seasons, reference frames, roster changes, the clipboard, empty dates). |
+| **P6** no non-model loss | **MET**: 2 planner `provider_retry`s, recovered in-session; 0 timeouts. |
+
+**Reading (2026-09-30b table): P4 missed with P7 met.** The reviewer looked outside the key and found real defects
+in every review, but defects slipped past. The seat helps; it is not sufficient alone.
+
+### P4 detail (3,805,438 checks; 3,805,159 pass)
+
+**Exact:**
+- A instant→wall (start, end at the true end instant, date, day offset, offset label): **1,870/1,870**.
+- C.classify outside transitions: **3,694,831/3,694,831** over 8 profiles.
+- E slot evaluation and ranking for 4 presets plus a DST roster, 29 dates × 4 durations: **55,680/55,680**.
+- G ordinary and overlap wall→instant: **23,645/23,645**.
+- Both engines use `Intl` with IANA ids and hardcode no offsets.
+
+**1. The DST span, mtg1's class, now in BOTH directions: 271 of 29,393 span checks (250 in offered zones).**
+- `availabilityFor` reads the wall clock at the start and walks `startMinute + i` for the duration. That is linear
+  local minutes, the mtg1 mechanism.
+- Spring: Helsinki, sleep 03:30–06:00, 60m at 2026-03-29T00:30Z. The app says `personal`; the truth is `sleep` (the
+  clock jumps 03:00→04:00, so the meeting really ends at 04:30).
+- Autumn: Lord Howe, owl, 120m. The app says `sleep`; the truth is `personal` (the repeated half hour keeps the real
+  clock short of sleep).
+- **Live repro:** the card reads "Helsinki EET (UTC+2) 02:30 – 04:30 … Personal: awake". The displayed window is
+  right and visibly overlaps the participant's own sleep hours. The display reads the true clock; the classifier
+  does not.
+- It is reachable: the reviewer's own walkthrough confirmed that sleep start and end are editable.
+- **Sweep note, recorded honestly:** the first judged run used 4 profiles that all put 02:00–03:00 inside sleep, and
+  C.span went 16,796/16,796 green BLIND. mtg1's sweep carried `owl` and `shortnight` for exactly this; they were
+  restored verbatim before the reported run. A sweep for a known class must carry that class's profiles. The MUTATE
+  pass did not catch the blind spot, because none of its planted errors was span-specific.
+
+**2. A reference column in the spring gap: 8 walls (4 US zones × 02:00/02:30 on 2026-03-08).**
+- `zonedTimeToUtc` lands a gap wall **before** the gap: NY "02:00" → 06:00Z = 01:00 EST. The rules accept a flag, a
+  rejection or a shift past the gap.
+- The reference timeline builds its 24 columns from it, so under reference = New York on 2026-03-08 the "02:00"
+  column is a silent duplicate of "01:00".
+- **Live repro:** clicking "01:00" and "02:00" both select `06:00 UTC`; "03:00" selects 07:00Z (EDT), correctly.
+- EU and southern gaps land at or past the gap and pass (11/11). Overlap walls land on a valid instant (19/19).
+
+**3. London in winter, off the oracle but a KEY row (V13), in a real browser.**
+- Chromium en-US names London's winter zone "GMT+00:00" (long) and "GMT+0" (short). Neither is in the app's map or
+  passes its `^[A-Z]{2,5}$` check, so it falls back to **"UTC+0"**. V13 pins `GMT`.
+- Under bun all 46 zone × season labels are right; that is what the reviewer's 46/46 and 70/70 measured. In the
+  browser: **45/46**, and London is in the default "Transatlantic" preset.
+- **The value sweep ran on an unfaithful double of the delivered runtime** (bun/happy-dom ICU ≠ Chromium ICU), the
+  fan-out 2 lesson in a new place. The abbreviation labels are not in the oracle (A checks the offset label), so
+  this was found by the live check, not the sweep.
+
+**Recorded, not scored:**
+- **W, wrapped work hours:** a 22:00–06:00 night shift is never `work`. All 18,721 wholly-inside meetings come out
+  `personal` (`allWork = workStart < workEnd`). R5 declares no wrapped policy, as in mtg1c.
+- **End-inclusive boundaries:** half-open is declared and exact (V20–V28 and every C boundary pass).
+- **Known unfixed (reviewer-found, no revision left):** the reference `<select>` goes out of sync after a roster
+  change (review_3's blocker).
+
+### What it means (N=1 per arm)
+
+- **Against mtg1** (same planner and builder tiers, glm reviewer): **the DST-span class recurred.** Neither team's key
+  pinned a spanning meeting, and this Opus reviewer never probed spans either. The reviewer seat alone did not close
+  mtg1's defect.
+- **Against mix1** (Opus planner + Opus 5 reviewer, 0 defects): mix1's engine read the wall clock at the end instant,
+  so the class never arose. The planner's 150-row key had no span row either. So mix1's clean result there traces to
+  its *design*, not to a review catch. That is a caution against crediting mix1's reviewer for DST-span safety.
+- **What the Opus reviewer bought:** 6 real, user-visible defects found and 5 fixed across 3 reviews, all outside the
+  key. The key went 53 → 70 rows through amendments. The team converted findings into rows as mtg1's did.
+- **What it did not buy:** time-arithmetic edge classes the reviewer did not think to probe (spans, gap walls), and
+  runtime fidelity (it swept in bun, not a browser).
+- **Harness levers this run surfaced, for NEXTSTEPS:**
+  - `amendments_ruled` and `values_swept` must fail on a missing `## Amendments` heading.
+  - The reviewer's frozen-spec diff hint (`git show <plan_sha>:specs/<adw_id>_*.md`).
+  - A value sweep that runs in the delivered runtime (Playwright Chromium), not only bun/happy-dom.
+- Billed $ comes at teardown, reconciled per generation. The run log says $5.79 (mix1 billed $31.42).

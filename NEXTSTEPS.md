@@ -26,7 +26,22 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. NOW: rmix1, the reviewer-only mix — pre-registration APPROVED 2026-09-30 (CHANGELOG 2026-09-30b)
+## 3. rmix1 JUDGED (CHANGELOG 2026-09-30c) — choose the next arm; VM still up, teardown pending
+
+**rmix1 result:** P4 missed narrowly on 3 classes. The DST span recurred (mtg1's class, 271/29,393, both
+directions). A reference column lands in the spring gap. London shows `UTC+0` in winter in a real browser (V13,
+passed in bun). **P7 met strongly:** 6 blockers across 3 reviews, all outside the key, 5 fixed. Not accepted
+(revisions exhausted). Run log $5.79. **Reading:** the Opus reviewer seat finds real defects the key cannot see,
+but it does not close time-arithmetic edge classes on its own. mix1's clean DST-span result came from its
+engine design, not a review catch. **Teardown is Ron's call** (it reconciles billed $ per generation).
+
+**Harness levers it surfaced (cheap, before the next arm):**
+- `amendments_ruled` / `values_swept` fail on a missing `## Amendments` heading (they passed vacuously at review_1).
+- Reviewer prompt: the frozen source is `git show <plan_sha>:specs/<adw_id>_*.md` (it believed it could not diff).
+- Value sweeps in the delivered runtime: the reviewer's bun/happy-dom sweep passed V13, which Chromium fails.
+- `sbx run cmd` still mangles `|` inside a quoted regex (the known escaping trap; it cost a watcher here).
+
+### Earlier: the rmix1 choice (2026-09-30)
 
 **Chosen 2026-09-30:** candidate 2 below. Flash planner and builder, `claude-opus-5.5` reviewer, roster
 `sssf.team-rev.config.yaml`, $40 key limit, N=1. Next steps: Ron approves the draft → `just target sync greenfield
@@ -119,7 +134,7 @@ A restored one (`git mv` back from `archive/factory/rosters/`) still runs on 073
 | **`sssf.config.yaml` (default / control)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) | planner `gemini-3.8-flash`, reviewer `glm-5.3`, documenter `gpt-6-luna` |
 | `sssf.team.config.yaml` (the team arm, `execute`'s default ADW) | `deepseek-v4.1-flash` | same seats as the default, team prompts |
 | `sssf.team-mix.config.yaml` (mix1) | `deepseek-v4.1-flash` | planner + reviewer `claude-opus-5.5` (mix1 itself ran `claude-opus-5`), documenter `gpt-6-luna` |
-| `sssf.team-rev.config.yaml` (rmix1, pre-registered) | `deepseek-v4.1-flash` | reviewer `claude-opus-5.5` only; otherwise the team roster |
+| `sssf.team-rev.config.yaml` (rmix1, judged 2026-09-30c) | `deepseek-v4.1-flash` | reviewer `claude-opus-5.5` only; otherwise the team roster |
 | `sssf.frontier` | `claude-opus-5.5` | builder + documenter `kimi-k3`, scout `gpt-6-sol` |
 | `sssf.gemniflash` | `gemini-3.8-flash` | none |
 
