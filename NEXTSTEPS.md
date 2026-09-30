@@ -26,14 +26,14 @@ script (the `values_swept` gate). It ships as a separate arm: `adw_team_sdlc.py`
 (`.sandbox/runs/harn5-…-artifacts/sweep_harn5.ts`, `harn7-…/sweep_harn7.ts`) are the starting
 point for the independent judge in item 3.
 
-## 3. rmix1 JUDGED (CHANGELOG 2026-09-30c) — choose the next arm; VM still up, teardown pending
+## 3. rmix1 JUDGED (CHANGELOG 2026-09-30c) — choose the next arm; torn down, billed $5.94
 
 **rmix1 result:** P4 missed narrowly on 3 classes. The DST span recurred (mtg1's class, 271/29,393, both
 directions). A reference column lands in the spring gap. London shows `UTC+0` in winter in a real browser (V13,
 passed in bun). **P7 met strongly:** 6 blockers across 3 reviews, all outside the key, 5 fixed. Not accepted
-(revisions exhausted). Run log $5.79. **Reading:** the Opus reviewer seat finds real defects the key cannot see,
+(revisions exhausted). Billed $5.94 (Opus reviewer 83%). **Reading:** the Opus reviewer seat finds real defects the key cannot see,
 but it does not close time-arithmetic edge classes on its own. mix1's clean DST-span result came from its
-engine design, not a review catch. **Teardown is Ron's call** (it reconciles billed $ per generation).
+engine design, not a review catch. Torn down 2026-09-30.
 
 **Harness levers it surfaced (cheap, before the next arm):**
 - `amendments_ruled` / `values_swept` fail on a missing `## Amendments` heading (they passed vacuously at review_1).
