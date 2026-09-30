@@ -5377,3 +5377,15 @@ spend so that a third review cannot be cut off.
 - The documenter model differs from mtg1 and mix1 (runs after the final review, touches no app code).
 - The greenfield pin moves by the 2026-09-30 refresh as well as the roster; this is verified at sync. The pi
   version is recorded at mount.
+
+**Mounted** `rmix1-20260930-ee1896` on greenfield, adw `f0851b2c`, pid 1798, `team` ADW via
+`execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-rev.config.yaml team`, with a $40 limit.
+**Check 0, partial:** gates A–F passed ("GATE PASSED"). VM HEAD is `6f54f9e`, the tree is clean, the brief and roster
+are present, and the VM's pi registry carries `claude-opus-5.5`. pi is 0.87.1 (gate F DRIFT against the 0.85.1
+image row is the known pending lock bump, as in mtg1/mix1). The process args end in
+`--config adws/adw_sssf_config/sssf.team-rev.config.yaml`; the recipe's module-default `--config` comes first and
+argparse keeps the last one. The planner runs on `google/gemini-3.8-flash`, which is identical in both rosters,
+so **the positive roster check is the reviewer's first `agent_sessions` row showing `anthropic/claude-opus-5.5`**,
+recorded when review_1 starts. Gate C pinged the default config's models, not this roster's; `claude-opus-5.5`
+passed the same ZDR ping from the host earlier on 2026-09-30.
+**P6 log:** planner `provider_retry` 1/2 in the first minutes ("JSON error injected into SSE stream"), same session.
