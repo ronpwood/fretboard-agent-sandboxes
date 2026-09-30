@@ -5466,3 +5466,31 @@ review_1 findings into key rows V58–V68:** the abbreviations, the reference-NY
 the click-date case. These are exactly the reviewer's proposed rows, so outside-the-key findings became `V` rows. A4
 is labelled "(build)" in `plan.md` but answers review_1. `## Amendments` is present again, with A1–A4 beneath it.
 Run-log estimates so far total about $3, well inside the $40 key.
+
+**Run ended 14:57Z: ADW ✗ "not accepted".** All 13 phases passed, and the harness had no faults beyond the two planner
+provider retries. The verdict is a result, not a loss: the reviewer rejected all three reviews and the revision
+budget (3 reviews, 2 revisions) ran out. Run log: 28.5M tokens, **$5.79** estimated; billed $ comes at teardown.
+- **review_2 (414.6s, $1.43 run log):** all four review_1 blockers closed. 11/12 requirements and 68/68 values. One new
+  blocker: the copied brief gave a UTC window with no date.
+- **revise_2 (61s):** fixed it; **A5** adds V69/V70.
+- **review_3 (176.9s, $0.76 run log):** 11/12 requirements and 70/70 values, with A1–A5 all accepted. It walked every
+  control end to end in happy-dom, and the abbreviations and bar/row consistency are re-verified at 46/46 and
+  1536/1536. **One blocker, again outside the key and again the cross-frame class:** after a roster change the
+  reference `<select>` drops the zone, but `state.referenceZone` and the hash keep it. The grid stays laid out in Tokyo
+  hours under a select that shows UTC, so clicking "09:00" selects 00:00Z. It proposes V71; there was no revision left
+  to take it. Non-blocking: an invalid zone in a hand-edited hash blanks the app.
+- **The reviewer never probed the DST-span class** in any of the three reviews.
+- The blockers went 4 → 1 → 1, a different one each time; the team converged, but not to approval. **Accept/reject is
+  not a quality ranking** (fan-out 3). P4 is decided by our sweep, not this verdict.
+- **Evidence preserved:** `refresh` → `shot` (renders, console CLEAN) → `snapshot` (the unapproved tree committed as
+  `6806635` on `sbx/rmix1-20260930-ee1896`, 8 files) → `harvest` (3 commits into `refs/sandbox/rmix1-20260930-ee1896`
+  in `greenfield-sandboxes`) → `traces` (`.sandbox/traces/rmix1-20260930-ee1896/`). The VM is still up; teardown is
+  Ron's call.
+- **Side note, a summarized-thinking claim checked against tool calls:** at review_2 the reviewer thought "plan.md is
+  gitignored and I can't diff against git". The first half is true (`.gitignore:149`). The second is false: it tried
+  `git show HEAD:<plan.md path>`, which can never exist, and never tried the committed spec at `43c40ff`. It fell back
+  to a `V` row count. The conclusion stood only because `spec_frozen` byte-compares; a host diff confirms the section
+  is identical. **Prompt candidate:** tell the reviewer the frozen source is `git show <plan_sha>:specs/<adw_id>_*.md`.
+
+**Next:** judge P4. Adapt `sweep_mix1.ts` to this app's API (`localSlot`, `availabilityFor`, `evaluateSlot`) and run the
+2026-09-28f rules plus the three known classes over the GRID against the snapshot.
