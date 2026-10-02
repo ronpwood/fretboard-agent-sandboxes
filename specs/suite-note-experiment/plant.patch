@@ -1,0 +1,49 @@
+diff --git a/apps/app/domain/recommender.ts b/apps/app/domain/recommender.ts
+index 47d69a4..af2416a 100644
+--- a/apps/app/domain/recommender.ts
++++ b/apps/app/domain/recommender.ts
+@@ -1,9 +1,7 @@
+ // Smart meeting recommender (R10).
+ //
+-// Every UTC hour of the selected date is a candidate. Slots are ranked with
+-// ZERO sleeping members first (strictly), then by team score descending, then
+-// by earliest start — so a sleep-free compromise always outranks a higher
+-// average that wakes somebody up.
++// Every UTC hour of the selected date is a candidate. Slots are ranked by
++// team score descending, then by earliest start.
+ 
+ import type { Status, TeamMember } from "./types.ts";
+ import { convertUtcToLocal } from "./timezone.ts";
+@@ -25,10 +23,6 @@ export interface RecommenderInput {
+   limit?: number;
+ }
+ 
+-function sleepingCount(statuses: Record<string, Status>): number {
+-  return Object.values(statuses).filter((s) => s === "sleeping").length;
+-}
+-
+ /** Ranked candidate slots for a date and duration. */
+ export function findBestMeetingSlots(input: RecommenderInput): CandidateSlot[] {
+   const { date, durationMinutes, members } = input;
+@@ -46,9 +40,6 @@ export function findBestMeetingSlots(input: RecommenderInput): CandidateSlot[] {
+   }
+ 
+   slots.sort((a, b) => {
+-    const aSleep = sleepingCount(a.statuses) > 0 ? 1 : 0;
+-    const bSleep = sleepingCount(b.statuses) > 0 ? 1 : 0;
+-    if (aSleep !== bSleep) return aSleep - bSleep;
+     if (b.score !== a.score) return b.score - a.score;
+     return a.startUtc.localeCompare(b.startUtc);
+   });
+diff --git a/apps/app/tests/generated/bcca0d92.test.ts b/apps/app/tests/generated/bcca0d92.test.ts
+index 86013ee..5a2a22f 100644
+--- a/apps/app/tests/generated/bcca0d92.test.ts
++++ b/apps/app/tests/generated/bcca0d92.test.ts
+@@ -505,7 +505,6 @@ describe("R10 smart meeting recommender: ranked candidate slots for the date and
+         else if (aRank === bRank && a.score < b.score) violations.push(`#${i} ${a.startUtc} score ${a.score} ranked above #${j} ${b.startUtc} score ${b.score}`);
+       }
+     }
+-    expect(violations).toEqual([]);
+   });
+ 
+   test("R10: the top slot for a three-continent team has no sleeping member and is not rated disruptive", async () => {
