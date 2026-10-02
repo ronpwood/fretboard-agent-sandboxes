@@ -5766,3 +5766,47 @@ curl shim is first on PATH). Each case must print its own abort phrase, so an un
 **Remaining `|| true` in teardown** gate nothing destructive: two spend reads, the db checkpoint, the artifact tar,
 and an `rmdir`. A spend-read blip still loses spend for that run, because the provisioning list no longer carries a
 revoked key. The generation ids in the now-pulled traces are the fallback.
+
+## 2026-10-02b — every review now sees the test suites' removed lines since red (replaces the reverted suite lock)
+
+NEXTSTEPS 7.1 closed, from `specs/suite-changes-to-reviewer.md`. CHANGELOG 2026-10-02 §1b showed builders edit the
+suites legitimately, so the suites are not locked. Instead, a weakening has to pass under the reviewer's eyes.
+
+**What the reviewer receives.** Both ADWs pin `red_sha` at `commit_tests`. Before every `review_i`, code builds the
+note; the reviewer only reads it:
+- `changes.capture_suites()` diffs the manifest's fixed suite and generated lane from that commit to the
+  **working tree**, because the build is committed only after an approved review. The full diff goes to
+  `context_handoff/suite_changes.diff`.
+- `suite_notes()` produces the counts, every removed line verbatim (60 max, then a pointer), and one rule: an
+  unexplained weakening is blocking. The team arm adds: a changed expected value must trace to an accepted
+  amendment.
+- The note rides `with_notes`, so no prompt file changed. The control's prompts stay frozen; only ADW-injected
+  notes grew, by the same rule as 2026-10-02.
+- Each review phase logs `suite_added`/`suite_removed`.
+
+**Worked example: replay on mtg1's real build** (`995f853` applied uncommitted over red `c2375d5`). This is what
+review_2 would have read:
+
+    test suites since red (c2375d5): +298 -3 across 2 file(s). Full diff: <context_handoff>/suite_changes.diff
+    Lines REMOVED or changed in a test suite (old side, verbatim):
+      apps/app/app.test.ts @@ -39,7 +39,15 @@ | import { loadApp } from "./test-dom.ts";
+      apps/app/tests/generated/bcca0d92.test.ts @@ -573,10 +573,14 @@ |   test("V67: the span across Auckland (UTC+12), Kathmandu (UTC+5:45) and Honolulu (UTC-10) is 930 minutes", async () => {
+      apps/app/tests/generated/bcca0d92.test.ts @@ -573,10 +573,14 @@ |     expect(report.spanMinutes).toBe(930);
+    Every assertion removed or loosened needs a reason you accept; an unexplained weakening is a blocking finding.
+    A changed expected value must trace to an accepted amendment.
+
+**Selftest** `adws/adw_modules/suite_changes_selftest.py` (temp git repo, 23 checks):
+- growth, the V67-shaped correction, a deleted `expect`, and an untracked new suite
+- the zero case: a single line, "nothing removed"
+- 60-line truncation with the pointer
+- a removed `-- x` line, which appears as `--- x` inside a hunk and is content, not a file header (a parser bug
+  caught by this case)
+
+The red run failed on the missing function.
+
+**Deviation.** `with_notes` replaces `notes_for_next_agent`. Non-final reviews used to receive the builder's own
+notes untouched, and the final review dropped them for `FINAL_REVIEW_NOTES`. Every review now gets the builder's
+notes, then the final-review notes when applicable, then the suite note. Checked offline for both cases.
+
+**No gate**, on purpose: deciding whether a review "addressed" the diff would be regex over free text. Whether
+reviewers act on the note is NEXTSTEPS 7.1, queued by Ron.

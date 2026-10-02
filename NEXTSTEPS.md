@@ -217,9 +217,16 @@ host — pi's built-in openrouter entry for opus-5.5 returns 404.
 
 Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ranked:
 
-1. **Surface suite edits to the reviewer.** New from the retro audit. Builders legitimately correct red-suite values
-   and grow `app.test.ts`, so a path lock is wrong. Put every post-`commit_tests` suite hunk (`-` lines especially)
-   in the review envelope, so a weakening is read, not just counted.
+1. **Experiment: does the reviewer ACT on the suite note?** (Ron, 2026-10-02.) The note itself is built
+   (CHANGELOG 2026-10-02b): every review now gets the suites' `-` lines since red. "Visible" is not "acted on".
+   - **Design:** plant one weakening in a fixed build tree, then run a single `review` call with the note and
+     without it, using the same reviewer model, N small.
+   - **Plant:** delete one `expect` from the red suite, or change a value to whatever the code returns.
+   - **Cost:** runs on the host against a scratch worktree, so no VM is needed.
+   - **Pre-register first:** a flag counts only if it names the planted line as blocking.
+   - **Signal:** `suite_removed` is already in the trace of every review phase.
+   - **Deferred alongside:** a token check for added `.skip`/`.only`/`todo`, which is weakening by a `+` line
+     that the note cannot show.
 2. **mix1's DST-span result was blind.** `sweep_mix1.ts:60,86-100` tests spans against every zone's transitions,
    with daytime-only profiles. Amend "engine design" to "unreachable under the spec" (NEXTSTEPS 3 recap,
    CHANGELOG mix1). Pre-register sweep profiles per defect class, plus one span mutation that must go red.

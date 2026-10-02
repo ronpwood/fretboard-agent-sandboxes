@@ -12,7 +12,8 @@ agents:
 sessions:
   - 287ef91c-3816-4441-a002-7d055b9f0ecd
 back_refs: []
-forward_refs: []
+forward_refs:
+  - specs/suite-changes-to-reviewer.md — the replacement for the reverted suites_protected lock
 status: complete
 ---
 

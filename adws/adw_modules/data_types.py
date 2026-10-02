@@ -271,6 +271,22 @@ class ChangeSet(BaseModel):
         return not (self.files or self.untracked)
 
 
+class SuiteChanges(BaseModel):
+    """Edits to the graded test suites since the red commit — git facts only.
+
+    `removed` is the number that matters: growth is all `+` lines, a weakening
+    is a `-` line (a deleted expect, or the old side of a changed value).
+    """
+
+    since: str                      # short sha of the red commit
+    files: list[str] = Field(default_factory=list)
+    untracked: list[str] = Field(default_factory=list)
+    added: int = 0
+    removed: int = 0
+    removed_lines: list[str] = Field(default_factory=list)   # "<file> <@@ hunk @@> | <line>"
+    diff_path: str = ""
+
+
 class ChangesOutput(EnvelopeBase):
     """A ChangeSet shaped as an envelope so an agent can be handed it directly.
 
