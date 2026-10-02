@@ -4,7 +4,21 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Recently run:** the bare Sonnet 5.5 control arm (CHANGELOG 2026-09-30e): 31/32 in 2 min for $0.33, tying bare Opus 5 on the rubric; Ron: "Opus was ready to deploy, Sonnet did a great MVP". Before that, mix1, the model-mix team arm (CHANGELOG 2026-09-29b–c): 0 value defects, the reviewer found a cross-frame bug, $31.42. Before that, the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
+**Start here (next session):** NEXTSTEPS 7.4, the 5.5 seat-test prep, which is the stated direction. Before
+the next greenfield VM run, `just target sync greenfield --push`. The 7.3 runtime fixes (CHANGELOG 2026-10-02e)
+are not on the target yet, and that run's pre-registration must name them as factory changes.
+
+**Recently run (2026-10-02):** an adversarial review of the whole repo by four read-only reviewers, with every
+high-severity claim verified (private Claude Doc "Adversarial Codebase Review — 2026-10-02"). Closed the same day:
+- grader inputs locked, and teardown/reap fail closed (2026-10-02)
+- suite edits surfaced to the reviewer (2026-10-02b), and the suite-note experiment (2026-10-02c): the note was not
+  shown to matter
+- mix1's DST-span claim corrected, plus a `spanPower` pre-check (2026-10-02d)
+- four runtime fixes (2026-10-02e); the corpus re-score found a hidden click defect in gf-1
+
+Greenfield is synced and pushed at `526aa07`, which predates 2026-10-02e. The remaining review items are 7 below.
+
+**Earlier:** the bare Sonnet 5.5 control arm (CHANGELOG 2026-09-30e): 31/32 in 2 min for $0.33, tying bare Opus 5 on the rubric; Ron: "Opus was ready to deploy, Sonnet did a great MVP". Before that, mix1, the model-mix team arm (CHANGELOG 2026-09-29b–c): 0 value defects, the reviewer found a cross-frame bug, $31.42. Before that, the meeting-planner pair (CHANGELOG 2026-09-28f–g), on the post-consolidation defaults. Before that, the consolidation (CHANGELOG 2026-09-28e): `team` is now `execute`'s default ADW, `tdd` is the frozen control (`just adw control`), and six rosters are in `archive/factory/`. Before that, the amortization pair and the rerun (CHANGELOG 2026-09-28a–d). amort2 (team) was exact, including a half-cent tie that the control missed. Gate E now asserts that account credit covers every open run (2026-09-28c). Before that: team1/team2 on the music brief (2026-09-26d/g).
 
 **Recently closed:** the edge-class gate, abandoned after Phase 1 (CHANGELOG 2026-09-28h, 2026-09-29a).
 Before that, the N=3 replicate set, closed at 2 valid runs by decision (CHANGELOG
@@ -213,7 +227,11 @@ host — pi's built-in openrouter entry for opus-5.5 returns 404.
   open and now covers v4.1 too. **Do not `--fix` it casually** — it changes what every
   historical run's cost means. Reconcile from generation ids after a run.
 
-## 7. Adversarial review 2026-10-02 — remaining (items 1–2 closed, CHANGELOG 2026-10-02)
+## 7. Adversarial review 2026-10-02 — remaining (original items 1–3 closed: CHANGELOG 2026-10-02 to 2026-10-02e)
+
+Numbers are kept as first queued, because the CHANGELOG cites them, so 2 is gone. Suggested order: **4** (seat
+tests are next), then **7** (small, same teardown file as 2026-10-02), **6** (cheap), **5** (needed before real
+projects), and **3** (needs a corpus calibration session).
 
 Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ranked:
 
