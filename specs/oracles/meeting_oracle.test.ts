@@ -53,3 +53,21 @@ test("overlap: NY 9-17 + London 9-17 is 3h in June but 4h in the March gap week"
   // Tokyo + NY + London: no common working hour at all
   expect(O.overlap([...ps, { zone: "Asia/Tokyo", startH: 9, endH: 17 }], Date.UTC(2026, 5, 15), Date.UTC(2026, 5, 16))).toEqual([]);
 });
+
+// Span power (CHANGELOG 2026-10-02d). Both directions: mix1's spec has no power for the class,
+// mtg1's night profiles do. If this fails, the helper broke, not a run.
+test("spanPower: mix1's fixed-AWAKE spec cannot expose the span class; mtg1's night profiles can", () => {
+  const H = (h: number, m = 0) => h * 60 + m, D = [15, 30, 45, 60, 90, 120];
+  // mix1 (sweep_mix1.ts oracleState): asleep unless inside AWAKE 07:00-22:00, then core/fringe/unsocial
+  const mix1 = (sh: number, eh: number) => (s: number, e: number) =>
+    s < H(7) || e > H(22) ? "asleep" : s >= sh && e <= eh ? "core" : s >= sh - 60 && e <= eh + 60 ? "fringe" : "unsocial";
+  for (const [sh, eh] of [[H(9), H(17)], [H(6), H(14)], [H(14), H(22)], [H(10), H(18, 30)]]) {
+    const p = O.spanPower(mix1(sh, eh), D);
+    expect(p.spans).toBeGreaterThan(0);
+    expect(p.biting).toBe(0);
+  }
+  // mtg1 sweep's shortnight: sleep 03:30-06:00 — any overlap with sleep is "sleeping"
+  const sleeps = (ss: number, se: number) => (s: number, e: number) =>
+    [0, 1440].some((d) => s < se + d && e > ss + d) ? "sleeping" : "awake";
+  expect(O.spanPower(sleeps(H(3, 30), H(6)), D).biting).toBeGreaterThan(0);
+});

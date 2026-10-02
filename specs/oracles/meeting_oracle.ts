@@ -146,3 +146,34 @@ export const PROBES = {
   londonSpringGap2026: Date.UTC(2026, 2, 29, 1, 30), // wall 01:30 on 29 Mar 2026 in London: none
   lordHoweAutumnOverlap2026: Date.UTC(2026, 3, 5, 1, 45), // wall 01:45 on 5 Apr 2026: two, 30 min apart
 };
+
+/**
+ * SPAN POWER — run BEFORE pre-registering a sweep for the DST-span class (mtg1's: the meeting's end
+ * read as start wall + duration, not as the true wall clock at the end instant).
+ *
+ * That defect changes a verdict only where the spec's own classifier gives a different answer for
+ * the extrapolated end than for the true end. So a sweep's power is a property of the spec and its
+ * profiles, not of how many checks "span a transition". mix1's sweep reported 16,796 span checks exact
+ * with power 0: its AWAKE 07:00-22:00 window is tested first, and every transition is 00:59-03:59
+ * local, so the class was unobservable under that spec (CHANGELOG 2026-10-02d). rmix1's first sweep
+ * was blind the same way.
+ *
+ * `classify(startMin, endMin)` is the spec's verdict from a meeting's local start and end, in minutes
+ * from the start's midnight (end may pass 1440). Pass the real rule, precedence included: a
+ * boundary list cannot see that a work edge before 07:00 is masked by "asleep". Counts meetings that
+ * cross the zone's OWN transition (15-minute starts), and those where the two ends disagree.
+ * `biting === 0` means the profiles cannot expose the class: change them, or declare it unreachable.
+ */
+export function spanPower(classify: (startMin: number, endMin: number) => string,
+                          durations: number[], years = [2026], zones = ZONES) {
+  let spans = 0, biting = 0;
+  for (const z of zones) for (const y of years) for (const T of transitions(z, y)) for (const dur of durations) {
+    for (let t = Math.ceil((T - dur * MIN + 1) / (15 * MIN)) * 15 * MIN; t < T; t += 15 * MIN) {
+      spans++;
+      const start = toWall(z, t), day0 = Math.floor(start / DAY) * DAY, s0 = (start - day0) / MIN;
+      const truth = (toWall(z, t + dur * MIN) - day0) / MIN;
+      if (classify(s0, s0 + dur) !== classify(s0, truth)) biting++;
+    }
+  }
+  return { spans, biting };
+}

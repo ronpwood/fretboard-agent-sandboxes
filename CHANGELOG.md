@@ -5150,7 +5150,7 @@ byte-identical to the harvest and 172/172 tests passing standalone.
 | **P2** amendment | **MET**: 5 proposed, 5 accepted with first-principles reasons. A1/A2 (test designer: 2026-03-10 is a Tuesday, so `off` cannot appear); A3 (builder: V93 unsatisfiable, re-derived independently by the reviewer in `/tmp/p8.ts`); A4 (builder: R11/V144); **A5 (builder, after review_1): V152–V156, the review's findings turned into key rows** |
 | **P3** traps cite `V` | **MET after one correction**: the first `spec_form` failed "no trap listed"; the retry passed 14/14, and the file parses to 16 traps. The cause was not isolated (the gate most likely read the file before the traps were written) |
 | **P4** zero reachable value defects | **MET: 0 in 2,177,633 checks** (below). **Night shifts are recorded as a spec-level policy gap** (Ron's scoring call, 2026-09-29) |
-| **P5** key covers the edge classes (recorded, not a gate) | Transition, gap, overlap and rollover **covered at plan** (V79–V93, V87, V89/V90, V61/V94/V107). **The span-across-a-transition row: MISSED at plan and never added.** Yet C.span is 16,796/16,796 exact, because the classifier reads the wall clock *at the end instant* (`zonedParts(zone, t+d)`), not start + duration in local minutes. The engine was right without the row |
+| **P5** key covers the edge classes (recorded, not a gate) | Transition, gap, overlap and rollover **covered at plan** (V79–V93, V87, V89/V90, V61/V94/V107). **The span-across-a-transition row: MISSED at plan and never added.** Yet C.span is 16,796/16,796 exact, because the classifier reads the wall clock *at the end instant* (`zonedParts(zone, t+d)`), not start + duration in local minutes. The engine was right without the row **CORRECTED 2026-10-02d:** the 16,796 counted any zone's transitions. Only 1,440 crossed the member's own, all `asleep`, and the span class was unobservable under mix1's fixed AWAKE window (power 0). The end-instant mechanism is real (720/720 end walls exact), but this sweep could not evidence it |
 | **P6** no non-model loss | **MET**: 0 provider retries, 0 timeouts. Two in-session gate retries (planner `spec_form`, reviewer `values_swept`). **Deviation:** the key limit was raised $20 → $50 mid-run (budget only). Host-side incident: a stray second mount was torn down at $0 |
 
 ### P4 detail (the oracle, with Africa/Lagos added in the sweep at a fixed +01:00, since the default roster uses it)
@@ -5851,3 +5851,40 @@ via that split. Dropping them leaves the same direction (M2: note 1/2, nonote 2/
 
 **Spend:** $4.79 OpenRouter across the 6 reviews ($0.52–$1.36 each). One zsh launch typo failed at argument
 parsing, before any call, and cost nothing.
+
+## 2026-10-02d — CORRECTION: mix1's "16,796 DST-span checks exact" had no power; the class was unobservable under mix1's spec, not ruled out by its engine
+
+NEXTSTEPS 7.2 closed. This was raised by the 2026-10-02 adversarial review, and I re-derived every number
+independently (`/private/tmp/claude-501/span72/`, scratch).
+
+**What was wrong.**
+- `sweep_mix1.ts` tagged `C.span` when a meeting crossed **any** zone's 2026 transition (`TRANS`). Only **1,440**
+  of the 16,796 crossed the member's **own** transition, and all 1,440 are `asleep` under the oracle.
+- A classifier with mtg1's defect (end = start wall + duration) disagrees with the oracle on **0** of the sweep's C
+  inputs.
+- Why: mix1's spec tests AWAKE 07:00–22:00 first, every transition in the oracle's zones is 00:59–03:59 local, and
+  meetings are at most 120 minutes. No transition-crossing meeting can reach a boundary that matters. The class is
+  **unreachable under that spec**. That is a property of what mix1's planner wrote, not evidence about the engine.
+
+**What still stands.**
+- mix1's `classify` does read the true wall clock at both ends (`zonedParts(zone, t+d)`). At every own-transition
+  span in the sweep set, its start and end walls match the oracle: **720/720**.
+- The engine *ingredient* is right; the *verdict* was never testable. Amended:
+  - CHANGELOG 2026-09-29c P5, inline
+  - NEXTSTEPS 3's "came from its engine design" and the mix1 recap's "so the class never arises"
+- **The mix1-vs-rmix1 contrast is about the spec.** rmix1's spec made sleep hours editable, so the class was
+  reachable, and rmix1 shipped it (271/29,393). mix1's spec fixed the window.
+
+**The fix: a power check before pre-registration.**
+- `specs/oracles/meeting_oracle.ts` gains `spanPower(classify, durations)`. It takes the spec's own endpoint rule,
+  precedence included, and counts own-transition spans where the extrapolated end and the true end get different
+  verdicts.
+- A first version that took boundary minutes instead **over-counted mix1 (12 vs 0)**, because it could not see
+  that `asleep` masks work edges before 07:00. Hence the classifier form.
+- Self-tested both ways in `meeting_oracle.test.ts` (5/5 pass): mix1's four profiles have power **0**; mtg1's
+  `shortnight` has **108**, `owl` **172**. Default sleep 23:00–07:00 also has **0**: only edited night hours expose
+  the class.
+- **Rule:** a sweep for this class pre-registers profiles with `biting > 0`, or declares the class unreachable
+  under the spec. It never reports "exact" on a zero-power set. rmix1 already noted that its MUTATE pass had no
+  span-specific error; `spanPower` *is* that span mutation, run before any app is involved.
+

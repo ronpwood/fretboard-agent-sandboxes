@@ -84,8 +84,8 @@ point for the independent judge in item 3.
 directions). A reference column lands in the spring gap. London shows `UTC+0` in winter in a real browser (V13,
 passed in bun). **P7 met strongly:** 6 blockers across 3 reviews, all outside the key, 5 fixed. Not accepted
 (revisions exhausted). Billed $5.94 (Opus reviewer 83%). **Reading:** the Opus reviewer seat finds real defects the key cannot see,
-but it does not close time-arithmetic edge classes on its own. mix1's clean DST-span result came from its
-engine design, not a review catch. Torn down 2026-09-30.
+but it does not close time-arithmetic edge classes on its own. mix1's clean DST-span result was **unobservable under its spec**
+(fixed AWAKE window; sweep power 0, CHANGELOG 2026-10-02d), not engine design or a review catch. Torn down 2026-09-30.
 
 **Harness levers it surfaced — three DONE 2026-09-30d (not yet synced to greenfield):**
 - DONE: heading guards in `spec_frozen` / `amendments_ruled` / `values_swept` (calibrated 5/5).
@@ -105,7 +105,7 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
 
 **mix1 is done and torn down.** Opus planner and reviewer, flash builder, on the meeting-planner brief:
 - **0 value defects in 2,177,633 oracle checks**, including 16,796 meetings that span a DST transition (the class
-  mtg1 shipped). The engine reads the wall clock at the meeting's end instant, so the class never arises.
+  mtg1 shipped). **CORRECTED 2026-10-02d:** the class was unreachable under mix1's spec (only 1,440 own-zone spans, all asleep; power 0). The end-instant engine is right (720/720 walls) but untested by that sweep.
 - **The Opus reviewer found the defect the run would otherwise have shipped:** clicking a suggestion selected the
   wrong instant in 6/30 viewer zones (a UTC-day ranking window vs the viewer's local-day grid). It was found in a
   real browser with zones the key never named. The builder closed it in one revision and wrote it into the key
@@ -223,9 +223,6 @@ Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ra
      before removing it.
    - **Side lesson:** answer keys should pin *order* where a requirement ranks things (R10). All 6 reviewers asked
      for it.
-2. **mix1's DST-span result was blind.** `sweep_mix1.ts:60,86-100` tests spans against every zone's transitions,
-   with daytime-only profiles. Amend "engine design" to "unreachable under the spec" (NEXTSTEPS 3 recap,
-   CHANGELOG mix1). Pre-register sweep profiles per defect class, plus one span mutation that must go red.
 3. **Cheap runtime fixes:**
    - `agent_pi.py` read loop: try/finally `_kill_tree`, so Ctrl-C no longer orphans pi
    - retest after the last `fix_i`
