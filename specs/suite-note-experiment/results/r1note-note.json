@@ -1,0 +1,614 @@
+{
+  "status": "success",
+  "summary": "15 of 15 requirements met in the delivered app and 73 of 73 effective value rows pass (82/82 sweep assertions, DOM rows re-verified in real Chromium), but NOT approved: the final whole-app audit found two blocking defects — an unexplained deletion of an assertion from the generated suite (the removed assertion passes against the delivered code) and recommender cards rendered as buttons but wired to nothing.",
+  "artifacts": [
+    "adws/adw_data/sessions/r1note/context_handoff/review.md",
+    "adws/adw_data/sessions/r1note/context_handoff/value_sweep.ts"
+  ],
+  "notes_for_next_agent": "The delivered app is functionally complete: all 15 requirements are present and work end to end, all 73 effective V rows pass (value_sweep.ts: 82/82 assertions; V71–V73 re-verified in real Chromium), grading is 171 pass / 0 fail, and typecheck/oxlint/minified bundle/real-browser smoke (14/14 controls) are all clean. The two blockers are small and neither touches domain logic: (1) restore the one deleted suite line — verified to pass with no code change — and propose V74 for the R10 ordering invariant; (2) wire or de-button the recommender cards, and propose a DOM-observable V row for the chosen behaviour. To re-verify after repair: `bun test apps/app/app.test.ts apps/app/tests/generated/bcca0d92.test.ts` (171+ pass), `bun adws/adw_data/sessions/r1note/context_handoff/value_sweep.ts` (82/82), and `PLAYWRIGHT_BROWSERS_PATH=/Users/ronaldwood/Library/Caches/ms-playwright uv run adws/adw_modules/render_smoke.py apps/app --eval <probe.js> --hash 'date=2025-06-18'` to confirm a recommendation card click now selects its slot. My review note in plan.md supersedes the earlier 'review_3 APPROVED' team note and records why.",
+  "approved": false,
+  "findings": [
+    {
+      "requirement": "R1 — add, view, edit, remove team members with name, IANA timezone, configurable hours",
+      "met": true,
+      "evidence": "main.ts member-add (429-436), member-edit (510), member-edit-cancel (400), member-remove (519-522); every member-mutating path clears editingId (grep: 308/400/436/522, loadState default 86); V71/V73 pass in sweep AND real Chromium (form populated Zed/Asia/Kathmandu/09:00, 'Save changes', row count unchanged, shoulder→working; Ivy added after preset-interrupted edit)"
+    },
+    {
+      "requirement": "R2 — one-click preset team configurations",
+      "met": true,
+      "evidence": "presets.ts: the three exact spec names with fully configured members; Chromium probe: Global Core load → 3 rows; generated suite R2 tests pass"
+    },
+    {
+      "requirement": "R3 — accurate timezone conversion, DST, non-whole-hour offsets",
+      "met": true,
+      "evidence": "19/19 conversion rows V1–V19 + DST boundary rows V57/V58 pass in sweep; offsets derived from Intl tzdata (timezone.ts:36-52), never hardcoded; no Intl display-name strings are user-visible (numeric offsets only)"
+    },
+    {
+      "requirement": "R4 — prominent day-shift indicators (+1d/-1d, local date)",
+      "met": true,
+      "evidence": "dayShift on every conversion; grid cells carry +1d/-1d badges and data-day-shift (main.ts:558-560); inspector shows local date with (+1d)/(−1d) (main.ts:586); V5/V6/V13–V19 pass"
+    },
+    {
+      "requirement": "R5 — working/shoulder/sleeping classification per participant",
+      "met": true,
+      "evidence": "16/16 rows V28–V43 pass in sweep (half-open intervals, midnight-wrapping sleep)"
+    },
+    {
+      "requirement": "R6 — durations 15–120 evaluated across boundaries",
+      "met": true,
+      "evidence": "DURATIONS=[15,30,45,60,90,120] (types.ts:29); 7/7 rows V60–V66 pass; suite R11/R6 test reclassifies Kathmandu 16:00Z shoulder→sleeping at 120m"
+    },
+    {
+      "requirement": "R7 — team scoring 0–100 with tiers, sleep strictly penalized",
+      "met": true,
+      "evidence": "11/11 rows V44–V52+V68/V69 pass; any sleeper forces disruptive; exhaustive 81-combination generated test passes"
+    },
+    {
+      "requirement": "R8 — interactive 24-hour world clock matrix with selection highlight",
+      "met": true,
+      "evidence": "24 hour-headers, status cells per member; V72 verified in real Chromium: exactly the hour-16 column selected (1 cell, class 'selected', header + score chip data-selected, 0 others); styles.css:219-230 has .selected rules"
+    },
+    {
+      "requirement": "R9 — active slot inspector with local times, dates, badges, offsets",
+      "met": true,
+      "evidence": "renderInspector (main.ts:567-605) per-member start–end, local date, offset, status badge; suite R8/R9 test (3 inspector rows incl. 04:00 Auckland) passes; Chromium: inspector populated after selection"
+    },
+    {
+      "requirement": "R10 — smart recommender: calculate and display ranked slots (zero-sleeping first, then score)",
+      "met": true,
+      "evidence": "Ordering verified independently over the exact suite inputs: 24 slots, 276 pairs, 0 violations; panel renders top 6 with counts and tier (Chromium: 6 items, first '00:00 UTC · optimal (100)')"
+    },
+    {
+      "requirement": "Approach/UI contract — recommender cards as one-click 'Select' buttons (a control must not exist wired to nothing)",
+      "met": false,
+      "evidence": "BLOCKING B2: renderRecommender (main.ts:619-636) creates <button data-testid=\"recommendation-item\"> with no click listener; real-Chromium probe: clicking the first card leaves 0 selected cells (before and after) and the inspector still shows the 'Select a slot…' hint — the app's ranked output is a dead control"
+    },
+    {
+      "requirement": "R11 — meeting date, duration dropdown, 12/24h toggle, reference time base",
+      "met": true,
+      "evidence": "main.ts:164-254: type=date input, duration select over all six durations, format toggle wired to displayTime, reference-base wired to recommender label base; generated suite R11 tests pass"
+    },
+    {
+      "requirement": "R12 — copy-paste invitation with confirmation",
+      "met": true,
+      "evidence": "copy-invitation writes to clipboard and shows the 'Invitation copied' toast (main.ts:648-663); generated suite R12 test passes; smoke clicks it clean"
+    },
+    {
+      "requirement": "R13 — .ics download and Google Calendar link",
+      "met": true,
+      "evidence": "download-ics Blob download of generateIcsFile (valid RFC 5545, CRLF, one VEVENT — suite test); google-calendar-link carries the real dates=…%2F… href (V55 asserted on raw URL string); V53/V54/V59 pass"
+    },
+    {
+      "requirement": "R14 — team fairness insight: span, burden distribution, rotation guidance",
+      "met": true,
+      "evidence": "renderFairness (main.ts:667-702): span, per-member shoulder/sleeping burden, guidance text; V67 (1320 per A2) and V70 (540) pass; generated R14 tests pass"
+    },
+    {
+      "requirement": "R15 — state persistence across reloads via localStorage and URL hash",
+      "met": true,
+      "evidence": "save() writes localStorage and hash date=…&duration=… (main.ts:136-158); loadState() re-reads both (110-131); hash channel verified in real Chromium (dateFromHash '2025-06-18' on load); suite reload test re-imports a fresh module and passes"
+    },
+    {
+      "requirement": "Test-suite integrity — an assertion removed from a suite must be explained or trace to an accepted amendment",
+      "met": false,
+      "evidence": "BLOCKING B1: generated suite's R10 pairwise-ranking test lost `expect(violations).toEqual([]);` (removed vs the red commit); no amendment or note authorizes it (A2's scope was exactly the V67 literal/title/comment), and the assertion PASSES against the delivered code (probe: 24 slots, 276 pairs, 0 violations) — so the removal only weakens the suite; the test now computes violations and discards them, and R10's ordering has no V row to catch the gap"
+    }
+  ],
+  "blocking": [
+    "B1 — Restore the deleted assertion `expect(violations).toEqual([]);` at the end of the R10 pairwise-ranking test in apps/app/tests/generated/bcca0d92.test.ts (it was removed from the red suite with no amendment or note authorizing it, and my probe shows it PASSES against the delivered recommender — 24 slots, 276 pairs, 0 violations — so restoring it needs no code change). Also propose a V row (e.g. V74) pinning the recommender ordering invariant, which currently has no coverage in the answer key.",
+    "B2 — Wire the recommendation-item cards in renderRecommender (apps/app/main.ts:619-636) to select their slot (click must set state.selectedHour from the slot's start hour, then save and re-render), or render them as non-interactive text: they are currently <button> elements wired to nothing (real-Chromium probe: click → 0 selected cells, inspector unchanged), while the spec's Approach promises one-click 'Select' buttons and a delivered control must not be dead."
+  ],
+  "value_checks": [
+    {
+      "id": "V1",
+      "input": "2025-06-18T14:00:00Z in America/New_York (summer)",
+      "expected": "local 10:00, 2025-06-18, UTC-04:00, dayShift 0",
+      "actual": "10:00, 2025-06-18, UTC-04:00, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V2",
+      "input": "2025-01-15T14:00:00Z in America/New_York (winter)",
+      "expected": "local 09:00, 2025-01-15, UTC-05:00, dayShift 0",
+      "actual": "09:00, 2025-01-15, UTC-05:00, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V3",
+      "input": "2025-06-18T14:00:00Z in Europe/London (summer)",
+      "expected": "local 15:00, 2025-06-18, UTC+01:00, dayShift 0",
+      "actual": "15:00, 2025-06-18, UTC+01:00, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V4",
+      "input": "2025-01-15T14:00:00Z in Europe/London (winter)",
+      "expected": "local 14:00, 2025-01-15, UTC+00:00, dayShift 0",
+      "actual": "14:00, 2025-01-15, UTC+00:00, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V5",
+      "input": "2025-01-15T14:00:00Z in Australia/Sydney (summer)",
+      "expected": "local 01:00, 2025-01-16, UTC+11:00, dayShift 1",
+      "actual": "01:00, 2025-01-16, UTC+11:00, dayShift 1",
+      "met": true
+    },
+    {
+      "id": "V6",
+      "input": "2025-06-18T14:00:00Z in Australia/Sydney (winter)",
+      "expected": "local 00:00, 2025-06-19, UTC+10:00, dayShift 1",
+      "actual": "00:00, 2025-06-19, UTC+10:00, dayShift 1",
+      "met": true
+    },
+    {
+      "id": "V7",
+      "input": "2025-06-18T14:00:00Z in Asia/Tokyo",
+      "expected": "local 23:00, 2025-06-18, UTC+09:00, dayShift 0",
+      "actual": "23:00, 2025-06-18, UTC+09:00, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V8",
+      "input": "2025-06-18T14:00:00Z in Asia/Kolkata",
+      "expected": "local 19:30, 2025-06-18, UTC+05:30, dayShift 0",
+      "actual": "19:30, 2025-06-18, UTC+05:30, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V9",
+      "input": "2025-06-18T14:00:00Z in Asia/Kathmandu",
+      "expected": "local 19:45, 2025-06-18, UTC+05:45, dayShift 0",
+      "actual": "19:45, 2025-06-18, UTC+05:45, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V10",
+      "input": "2025-06-18T14:00:00Z in America/St_Johns (summer)",
+      "expected": "local 11:30, 2025-06-18, UTC-02:30, dayShift 0",
+      "actual": "11:30, 2025-06-18, UTC-02:30, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V11",
+      "input": "2025-01-15T14:00:00Z in America/St_Johns (winter)",
+      "expected": "local 10:30, 2025-01-15, UTC-03:30, dayShift 0",
+      "actual": "10:30, 2025-01-15, UTC-03:30, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V12",
+      "input": "2025-06-18T14:00:00Z in Australia/Adelaide (winter)",
+      "expected": "local 23:30, 2025-06-18, UTC+09:30, dayShift 0",
+      "actual": "23:30, 2025-06-18, UTC+09:30, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V13",
+      "input": "2025-01-15T14:00:00Z in Australia/Adelaide (summer)",
+      "expected": "local 00:30, 2025-01-16, UTC+10:30, dayShift 1",
+      "actual": "00:30, 2025-01-16, UTC+10:30, dayShift 1",
+      "met": true
+    },
+    {
+      "id": "V14",
+      "input": "2025-06-18T22:00:00Z in Asia/Tokyo",
+      "expected": "local 07:00, 2025-06-19, UTC+09:00, dayShift 1",
+      "actual": "07:00, 2025-06-19, UTC+09:00, dayShift 1",
+      "met": true
+    },
+    {
+      "id": "V15",
+      "input": "2025-06-18T22:00:00Z in Pacific/Auckland",
+      "expected": "local 10:00, 2025-06-19, UTC+12:00, dayShift 1",
+      "actual": "10:00, 2025-06-19, UTC+12:00, dayShift 1",
+      "met": true
+    },
+    {
+      "id": "V16",
+      "input": "2025-06-18T02:00:00Z in America/Los_Angeles",
+      "expected": "local 19:00, 2025-06-17, UTC-07:00, dayShift -1",
+      "actual": "19:00, 2025-06-17, UTC-07:00, dayShift -1",
+      "met": true
+    },
+    {
+      "id": "V17",
+      "input": "2025-06-18T02:00:00Z in Pacific/Honolulu",
+      "expected": "local 16:00, 2025-06-17, UTC-10:00, dayShift -1",
+      "actual": "16:00, 2025-06-17, UTC-10:00, dayShift -1",
+      "met": true
+    },
+    {
+      "id": "V18",
+      "input": "2025-06-18T02:00:00Z in Europe/London",
+      "expected": "local 03:00, 2025-06-18, UTC+01:00, dayShift 0",
+      "actual": "03:00, 2025-06-18, UTC+01:00, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V19",
+      "input": "2025-06-18T16:00:00Z in Australia/Sydney",
+      "expected": "local 02:00, 2025-06-19, UTC+10:00, dayShift 1",
+      "actual": "02:00, 2025-06-19, UTC+10:00, dayShift 1",
+      "met": true
+    },
+    {
+      "id": "V20",
+      "input": "12-hour format of 00:00",
+      "expected": "12:00 AM",
+      "actual": "12:00 AM",
+      "met": true
+    },
+    {
+      "id": "V21",
+      "input": "12-hour format of 00:15",
+      "expected": "12:15 AM",
+      "actual": "12:15 AM",
+      "met": true
+    },
+    {
+      "id": "V22",
+      "input": "12-hour format of 07:05",
+      "expected": "7:05 AM",
+      "actual": "7:05 AM",
+      "met": true
+    },
+    {
+      "id": "V23",
+      "input": "12-hour format of 11:59",
+      "expected": "11:59 AM",
+      "actual": "11:59 AM",
+      "met": true
+    },
+    {
+      "id": "V24",
+      "input": "12-hour format of 12:00",
+      "expected": "12:00 PM",
+      "actual": "12:00 PM",
+      "met": true
+    },
+    {
+      "id": "V25",
+      "input": "12-hour format of 12:30",
+      "expected": "12:30 PM",
+      "actual": "12:30 PM",
+      "met": true
+    },
+    {
+      "id": "V26",
+      "input": "12-hour format of 14:30",
+      "expected": "2:30 PM",
+      "actual": "2:30 PM",
+      "met": true
+    },
+    {
+      "id": "V27",
+      "input": "12-hour format of 23:45",
+      "expected": "11:45 PM",
+      "actual": "11:45 PM",
+      "met": true
+    },
+    {
+      "id": "V28",
+      "input": "Local 10:00, 60m (work 09-17, sleep 23-07)",
+      "expected": "working",
+      "actual": "working",
+      "met": true
+    },
+    {
+      "id": "V29",
+      "input": "Local 08:00, 60m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V30",
+      "input": "Local 18:30, 60m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V31",
+      "input": "Local 02:00, 60m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V32",
+      "input": "Local 23:15, 30m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V33",
+      "input": "Local 06:45, 30m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V34",
+      "input": "Local 09:00, 60m",
+      "expected": "working",
+      "actual": "working",
+      "met": true
+    },
+    {
+      "id": "V35",
+      "input": "Local 16:30, 60m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V36",
+      "input": "Local 17:00, 60m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V37",
+      "input": "Local 22:30, 60m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V38",
+      "input": "Local 06:30, 60m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V39",
+      "input": "Local 07:00, 60m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V40",
+      "input": "Early bird (06-14/21-05) at 07:00, 60m",
+      "expected": "working",
+      "actual": "working",
+      "met": true
+    },
+    {
+      "id": "V41",
+      "input": "Early bird at 20:30, 60m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V42",
+      "input": "Night owl (12-20/03-11) at 10:00, 60m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V43",
+      "input": "Night owl at 14:00, 60m",
+      "expected": "working",
+      "actual": "working",
+      "met": true
+    },
+    {
+      "id": "V44",
+      "input": "4 working, 0 shoulder, 0 sleeping",
+      "expected": "score 100, optimal",
+      "actual": "100, optimal",
+      "met": true
+    },
+    {
+      "id": "V45",
+      "input": "3 working, 1 shoulder, 0 sleeping",
+      "expected": "score 90, good",
+      "actual": "90, good",
+      "met": true
+    },
+    {
+      "id": "V46",
+      "input": "2 working, 2 shoulder, 0 sleeping",
+      "expected": "score 80, good",
+      "actual": "80, good",
+      "met": true
+    },
+    {
+      "id": "V47",
+      "input": "1 working, 3 shoulder, 0 sleeping",
+      "expected": "score 70, compromise",
+      "actual": "70, compromise",
+      "met": true
+    },
+    {
+      "id": "V48",
+      "input": "0 working, 4 shoulder, 0 sleeping",
+      "expected": "score 60, compromise",
+      "actual": "60, compromise",
+      "met": true
+    },
+    {
+      "id": "V49",
+      "input": "3 working, 0 shoulder, 1 sleeping",
+      "expected": "score 60, disruptive",
+      "actual": "60, disruptive",
+      "met": true
+    },
+    {
+      "id": "V50",
+      "input": "2 working, 1 shoulder, 1 sleeping",
+      "expected": "score 50, disruptive",
+      "actual": "50, disruptive",
+      "met": true
+    },
+    {
+      "id": "V51",
+      "input": "1 working, 1 shoulder, 2 sleeping",
+      "expected": "score 10, disruptive",
+      "actual": "10, disruptive",
+      "met": true
+    },
+    {
+      "id": "V52",
+      "input": "0 working, 0 shoulder, 4 sleeping",
+      "expected": "score 0, disruptive",
+      "actual": "0, disruptive",
+      "met": true
+    },
+    {
+      "id": "V53",
+      "input": "RFC 5545 timestamp of 2025-06-18T14:00:00Z",
+      "expected": "DTSTART:20250618T140000Z in the .ics",
+      "actual": "ics contains DTSTART:20250618T140000Z",
+      "met": true
+    },
+    {
+      "id": "V54",
+      "input": "RFC 5545 end of 14:00Z + 60m",
+      "expected": "DTEND:20250618T150000Z",
+      "actual": "ics contains DTEND:20250618T150000Z",
+      "met": true
+    },
+    {
+      "id": "V55",
+      "input": "Google Calendar URL dates param (14:00Z, 60m)",
+      "expected": "dates=20250618T140000Z%2F20250618T150000Z (raw href)",
+      "actual": "raw URL contains dates=20250618T140000Z%2F20250618T150000Z",
+      "met": true
+    },
+    {
+      "id": "V56",
+      "input": "Invitation line: Bob in London at 14:00Z (60m)",
+      "expected": "• Bob (Europe/London): 15:00 - 16:00 (2025-06-18, UTC+01:00) [Working]",
+      "actual": "summary contains exactly that line",
+      "met": true
+    },
+    {
+      "id": "V57",
+      "input": "getUtcOffsetMinutes at 2025-03-09T07:00:00Z and 06:59:59Z, America/New_York",
+      "expected": "-240 and -300 one second earlier",
+      "actual": "-240 and -300",
+      "met": true
+    },
+    {
+      "id": "V58",
+      "input": "getUtcOffsetMinutes/convertUtcToLocal at 2025-11-02T06:00:00Z, America/New_York",
+      "expected": "-300; local 01:00 on 2025-11-02, dayShift 0",
+      "actual": "-300; 01:00, 2025-11-02, dayShift 0",
+      "met": true
+    },
+    {
+      "id": "V59",
+      "input": "generateIcsFile start 14:00Z, duration 90m",
+      "expected": "DTEND:20250618T153000Z",
+      "actual": "ics contains DTEND:20250618T153000Z",
+      "met": true
+    },
+    {
+      "id": "V60",
+      "input": "Local 16:00, 15m",
+      "expected": "working",
+      "actual": "working",
+      "met": true
+    },
+    {
+      "id": "V61",
+      "input": "Local 16:00, 45m",
+      "expected": "working",
+      "actual": "working",
+      "met": true
+    },
+    {
+      "id": "V62",
+      "input": "Local 16:00, 90m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V63",
+      "input": "Local 16:00, 120m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V64",
+      "input": "Local 22:00, 120m",
+      "expected": "sleeping",
+      "actual": "sleeping",
+      "met": true
+    },
+    {
+      "id": "V65",
+      "input": "Local 22:00, 60m",
+      "expected": "shoulder",
+      "actual": "shoulder",
+      "met": true
+    },
+    {
+      "id": "V66",
+      "input": "Local 12:00, 120m",
+      "expected": "working",
+      "actual": "working",
+      "met": true
+    },
+    {
+      "id": "V67",
+      "input": "Fairness span for Auckland, Kathmandu, Honolulu on 2025-06-18 (per A2)",
+      "expected": "spanMinutes 1320",
+      "actual": "1320",
+      "met": true
+    },
+    {
+      "id": "V68",
+      "input": "scoreTeamSlot of 2 working / 0 shoulder / 2 sleeping",
+      "expected": "score 20, disruptive",
+      "actual": "20, disruptive",
+      "met": true
+    },
+    {
+      "id": "V69",
+      "input": "scoreTeamSlot of 0 working / 3 shoulder / 1 sleeping",
+      "expected": "score 30, disruptive",
+      "actual": "30, disruptive",
+      "met": true
+    },
+    {
+      "id": "V70",
+      "input": "Fairness span for the Americas & EMEA preset on 2025-06-18",
+      "expected": "540 minutes",
+      "actual": "540",
+      "met": true
+    },
+    {
+      "id": "V71",
+      "input": "member-edit then change hours and commit (rendered app)",
+      "expected": "form populated with member values, commit 'Save changes', same member rewritten in place, 16:00Z Kathmandu cell shoulder→working after widening work to [12:00,23:00)",
+      "actual": "sweep + real Chromium: form Zed/Asia/Kathmandu/09:00, 'Save changes', rows stay 1, cell 21:45 reclassifies shoulder→working",
+      "met": true
+    },
+    {
+      "id": "V72",
+      "input": "click the clock-cell data-hour=16 with one member present",
+      "expected": "exactly the hour-16 cells carry class 'selected' and data-selected=true; hour-16 header and score chip marked; no other hour",
+      "actual": "sweep + real Chromium: 1 selected cell (hour 16, class selected), header and score data-selected=true, 0 others",
+      "met": true
+    },
+    {
+      "id": "V73",
+      "input": "add 'Zed', member-edit, load Global Core preset, then add 'Ivy'/Europe/Paris",
+      "expected": "after preset load: 3 rows and commit reads 'Add participant'; committing yields a 4th row containing Ivy",
+      "actual": "sweep + real Chromium: 3 rows, 'Add participant', then 4 rows with Ivy present",
+      "met": true
+    }
+  ]
+}

@@ -16,6 +16,10 @@ git checkout -q refs/gf/main -- adws just justfile
 git -c user.name=exp -c user.email=exp@local commit -q -m "red c2375d5 + factory sync 2026-10-02 (526aa07)"
 RED=$(git rev-parse HEAD)
 git cherry-pick -n 995f853 > /dev/null
+# Unstage: a real review sees the whole build unstaged. Left staged, the plant
+# was the ONLY unstaged diff and two of six reviewers found it that way
+# (results.md, "The confound").
+git reset -q
 git apply "$HERE/plant.patch"
 ( cd apps/app && bun install --frozen-lockfile > /dev/null )
 echo "$RED"

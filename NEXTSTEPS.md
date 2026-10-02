@@ -217,16 +217,12 @@ host — pi's built-in openrouter entry for opus-5.5 returns 404.
 
 Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ranked:
 
-1. **Experiment: does the reviewer ACT on the suite note?** (Ron, 2026-10-02.) The note itself is built
-   (CHANGELOG 2026-10-02b): every review now gets the suites' `-` lines since red. "Visible" is not "acted on".
-   - **Design:** plant one weakening in a fixed build tree, then run a single `review` call with the note and
-     without it, using the same reviewer model, N small.
-   - **Plant:** delete one `expect` from the red suite, or change a value to whatever the code returns.
-   - **Cost:** runs on the host against a scratch worktree, so no VM is needed.
-   - **Pre-register first:** a flag counts only if it names the planted line as blocking.
-   - **Signal:** `suite_removed` is already in the trace of every review phase.
-   - **Deferred alongside:** a token check for added `.skip`/`.only`/`todo`, which is weakening by a `+` line
-     that the note cannot show.
+1. **Suite note: ablation candidate at the next model refresh** (CHANGELOG 2026-10-02c). On glm-5.3's final review
+   it added no catches over the spec audit (M2: 2/3 note vs 3/3 without), with one possible anchoring miss.
+   - **Untested:** mid-run reviews, a weakening the spec does not spell out, and other reviewer models. Test those
+     before removing it.
+   - **Side lesson:** answer keys should pin *order* where a requirement ranks things (R10). All 6 reviewers asked
+     for it.
 2. **mix1's DST-span result was blind.** `sweep_mix1.ts:60,86-100` tests spans against every zone's transitions,
    with daytime-only profiles. Amend "engine design" to "unreachable under the spec" (NEXTSTEPS 3 recap,
    CHANGELOG mix1). Pre-register sweep profiles per defect class, plus one span mutation that must go red.
