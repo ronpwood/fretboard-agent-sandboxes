@@ -212,3 +212,31 @@ host — pi's built-in openrouter entry for opus-5.5 returns 404.
   2026-09-30, so the keep-catalog-vs-use-measured decision from 2026-09-07g is still
   open and now covers v4.1 too. **Do not `--fix` it casually** — it changes what every
   historical run's cost means. Reconcile from generation ids after a run.
+
+## 7. Adversarial review 2026-10-02 — remaining (items 1–2 closed, CHANGELOG 2026-10-02)
+
+Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ranked:
+
+1. **Surface suite edits to the reviewer.** New from the retro audit. Builders legitimately correct red-suite values
+   and grow `app.test.ts`, so a path lock is wrong. Put every post-`commit_tests` suite hunk (`-` lines especially)
+   in the review envelope, so a weakening is read, not just counted.
+2. **mix1's DST-span result was blind.** `sweep_mix1.ts:60,86-100` tests spans against every zone's transitions,
+   with daytime-only profiles. Amend "engine design" to "unreachable under the spec" (NEXTSTEPS 3 recap,
+   CHANGELOG mix1). Pre-register sweep profiles per defect class, plus one span mutation that must go red.
+3. **Cheap runtime fixes:**
+   - `agent_pi.py` read loop: try/finally `_kill_tree`, so Ctrl-C no longer orphans pi
+   - retest after the last `fix_i`
+   - render exit 2 on a missing `index.html` or a silent server must fail
+   - the click pass must report clicked/total; the cap is 25 and `--max-clicks N` (space form) is ignored
+4. **Before the 5.5 seat tests:**
+   - strip fretboard terms and "a previous run" stories from the team prompts
+   - build a Sonnet 5.5 roster on the team prompts
+   - `mount` must forward `--config` (gate C pings the wrong roster)
+5. **Before real projects:** gate commands (`lint`/`typecheck`/`build`/`test`) in `app.manifest.yaml`. Bun + TS is
+   hard-wired today.
+6. **Cheap cleanup:**
+   - fix `install.md` (`just inkwell`, `apps/inkwell`), `TREE.md`, the README Inkwell sections and the disler URL
+     in `mount_one.md`
+   - delete the stray shirt images and the drifted `.claude/skills/sssf/templates/` copy
+7. **Teardown, next in line:** check pid liveness before reading spend or destroying (`kill -0` with a sentinel).
+

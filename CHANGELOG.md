@@ -5678,3 +5678,91 @@ P4 (no commit) met · P5 (<37 min) met by ~18x.
 
 **Torn down 2026-09-30:** VM destroyed, key revoked (OpenRouter spend $0.0005, unused by this lane). Final Shelley
 balance $5.95 allowance / $105.95 available, unchanged since the after-reading, so the $0.33 delta stands.
+
+## 2026-10-02 — adversarial review; grader inputs locked; teardown and reap fail closed; suite protection reverted on evidence
+
+Four read-only reviewers audited the repo, one per lens: factory runtime, sandbox harness, measurement integrity and
+drift. I verified every high-severity claim against the code before reporting it. The report is a private Claude
+Doc ("Adversarial Codebase Review — 2026-10-02"): 8 high findings, 1 claim rejected. Items 1 and 2 were built
+from `specs/grader-integrity-and-teardown-fail-closed.md`; the rest are queued in NEXTSTEPS 7.
+
+### 1. Grader inputs: no agent may write the prompts or harness it is judged by
+
+`permissions.permitted()` checked `always_writable` (all of `adws/adw_data/`) before `protected_files`. So every
+agent on every roster could rewrite the tracked prompt sets, `bash_timeout.ts`, `subagents.ts` and the fixtures.
+That included a reviewer with `writes: []`. Prompts are re-read per call, so an edit in `revise_1` would drive
+`review_2`.
+
+**Fix:** `always_writable` is now `data_dir/sessions/` only. The rest of `data_dir` is `never_writable`, checked
+above `writes`. No glob unlocks it, because the documenter's `**/*.md` would otherwise reach every prompt. The
+lock is derived in code, so all six rosters get it with no YAML change. **It applies to the control arm too**
+(Ron, 2026-10-02: "a control that can tamper with its own grader is broken"). The control's prompts are unchanged.
+Runs before this date ran without the lock.
+
+**Selftest** `adws/adw_modules/permissions_selftest.py` (340 cells, every agent × every roster): **136 wrong at
+d432f8c**, 0 after.
+
+### 1b. Suite protection: built, then REVERTED on the retro audit
+
+The plan also protected the fixed suite and the generated lane from the builder. The retro audit over all 56
+harvested bundles showed that premise was wrong:
+
+| Result | Bundles |
+|---|---|
+| **No commit touched the prompts or harness under `adws/adw_data/`** | 56 / 56 |
+| Post-`commit_tests` edits to a suite | 28 (all greenfield TDD/team runs) |
+| Clean | 6 |
+| n/a: no red suite (pre-TDD arms, bare `run agent`) | 19 |
+| Unreadable: prerequisites outside current history | 3 (gf-1/2/3, 2026-08-28) |
+
+The 28 are the design working, not tampering:
+- **Fixed suite:** builders *add* durable tests to `app.test.ts` by prompt (+125 to +419 lines per run, ≤31 deleted).
+- **Red suites:** 2–12 line value corrections, several tied to an accepted amendment. mtg1 V67 930→1320 (A2) is
+  one; mix1's London column (A3) is another. The others fix test-local mistakes: harn5's G-major vi A→E, the capo
+  circle index, team1's roman-numeral normaliser, rmix1's signed gap.
+
+Protecting the suites would have rolled those corrections back and rejected correct builds. A path rule cannot
+tell a correction from a weakening; only a reader of the diff can. The protection was reverted. "Surface every
+post-`commit_tests` suite hunk to the reviewer" is queued instead (NEXTSTEPS 7). **Limit:** commit history cannot
+see an edit made and reverted inside one run.
+
+### 2. Teardown and reap fail closed; traces before revoke
+
+- **VM listing.** `teardown.just` read a failed `exe.dev ls` as `{"vms":[]}`, meaning "gone". That skipped
+  artifacts, harvest and the dirty check, then revoked the key, closed the record and printed "✓ teardown complete"
+  over a live VM. `reap.just` had the same fallback, so one blip classed every open run as orphaned. A failed or
+  unparseable listing now aborts with nothing touched. Reap refuses, dry run included.
+- **Dirty check.** The check read an ssh failure as "clean". It now requires an `SBX_TREE_OK` sentinel as the last
+  line.
+- **Traces.** New teardown step 2b calls `just sbx manage traces` before revoke, and a failure aborts. `--no-traces`
+  skips deliberately. `traces` now probes with an `SBX_PROBE_OK` sentinel, so a missing dir is normal and an
+  unreachable VM aborts. It also pulls `~/.claude/projects`: `run agent` transcripts were never collected before.
+
+**Selftest** `sandbox_mount/host/teardown_selftest.sh` (PATH shims for ssh/curl/rsync; refuses to run unless the
+curl shim is first on PATH). Each case must print its own abort phrase, so an unrelated error cannot pass it.
+
+| Case | d432f8c | after |
+|---|---|---|
+| ls-fail | FAIL: revoked, "✓ complete" | PASS |
+| ls-garbage | FAIL: revoked, "✓ complete" | PASS |
+| traces-fail | FAIL | PASS |
+| dirty-fail | FAIL: ssh failure read as clean | PASS |
+| dirty-real | FAIL* | PASS |
+| happy | PASS | PASS |
+| reap --yes ls-fail | FAIL: revoked an open run's key | PASS |
+
+\* A shim artifact: the shim keys on the new sentinel text. The old command did catch a real dirty tree.
+
+**Live check** (`failclosed-live-20261002-5049e8`, Ron approved the spend). Mount, one `run agent` turn on
+`claude-sonnet-5-5`, then an untracked `app/failclosed-probe.txt`:
+- Teardown pulled the transcript, then **refused on the real `?? failclosed-probe.txt`**, leaving the VM alive and
+  the record open.
+- After the file was removed, teardown ran end to end: traces (1 transcript at
+  `claude-projects/-home-exedev-app/<session>.jsonl`, which confirms the path assumption), tree clean, key revoked
+  and verified absent, VM destroyed.
+- OpenRouter spend $0.0004. The Shelley cost of the one turn was not measured; that lane only shows as a balance
+  delta.
+
+**Remaining `|| true` in teardown** gate nothing destructive: two spend reads, the db checkpoint, the artifact tar,
+and an `rmdir`. A spend-read blip still loses spend for that run, because the provisioning list no longer carries a
+revoked key. The generation ids in the now-pulled traces are the fallback.

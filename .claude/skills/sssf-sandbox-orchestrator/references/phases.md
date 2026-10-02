@@ -142,15 +142,18 @@ which looks like a bug rather than a budget.
 A run can die anywhere: VM but no key, key but no VM, a record with neither. **A missing piece is
 the normal path, not an error.** Every step in `teardown.just` is individually guarded.
 
-Order is load-bearing — **spend → artifacts → harvest → revoke → destroy**. Everything that READS
-the box runs before anything that destroys it:
+Order is load-bearing — **spend → artifacts → traces → harvest → dirty-check → revoke → destroy**.
+Everything that READS the box runs before anything that destroys it, and **every probe fails
+closed**: an answer teardown could not get aborts it, never defaults to "gone" or "clean":
 
 | Step | Guard |
 | --- | --- |
-| VM liveness | asked of the control plane (`ssh exe.dev ls --json`), not probed over ssh. Authoritative, and it is the same answer `reap` uses |
+| VM liveness | asked of the control plane (`ssh exe.dev ls --json`), not probed over ssh. Authoritative, and it is the same answer `reap` uses. A failed or unparseable listing **aborts with nothing touched** — it used to read as "gone", which skipped harvest and revoked the key over a live VM. `reap` refuses on the same condition |
 | 1. spend | read **before** the key dies — after `DELETE` the number is unrecoverable. Prefers the runtime key's own `GET /api/v1/key`; on a re-run where the `.key` file was already shredded it falls back to the provisioning **LIST**, which still carries `usage` per hash |
 | 2. artifacts | skipped if no VM. `ls -d` filters to what exists, so a run that died before writing `app_docs/` is not an error. Empty result removes the dir rather than implying something was pulled |
+| 2b. traces | delegates to `just sbx manage traces`: agent streams (`raw_output.jsonl`, generation ids for cost reconciliation), `sssf.db`, and `run agent`'s `~/.claude/projects` transcripts — none of which any bundle carries. A failure **ABORTS before revoke and destroy**; `--no-traces` skips deliberately |
 | 3. harvest | delegates to `just sbx manage harvest`, **default on**, so nobody loses a run's commits by forgetting. Skipped if no VM, or deliberately with `--no-harvest` when you already harvested. A failure **ABORTS the teardown before revoke and destroy** — destroying a VM whose commits were never pulled is the one irreversible mistake this file can make |
+| 3b. dirty tree | `git status --porcelain` on the VM must end with an `SBX_TREE_OK` sentinel; an ssh failure aborts (it used to read as "clean"). A dirty tree aborts unless `--force-dirty` |
 | 4. revoke | no `key_hash` → nothing to revoke. `2xx` → revoked. `404` → already gone (the idempotent re-run path). Anything else → stop, leave the VM alone. A live `key_hash` with no provisioning key in `.env` is a hard stop, not a warning |
 | 5. destroy | only if the VM is actually alive |
 | 6. close | `close()` is idempotent and **first close wins** — the moment that matters is when the key actually died. Key file shredded (`shred -u`, `rm -P` on macOS), `-f` last so a re-run never fails on an already-removed file |

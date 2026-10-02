@@ -95,7 +95,7 @@ their own contents when run bare.
 | `just sbx manage list` | every run record: state, VM alive, spend |
 | `just sbx manage harvest RUN_ID` | pull the run's commits home as a git bundle, fetched into `refs/sandbox/<run-id>`. Non-destructive, idempotent, run it any time. |
 | `just sbx manage traces RUN_ID [SESSION]` | pull the run's agent traces home (`raw_output.jsonl` thinking + tool streams, prompts, envelopes, `sssf.db`) to `.sandbox/traces/<run-id>/`. harvest = commits, traces = thinking. Non-destructive, idempotent; traces are gitignored on the box and die at teardown otherwise. |
-| `just sbx lifecycle teardown RUN_ID [--no-harvest]` | spend → artifacts → **harvest** → revoke → destroy → close. **The only destructive recipe.** |
+| `just sbx lifecycle teardown RUN_ID [--no-harvest] [--no-traces] [--force-dirty]` | spend → artifacts → **traces** → **harvest** → dirty-check → revoke → destroy → close. Pulls traces and Claude transcripts itself. Every probe fails closed. **The only destructive recipe.** |
 | `just sbx manage reap [--yes]` | delete orphaned `sbx-*` keys. Dry run by default. Run it at the start of a session. |
 | `just target list` / `show NAME` | known targets (`default` + `targets/*.yaml`), and a target's definition + last sync provenance |
 | `just target sync NAME [--dry-run] [--push]` | regenerate a target repo's factory from HEAD: leak-checked, gated, neutral commit. `--push` is outward-facing (public repo) — ask first |
