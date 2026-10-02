@@ -5888,3 +5888,60 @@ independently (`/private/tmp/claude-501/span72/`, scratch).
   under the spec. It never reports "exact" on a zero-power set. rmix1 already noted that its MUTATE pass had no
   span-specific error; `spanPower` *is* that span mutation, run before any app is involved.
 
+
+## 2026-10-02e — four runtime fixes: Ctrl-C no longer orphans pi; the last fix is tested; the render gate fails on a missing app; the click pass drives every control (and found a hidden defect in gf-1)
+
+NEXTSTEPS 7.3 closed. Each defect was reproduced red before the fix, then green after.
+
+**1. Ctrl-C orphaned pi.** pi runs in its own process group, and the read loop in `agent_pi.run` had no
+kill-on-exit. Ctrl-C (SystemExit from `session.py`) or a raising `on_event` left pi and its children running and
+spending, while the trace marked them ended. The loop is now wrapped in `except BaseException: _kill_tree;
+raise`.
+- `agent_pi_selftest.py` uses a fake pi that spawns a grandchild `sleep` and then hangs.
+- **At HEAD:** both pids leaked.
+- **After:** none leaked, and the normal exit path still returns its text.
+
+**2. The last fix was never tested.** Five ADWs (team, tdd control, simple_sdlc, build_test, plan_build_test) looped
+test_i → fix_i, so fix_3's output never ran. A `for … else` now adds `test_4` exactly when the loop runs out on a
+fix. A behavioural probe drove `adw_build_test.main` with stubbed phases:
+
+| Suite results | HEAD | Now |
+|---|---|---|
+| red ×3, then green | fix_3 ends the run, **accepted=False** | test_4 runs, accepted |
+| red ×4 | rejected, fix_3 untested | test_4 runs, rejected |
+| green first time | no test_4 | no test_4 (unchanged) |
+
+`plan_build_test_quality` already ended on a verify and is unchanged.
+
+**3. A broken app could pass the render gate.** A missing `index.html`, or a dev server that **exits** before
+answering, now exits **1** (blocking). Both used to exit 2, which `quality.py` passes as "SKIPPED (infrastructure)".
+Exit 2 is kept only for no playwright/browser, or a server that is alive but silent. The exit-code contract in
+the docstring was rewritten to match. The server-exits path is reasoned from `_wait_for_port`, not exercised:
+no fixture could make `bun index.html` die at boot.
+
+**4. The click pass** clicked only the first 25 reachable controls and reported "PASS — every control reachable, no
+error while driving it". `--max-clicks N` (space form) was ignored, and its value was picked up as an extra
+positional argument. Fixes:
+- **Cap:** 200, reported as a ceiling. Going over it prints `PARTIAL … never driven` and `PASS (partial)`, never
+  "every control".
+- **Measured line:** now `clicked X of Y reachable`.
+- **Floor:** reachable controls with **zero** clicks landed now FAIL.
+- **Flag:** both flag forms parse.
+
+`render_smoke_selftest.sh` covers this with fixtures in `adws/adw_data/fixtures/render_smoke/`. All 5 cases were red
+at HEAD, including a disabled-only app that said "PASS … every control reachable"; all 5 pass now.
+
+**Corpus regression** (`render_smoke_corpus.sh` over all 37 harvested greenfield apps, HEAD vs new):
+- **Exactly one verdict changed: gf-1, PASS → FAIL.** Its "▶ Strum" button throws on click (`dispatchEvent`:
+  parameter 1 is not of type 'Event'). That is a real app defect the 25-cap hid since 2026-08-28.
+- The floor fired on nothing new, so there are no new false positives.
+- Click coverage rose to the full reachable set, e.g. harn2 25 → 123 and team2 25 → 117.
+
+**Not fixed, measured instead.** Several apps still pass with clicks far below reachable controls, because the
+controls are blocked or vanish rather than hitting the cap: gf3-1 1/77, gf4-solo 11/39 (fails on other grounds),
+rmix1 20/41. A ratio floor needs calibration on this corpus first (queued, NEXTSTEPS 7). The PASS line now shows the
+ratio.
+
+All earlier selftests still pass (agent_pi, permissions 340, suite_changes 23, teardown 7, meeting oracle 5). The
+greenfield factory is **not re-synced**: the next greenfield run's sync carries these, and its pre-registration must
+name them.

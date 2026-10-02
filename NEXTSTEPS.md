@@ -223,11 +223,10 @@ Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ra
      before removing it.
    - **Side lesson:** answer keys should pin *order* where a requirement ranks things (R10). All 6 reviewers asked
      for it.
-3. **Cheap runtime fixes:**
-   - `agent_pi.py` read loop: try/finally `_kill_tree`, so Ctrl-C no longer orphans pi
-   - retest after the last `fix_i`
-   - render exit 2 on a missing `index.html` or a silent server must fail
-   - the click pass must report clicked/total; the cap is 25 and `--max-clicks N` (space form) is ignored
+3. **Click-coverage floor, calibrate first** (from 7.3, CHANGELOG 2026-10-02e). The render gate now fails only on
+   zero clicks landed. Apps still pass at 1/77 (gf3-1) or 20/41 (rmix1), with controls blocked or vanishing. Before
+   any ratio becomes a failure, run `render_smoke_corpus.sh` and check it fires on the known-bad apps and nothing
+   else.
 4. **Before the 5.5 seat tests:**
    - strip fretboard terms and "a previous run" stories from the team prompts
    - build a Sonnet 5.5 roster on the team prompts
