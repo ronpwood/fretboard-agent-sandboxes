@@ -6530,3 +6530,7 @@ Per seat: planner $1.27, reviewer $0.88, builder $0.73, test designer $0.68, doc
 Artifacts: `.sandbox/runs/s55m1-20261003-b37ef8-artifacts/`: `span_power.ts`, `sweep_s55m1.ts` + `.out`,
 `mutate.out`, `ui_read.js`, `hashes.ts`, `ui_compare.ts` + `.out`, `ui_chromium.json`, `browser.py` + `.json`,
 `rev_sweep.out` and 65 generation records. Screenshots: `specs/greenfield-judge/judge-s55m1-{four,five}.png`.
+
+**Torn down 2026-10-03 (Ron's decision, same day):** tree clean, key revoked and verified absent from OpenRouter, VM
+destroyed, record closed, `reap` clean. Final billed spend **$3.614**, matching the pre-teardown per-generation
+reconciliation. Ron: "This is the most impressive team I've seen posted to date."

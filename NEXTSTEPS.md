@@ -8,7 +8,7 @@ closes, write its result entry in the changelog and delete it here.
 0 value defects in 5.04M checks, the DST-span class reachable and exact for the first time, for $3.61. With s55t1 that
 is 2/2. Next: **a replicate of s55m1** (same pin, same roster) before freezing all-Sonnet as the production roster.
 Then NEXTSTEPS 7 item 8 (`values_swept` accepts boilerplate, seen 2/2 on Sonnet). Ron's UI ticket for s55m1 is the
-timeline legend (solid green vs "underline"). The s55m1 VM is up, pending Ron's teardown call.
+timeline legend (solid green vs "underline"). s55m1 is torn down.
 
 **Recently run (2026-10-02):** an adversarial review of the whole repo by four read-only reviewers, with every
 high-severity claim verified (private Claude Doc "Adversarial Codebase Review — 2026-10-02"). Closed the same day:
