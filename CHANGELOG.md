@@ -6147,3 +6147,80 @@ definitely use. It would probably benefit from the sound and a few of the featur
 certainly can't fault it on the final product. It appears as though every feature in the plan is deployable, so
 it's more than an MVP. It could be put in front of real guitar players that would get value out of it, and then I
 would imagine tickets would be requested for extended features."
+
+
+## 2026-10-03c — s55t1 judged: all-Sonnet team arm is deploy-grade (Ron) with 0 value defects in 13,234 checks, for $4.47; bare Sonnet's MVP gap closed on the same model
+
+Pre-registered in 2026-10-03b. Judged on the harvested tree (`refs/sandbox/s55t1-20261003-2467f5`, 4 commits).
+Ron's verdict was recorded first: "a very deployable version … more than an MVP. It could be put in front of real
+guitar players."
+
+### Predictions
+
+| | prediction | result |
+|---|---|---|
+| P1 | every review sweeps every `V`, with a declared sweep | **MET, with a gate weakness.** The first attempt approved without per-row `value_checks`, and `values_swept` sent it back. The retry gave 317/317 entries, but every one reads `expected:"spec", actual:"equal"`: boilerplate. A real sweep stands behind it. `value_sweep.ts` parses each expected value from `plan.md`, compares strictly to the delivered code and the happy-dom UI, and printed `failed: 0`. **The gate checks that entries exist, not what they contain.** |
+| P2 | at least one amendment, ruled | **MET.** A1 (builder): the generated V313 test asserted "Capo 3: C shapes" for D major. Frozen V313 is a capo-persistence row naming no shape; V267 gives B. D (pc 2) − 3 = pc 11 = B, so **the test designer's value was wrong and the key was right.** One line changed, the only suite edit since red. The ruling is correct on first principles. |
+| P3 | every trap cites a `V` row | **MET first try.** `spec_form` passed at attempt 1, with 12 traps. |
+| P4 | zero reachable value defects (our sweep) | **MET.** `sweep_s55t1.ts` is a first-principles oracle using only letter-stepping and pitch-class arithmetic; no app code computes an expected value. 26 keys × theory API + rendered UI × sevenths on/off × capo 0–7: **0 misses in 11,076 checks.** **(a)** In real Chromium, every key's visible title, signature, scale strip, chord names and all 78 neck cells: **0 misses in 2,158 checks**, including E# on the F# neck and Cb in Gb. **(b)** Every `.chord-card` carries numeral, name, function, notes and capo shape in all 26 keys × 16 states. **Mutation-tested:** 6/6 planted defects caught (capo direction, minor VI function, wheel Db→C#, B string retuned, UI ignoring sevenths, toggle on the wrong position), from 6 to 1,456 misses each. |
+| P5 | T1: audio channel asserted | **NOT OBSERVABLE.** The planner made audio an optional extra and the builder added none: no `AudioContext` anywhere. This is also a scope difference against bare-s55, which shipped sound. Ron noted it would "benefit from the sound". |
+| P6 | builder screenshots; reviewer reads in Chromium | **MET.** The builder ran `render_smoke.py --screenshot` and read the PNG. The reviewer ran 2 `--eval` reads in real Chromium (C major values; F#/Gb toggle state): 2 states, not a sweep. Sonnet's "doesn't look" posture from bare-s55 did **not** survive prompts that ask it to look. |
+| P7 | key spells sharp, flat and minor keys at plan | **MET** (recorded in flight before any outcome): all 26 keys, including E# and Cb, plus neck rows in every key. The de-domained planner prompt lost nothing measurable here. |
+| P8 | no non-model loss | **MET.** 0 provider retries, 0 timeouts; the only retry was the `values_swept` gate. |
+
+**Reading (pre-registered table): P4 met + deploy = "the team process closes the MVP → deploy gap on the same
+model. All-Sonnet is a frozen-roster candidate."**
+
+### Rubric (frozen; every gate re-run by me)
+
+Part A **20/20**, Part B **12/12** = **32/32**, against bare-s55's 31/32. The one point of difference is item 9's
+structural red suite (committed `e9dab3c` before code), which a one-turn arm cannot earn. **The rubric is saturated,
+as predicted**, so the separation is Ron's verdict and the sweep, not the score.
+- **Items 1–5:** settled by P4's sweep.
+- **Item 6 (guitar surface):** a 6×13 neck spelled in key, chord tones lit per selected card, and a capo helper
+  with per-chord shapes. No chord diagrams or voicings; the spec chose capo shapes instead.
+- **Item 7 (teaching):** a per-key lesson, diatonic-family highlighting on the wheel, harmonic functions, a relative
+  jump. **Judgement call, scored 2 with a flaw:** in minor keys the lesson says "I = F#m, IV = Bm and V = C#m"
+  (uppercase), where the app's own cards correctly show i/iv/v. With sevenths on, it says to play `Bm7, Em7, F#m7`,
+  which "sound as F#m, Bm, C#m": seventh shapes, triad names. The shapes are correct. No `V` row covers lesson
+  wording, and the reviewer flagged exactly this gap as non-blocking.
+- **Item 10 (delivery):** 71/71 tests (306 asserts), oxlint 1.36.0 clean, the factory's tsc 7.0.2 argv clean,
+  build ok, nothing outside `apps/app`, `specs` and `app_docs`.
+- **Items 11 and 14:** a scripted Chromium pass of 70 steps (24 segments, 26 arrow moves, the relative round trip,
+  the Gb toggle, sevenths, capo 0–7, all 7 cards lighting tones), with 0 coherence problems and 0 console errors.
+  The render gate reached and clicked 34/34 controls, with none blocked.
+- **Items 12–13:** a designed dark theme, a large legible wheel, and a clear hierarchy. At 360 px it is one column
+  with `scrollWidth` 360; the neck scrolls inside its panel.
+- **Item 15 (restraint):** nothing bolted on.
+- **Item 16 (recoverability):** the worst finding is the lesson wording, contained in one function.
+
+### Process (recorded, never scored)
+
+| | s55t1 (team, Sonnet 5.5) | bare-s55 | team2 (team, flash) |
+|---|---|---|---|
+| wall clock | ~28 min of phases | 2 min | ~44 min |
+| billed | **$4.47** (OpenRouter, reconciled) | $0.33 (Shelley delta) | $2.32 |
+| generations / tokens | 84 / 6.27M in (92.5% cached), 213k out | — | 206 turns / 17.9M in |
+| loops used | fix 1 of 3, revision 0 of 2 | — | revision 1 of 2 |
+| key | 317 `V` at plan, 317 at end, 1 amendment (test-only) | — | 78 → 101 |
+| app | 1,017 lines in 8 files (theory 214, ui 424), 71 tests / 306 asserts | 616 / 8, 10 / 322 | — |
+
+Per seat: reviewer $1.21, test designer $1.20, builder $1.05, planner $0.95, documenter $0.07. This is an even
+spread, unlike mix1, where two Opus seats were 98.5% of the bill.
+
+### What this changes
+
+1. **The process, not the model, closed the MVP → deploy gap here.** On the same model, one turn gave Ron "a great
+   MVP" and the team chain gave "very deployable … more than an MVP", with 0 value defects in 13,234 checks. N=1,
+   and the comparison carries the confounds named in 2026-10-03b: harness, app shell, factory and scope (no audio).
+2. **Sonnet 5.5 in the planner seat writes a complete key unprompted:** 317 rows, all 26 keys at plan, and the
+   amendment it drew was a test error, not a key gap. That is the behaviour team2 needed brief-specific prompt
+   stories to reach. **The de-domaining cost nothing measurable on this brief.**
+3. **New gate weakness:** `values_swept` accepts boilerplate `value_checks`. Here an honest sweep stood behind it,
+   but the gate could not have known.
+4. **All-Sonnet is the leading frozen-roster candidate for cost-sensitive work**, at $4.47 against mix1's $31.42
+   (a different brief). The open question is whether it holds on a brief with an exact oracle and edge classes
+   that mix1/rmix1 found hard (the meeting planner), where the reviewer seat mattered.
+
+Artifacts: `.sandbox/runs/s55t1-20261003-2467f5-artifacts/` (84 generation records, `sweep_s55t1.ts`, `chromium_compare.ts`, `chromium_read.js`, `interact.js`, `narrow.py`); screenshots `specs/greenfield-judge/judge-s55t1-{home,360}.png`, traces in
+`.sandbox/traces/s55t1-20261003-2467f5/`.

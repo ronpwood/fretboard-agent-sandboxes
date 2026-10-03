@@ -4,10 +4,10 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Start here (next session):** 7.4 is closed (CHANGELOG 2026-10-03): `mount --config`, the team prompts de-domained,
-and an all-Sonnet team roster (`sssf.team-sonnet.config.yaml`). Next: pre-register the first 5.5 seat test. Before
-any greenfield VM run, `just target sync greenfield --push`. The target is at `526aa07`, which lacks the 2026-10-02e
-runtime fixes and the 2026-10-03 prompt change. That run's pre-registration must name both as factory changes.
+**Start here (next session):** s55t1 is judged (CHANGELOG 2026-10-03c). The all-Sonnet team arm was deploy-grade
+per Ron, with 0 value defects in 13,234 checks, for $4.47. Its VM is still up, pending Ron's teardown call. The next
+seat-test question is whether all-Sonnet holds on the meeting planner, the brief with an exact oracle where the
+reviewer seat mattered (mix1/rmix1). Pre-register it against rmix1/mix1/mtg1. Greenfield is synced at `a16a6c3`.
 
 **Recently run (2026-10-02):** an adversarial review of the whole repo by four read-only reviewers, with every
 high-severity claim verified (private Claude Doc "Adversarial Codebase Review — 2026-10-02"). Closed the same day:
@@ -252,4 +252,8 @@ Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ra
      in `mount_one.md`
    - delete the stray shirt images and the drifted `.claude/skills/sssf/templates/` copy
 7. **Teardown, next in line:** check pid liveness before reading spend or destroying (`kill -0` with a sentinel).
+8. **`values_swept` accepts boilerplate** (from s55t1, CHANGELOG 2026-10-03c). A reviewer's retry passed with 317
+   `value_checks` that all read `expected:"spec", actual:"equal"`. An honest sweep stood behind it this time.
+   Cheapest fix: require each entry's `expected` to match the `V` row's expected text (or contain it), so a copied
+   placeholder fails. Calibrate on the corpus envelopes first; earlier reviews may have abbreviated legitimately.
 
