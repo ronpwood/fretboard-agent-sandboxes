@@ -5,7 +5,7 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 closes, write its result entry in the changelog and delete it here.
 
 **Start here (next session):** s55t1 is judged (CHANGELOG 2026-10-03c). The all-Sonnet team arm was deploy-grade
-per Ron, with 0 value defects in 13,234 checks, for $4.47. Its VM is still up, pending Ron's teardown call. The next
+per Ron, with 0 value defects in 13,234 checks, for $4.47. Torn down. The next
 seat-test question is whether all-Sonnet holds on the meeting planner, the brief with an exact oracle where the
 reviewer seat mattered (mix1/rmix1). Pre-register it against rmix1/mix1/mtg1. Greenfield is synced at `a16a6c3`.
 
