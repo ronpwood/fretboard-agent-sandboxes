@@ -6428,3 +6428,105 @@ There's a slight visual problem with adding a fourth person in the section where
 across the day (UTC-aligned) doesn't scroll to allow visual display. But when I had a fourth person, it seems to work
 fine, so probably just a minor visual bug." He did not choose between deploy and MVP explicitly, and none is
 assigned for him.
+
+**Ron's verdict, clarified (verbatim, 2026-10-03):** "I'd use the word 'deployable' (slight interface fix), but it's
+probably one ticket and done." **Timing, recorded honestly:** this arrived after the engine sweep's result (0 misses)
+had been posted in chat, so it is a clarification given with partial results visible. It is not part of the
+before-scoring record. It agrees with that record.
+
+
+## 2026-10-03e — s55m1 judged: 0 value defects in 5,039,098 checks, the DST-span class reachable AND exact for the first time, $3.61; deployable per Ron with one UI ticket
+
+Pre-registered in 2026-10-03d. Judged on the harvested tree (`refs/sandbox/s55m1-20261003-b37ef8`, 4 commits), by
+the rule-based oracle only.
+
+### Predictions
+
+| | prediction | result |
+|---|---|---|
+| P1 | every review sweeps every `V`, and the sweep compares to the frozen values | **MET in substance, with the boilerplate envelope again.** Both reviews' entries read `expected:"spec", actual:"sweep OK"`, a second Sonnet run in a row (NEXTSTEPS 7 item 8). Behind them: `value_sweep.ts` covers 137 rows (re-run by me on the harvest: 136/136 checks OK, with grouped ids `V138-141` and `V148-151`). 30 DOM rows are credited to the generated suite, which ran green in quality, and V168–V170 to a Chromium measurement. **Weaker than s55t1:** expected values are typed as literals, not parsed from `plan.md`. |
+| P2 | an amendment, ruled correctly | **MET.** A1 (builder, in revision) turned review_1's finding into V168–V170: tick and cell alignment on the timeline. **Verified** in Chromium 153 and Chrome 154: every hour tick's centre sits 5 px from its 10 px cell's left edge, with no drift across 00:00–22:00. |
+| P3 | traps cite `V` | **MET after one correction.** `spec_form` failed first on 19 rows with no derivation; the retry passed (recorded in flight). 14 traps. |
+| P4 | zero reachable value defects | **MET** (below). |
+| P5 | span row at plan, plus the other edge classes | **MISSED on the span row only** (recorded in flight). Transition instants, gap and overlap walls, rollover and 23/25-hour days were all covered at plan. **But the spec stated the correct end-reading rule in prose and named the start-only shortcut as a trap,** and the code implements it exactly. |
+| P6 | builder reads a screenshot; reviewer reads in Chromium | **SPLIT.** Reviewer: met, several `--eval` reads, including the measurement that found the axis defect. **Builder: MISSED.** It ran the smoke as `--json` and two `--eval` measurements, and never took or read a screenshot. A screenshot would likely have shown the axis drift before review. |
+| P7 | the reviewer checks outside the key | **MET.** review_1 found the timeline's UTC tick labels about 5 slots off their cells (10 px tick pitch vs 9 px cells, plus a mismatched label column). It measured this in real Chromium (`"16:00"` tick at x=847), made it blocking, and the builder fixed it. Every value matched, so no key row could have caught it. |
+| P8 | no non-model loss | **MET.** 0 `provider_retry`, 0 timeouts. The only retries were the `spec_form` and `values_swept` gates. |
+
+**Reading (pre-registered table): P4 met, P5 missed → "credit design or review, and say which". It is DESIGN, by the
+planner:** the span class had power (spanPower > 0, pre-registered in flight) and is exact. The spec's prose rule ("the
+participant's local reading of `t` *and of `t+len`*") was implemented as written (`fits()` reads `localView(t+len)`).
+No review probed spans. **This is the first meeting-planner run where the class was reachable AND clean:**
+- mtg1 and rmix1 shipped it
+- mix1's spec made it unreachable (2026-10-02d)
+
+### P4 detail (5,001,383 engine checks + 37,715 UI checks; 0 misses)
+
+| class | checks | result |
+|---|---|---|
+| A. instant → local date, minute, day offset against every anchor, offset and its label (17 zones × 22 GRID instants) | 7,106 | exact |
+| B. offset badge (`offsetOnDate`, read at anchor-local noon) × 57 dates × 4 anchors × 17 zones | 3,876 | exact |
+| C. `fits()`: every own-day slot × 7 durations × 7 profiles × 17 zones × 57 dates | 4,550,056 | exact |
+| **C.span**: meetings crossing the zone's OWN transition, on the pre-registered biting profiles | **8,120** | **exact**: **1,348** of them are cases where a linear end (the mtg1/rmix1 mechanism) gives the wrong verdict |
+| D. `slotStarts`: count and every instant, every zone as anchor × 57 dates (92/100/94/98 on transition days) | 969 | exact |
+| E. `findWindows`: 5 rosters (including a span-biting one) × 4 anchors × 57 dates × 3 durations: per-slot attendees, max, everyone, windows | 6,840 | exact |
+| G. wall → instants, every 15-min wall × 17 zones × 57 dates: **gap → none/null 76/76, overlap → both/earlier 76/76**, ordinary 92,872 | 93,176 | exact |
+| H. timeline cells (`isWorkingAt`) | 331,240 | exact |
+| U. **rendered UI in real Chromium**, 150 hash states (5 rosters × 3 anchors × 10 DST-sensitive dates): window bounds, headers, every participant's range and day marker, attending flags, badges, labels, timeline cells, converter rows; **converter gap: error and no rows 40/40; overlap: earlier instant plus note 40/40** | 37,715 | exact |
+
+- **Class (c), `Intl` display names: avoided by design.** `ui.ts` has no `Intl`, `timeZoneName` or `toLocale`. Labels
+  are `cityLabel` (from the IANA id) and offsets are numeric. All 51 labels and badges are identical in Playwright
+  Chromium 153 and the installed **Google Chrome 154.0.8037.93**, the browser where rmix1's London label failed.
+- **Class (d):** overnight hours are refused by declared policy, in the form (code read: "Working hours must start
+  before they end") and in the codec. End-inclusive is declared (`endReading ≤ endMin`, midnight = 1440); profiles
+  20–24 and 00–24 are exact under C.
+- **rmix1's gap-column class cannot occur:** slots are absolute 15-minute steps from the first existing anchor wall.
+- **Mutation-tested** (`mutate.out`). Each planted class goes red:
+  - **span** (end = start wall + len): 1,348/1,348 span misses, plus 180 in C.fit, plus 122 in window results
+  - **gap** (a gap wall lands an hour early): 76/76 gap and 76/76 resolve
+  - **Kathmandu as +5:30:** offsets, labels and badges
+
+### Delivery, interaction and UI (recorded beside P4)
+
+- **Gates re-run on the harvest:** 193/193 tests (1,267 asserts), oxlint 1.36.0 clean, the factory's tsc 7.0.2 argv
+  clean, build ok, nothing outside `apps/app`, `specs` and `app_docs`.
+- **Interaction pass, in both browsers:** 71 steps (5 DST dates × 3 anchors × 3 durations, 12h toggle, add, empty
+  name refused, remove, corrupt hash falls back to the default team). **0 console or page errors.**
+- **One UI defect (Ron's ticket):** the timeline legend says "Green underline = suggested window". In fact attendees'
+  cells are **solid green**, and only people left out of a window get the thin underline. With two partial windows,
+  as in Ron's 4-person case, the view reads as noise even though the windows are right. **Ron's 4- vs 5-person
+  difference is the spec's rule working:** with 4, two trios tie at 3 of 4, so both windows show; with 5, only the
+  morning window reaches 4 of 5. The UI sweep checks this logic across 150 rosters. On scrolling: at 1280 px the
+  timeline is `overflow-x: auto` and overflows by 14 px. Recorded as Ron's report plus that measurement.
+
+### Process (recorded, never scored)
+
+| | s55m1 (all Sonnet 5.5) | mtg1 (flash) | mix1 (Opus plan+review) | rmix1 (Opus reviewer) |
+|---|---|---|---|---|
+| value defects (our sweep) | **0** (span reachable, 1,348 biting) | 1 class (span) | 0 (span unreachable) | 3 classes |
+| verdict path | review_2 (1 revision) | review_3 | review_2 | review_3 |
+| `V` rows: plan → end | 167 → 170 | 56 → 73 | 150 → 156 | 53 → 70 |
+| billed | **$3.61** | $1.81 | $31.42 | $5.94 |
+| wall clock (phases) | ~27 min | — | ~102 min | — |
+
+Per seat: planner $1.27, reviewer $0.88, builder $0.73, test designer $0.68, documenter $0.06.
+
+### What this changes
+
+1. **All-Sonnet passed the edge-heavy brief:** 0 value defects in 5.04M checks, with the hardest known class
+   reachable and exact. It cost $3.61, against mix1's $31.42. With s55t1, that is 2/2 on two different briefs, which
+   makes it the frozen-roster candidate. N=1 per brief, so a replicate on the meeting planner is the gate before
+   freezing.
+2. **The planner closed the span class by writing the rule, not a row.** That is a new mechanism. Earlier arms
+   either shipped it or never reached it. A prose rule implemented verbatim worked here. No row pinned it, so a
+   different builder could still have taken the shortcut. The span row remains worth wanting.
+3. **The Sonnet reviewer behaved like rmix1's Opus reviewer:** it found a real defect outside the key, measured in a
+   browser.
+4. **Two Sonnet habits, now seen 2/2:**
+   - (a) the reviewer submits boilerplate `value_checks`, which `values_swept` cannot tell from real ones (item 8 is
+     now more urgent)
+   - (b) the builder skips the screenshot even when prompted. Here that cost a revision.
+
+Artifacts: `.sandbox/runs/s55m1-20261003-b37ef8-artifacts/`: `span_power.ts`, `sweep_s55m1.ts` + `.out`,
+`mutate.out`, `ui_read.js`, `hashes.ts`, `ui_compare.ts` + `.out`, `ui_chromium.json`, `browser.py` + `.json`,
+`rev_sweep.out` and 65 generation records. Screenshots: `specs/greenfield-judge/judge-s55m1-{four,five}.png`.

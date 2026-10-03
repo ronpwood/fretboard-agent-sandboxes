@@ -4,10 +4,11 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Start here (next session):** s55t1 is judged (CHANGELOG 2026-10-03c). The all-Sonnet team arm was deploy-grade
-per Ron, with 0 value defects in 13,234 checks, for $4.47. Torn down. The next
-seat-test question is whether all-Sonnet holds on the meeting planner, the brief with an exact oracle where the
-reviewer seat mattered (mix1/rmix1). Pre-register it against rmix1/mix1/mtg1. Greenfield is synced at `a16a6c3`.
+**Start here (next session):** s55m1 is judged (CHANGELOG 2026-10-03e). All-Sonnet 5.5 passed the meeting planner with
+0 value defects in 5.04M checks, the DST-span class reachable and exact for the first time, for $3.61. With s55t1 that
+is 2/2. Next: **a replicate of s55m1** (same pin, same roster) before freezing all-Sonnet as the production roster.
+Then NEXTSTEPS 7 item 8 (`values_swept` accepts boilerplate, seen 2/2 on Sonnet). Ron's UI ticket for s55m1 is the
+timeline legend (solid green vs "underline"). The s55m1 VM is up, pending Ron's teardown call.
 
 **Recently run (2026-10-02):** an adversarial review of the whole repo by four read-only reviewers, with every
 high-severity claim verified (private Claude Doc "Adversarial Codebase Review — 2026-10-02"). Closed the same day:
@@ -252,7 +253,7 @@ Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ra
      in `mount_one.md`
    - delete the stray shirt images and the drifted `.claude/skills/sssf/templates/` copy
 7. **Teardown, next in line:** check pid liveness before reading spend or destroying (`kill -0` with a sentinel).
-8. **`values_swept` accepts boilerplate** (from s55t1, CHANGELOG 2026-10-03c). A reviewer's retry passed with 317
+8. **`values_swept` accepts boilerplate** (from s55t1 AND s55m1, CHANGELOG 2026-10-03c/e: 2/2 Sonnet reviews). A reviewer's retry passed with 317
    `value_checks` that all read `expected:"spec", actual:"equal"`. An honest sweep stood behind it this time.
    Cheapest fix: require each entry's `expected` to match the `V` row's expected text (or contain it), so a copied
    placeholder fails. Calibrate on the corpus envelopes first; earlier reviews may have abbreviated legitimately.
