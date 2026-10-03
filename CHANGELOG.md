@@ -6107,3 +6107,12 @@ recorded here in a follow-up commit, before mounting, because approval came befo
 - Against bare-s55: harness (pi vs Claude Code), app shell and the factory all differ, alongside the process.
 - Against team2: the model, the de-domained prompts and 35 files of factory change all move together.
 - The pi version and the Claude Code version on the image are recorded at mount.
+
+**Mounted** `s55t1-20261003-2467f5` on greenfield, adw `13837788`, pid 1766, `team` ADW via
+`execute <id> prompts/greenfield.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team`, with a $40 limit.
+**Check 0 PASSED:** gates A–F ("GATE PASSED"); VM HEAD `a16a6c3` matches the pin; tree clean; brief present; pi
+0.87.1 (gate F DRIFT against the 0.85.1 image row is the known pending lock bump); Claude Code on image 2.1.284.
+**Check 1 PASSED:** gate C listed exactly one model, `pass anthropic/claude-sonnet-5.5`. This is the first live use
+of `mount --config`.
+**Check 2, partial:** the process args end in `--config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`. run.log
+shows `planner openrouter/anthropic/claude-sonnet-5.5`. The planner's reasoning effort will be read from the trace.
