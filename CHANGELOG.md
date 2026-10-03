@@ -6376,3 +6376,12 @@ limit** is about 2× the top, so a third review cannot be cut off.
   own misses.
 - The installed Google Chrome version at judging time is recorded. Class (c) is browser-version-sensitive by nature.
 - The pi and Claude Code versions are recorded at mount.
+
+**Mounted** `s55m1-20261003-b37ef8` on greenfield, adw `aff5683f`, pid 1777, `team` ADW via
+`execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team`, with a $40 limit.
+Before mounting, the host's sync paths were confirmed unchanged since the `a16a6c3` sync (`git diff 6ffc824 HEAD` over
+them is empty). **Check 0 PASSED:** gates A–F; VM HEAD `a16a6c3` matches the pin; tree clean; brief present (676
+bytes); pi 0.87.1 (known image DRIFT); Claude Code 2.1.284. **Check 1 PASSED:** gate C listed exactly
+`anthropic/claude-sonnet-5.5`. **Check 2 PASSED:** the process args end in `--config
+adws/adw_sssf_config/sssf.team-sonnet.config.yaml`, and the live planner pi carries `--model
+anthropic/claude-sonnet-5.5 --thinking high`.
