@@ -6385,3 +6385,32 @@ bytes); pi 0.87.1 (known image DRIFT); Claude Code 2.1.284. **Check 1 PASSED:** 
 `anthropic/claude-sonnet-5.5`. **Check 2 PASSED:** the process args end in `--config
 adws/adw_sssf_config/sssf.team-sonnet.config.yaml`, and the live planner pi carries `--model
 anthropic/claude-sonnet-5.5 --thinking high`.
+
+**In-flight observation, recorded 2026-10-03T09:45:27-07:00 (commit time) BEFORE any outcome** (the test designer is running; no build, no review):
+- **P3 needed a correction:** the first `spec_form` failed "no derivation in the last column" on 19 rows (V61–V134);
+  the in-session retry passed.
+- The committed spec `c05c8f2` (`specs/aff5683f_timezone_meeting_planner.md`, 35 KB) has **167 `V` rows**
+  (mtg1 56, mix1 150, rmix1 53 at plan), 12 requirements and 14 traps.
+- **Design:**
+  - Participants have working hours `[startMin, endMin)`, with 0 ≤ start < end ≤ 1440. Overnight shifts are
+    **rejected**, so class (d) wrapped hours has a declared policy: refusal.
+  - There is no sleep window. Windows are searched over the anchor day's 15-minute starts (92/100 on DST days).
+  - An R9 converter takes wall-time input. A gap is an **error with no times shown**; an overlap resolves to the
+    **earlier** instant and is **flagged**. So class (b) is reachable, with a declared policy.
+  - R7's per-participant timeline of the anchor day can show rmix1's reference-column-in-the-gap class.
+  - Offsets are shown numerically (`UTC-05:00`, R8). `cityLabel` is a `time.ts` export, not yet read.
+- **P5 at plan:**
+  - Transition instants: covered (V19–V22, V47–V49).
+  - Gap and overlap walls: covered (V53–V58, UI V146/V147, in NY, London and Sydney).
+  - Date rollover: covered (V129–V133).
+  - 23/25-hour days: covered (V89–V93, V111/V112).
+  - **A meeting spanning its own zone's transition: MISSED.** V110 is a DST-day window starting after the change.
+    V111/V112 use 00:00–24:00 hours, where a span cannot change the verdict.
+  - **But the spec states the correct rule in prose:** a candidate is OK iff the participant's local reading of
+    `t` *and of `t+len`* fall on the same local day, with `endReading ≤ endMin`. It lists "checking only the
+    start … not that it ends inside" as a trap. So the rule is stated but no row pins it.
+- **spanPower on that rule** (durations 15–180, years 2025–2026, 1,160 own-transition spans per profile):
+  - default 09–17, 00–24, 22–24 and 18–24 have power **0**
+  - 00–03 has **430**, 00–02:30 **346**, 01–03 **294**, 00–04 **278**
+  - **The class is reachable.** These four profiles are pre-registered for P4(a) and carried into the sweep verbatim.
+    Script: `.sandbox/runs/s55m1-…-artifacts/span_power.ts`.
