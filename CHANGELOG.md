@@ -6414,3 +6414,17 @@ anthropic/claude-sonnet-5.5 --thinking high`.
   - 00–03 has **430**, 00–02:30 **346**, 01–03 **294**, 00–04 **278**
   - **The class is reachable.** These four profiles are pre-registered for P4(a) and carried into the sweep verbatim.
     Script: `.sandbox/runs/s55m1-…-artifacts/span_power.ts`.
+
+**Run complete:** 16/16 phases. review_1 **rejected** (11/12 requirements, 167/167 values): the timeline's UTC tick
+labels sat about 5 slots off their cells (R7). The reviewer found it outside the key, measured in real Chromium with
+`render_smoke --eval`. After a `values_swept` retry in-session, revise_1 fixed it, and A1 (builder) turned the finding
+into rows V168–V170. review_2 **approved**: 12/12, 170/170. Harvested 4 commits to `refs/sandbox/s55m1-20261003-b37ef8`;
+traces home; no planner subagent sessions. **Cost, reconciled per generation before teardown:** 65/65 ids resolved, all
+`claude-sonnet-5.5-20260928`, summing to **$3.6138** against the key's **$3.61386**. 3.43M input tokens (90.8% cached),
+220k output. Per seat: planner $1.27, reviewer $0.88, builder $0.73, test designer $0.68, documenter $0.06.
+
+**Measure 0, Ron's verdict, recorded 2026-10-03 BEFORE any scored item (verbatim):** "App looks good from my testing.
+There's a slight visual problem with adding a fourth person in the section where it gets added here Working hours
+across the day (UTC-aligned) doesn't scroll to allow visual display. But when I had a fourth person, it seems to work
+fine, so probably just a minor visual bug." He did not choose between deploy and MVP explicitly, and none is
+assigned for him.
