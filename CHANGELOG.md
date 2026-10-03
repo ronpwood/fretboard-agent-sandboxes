@@ -5945,3 +5945,33 @@ ratio.
 All earlier selftests still pass (agent_pi, permissions 340, suite_changes 23, teardown 7, meeting oracle 5). The
 greenfield factory is **not re-synced**: the next greenfield run's sync carries these, and its pre-registration must
 name them.
+
+
+## 2026-10-03 — 5.5 seat-test prep: `mount --config` reaches gate C; team prompts de-domained; an all-Sonnet team roster
+
+NEXTSTEPS 7.4 closed. All three changes touch the team arm only. The frozen control (`prompt_engineering/`,
+`sssf.config.yaml`) is untouched.
+
+**1. `mount` could not pick a roster.** `mount.just` called `setup "$ID"` with no CONFIG, and `create` rejects
+unknown flags, so every mount's gate C pinged `sssf.config.yaml`, whatever the arm would execute on. `mount` now
+takes `--config PATH` (or `--config=PATH`), strips it from `create`'s flags, passes it to `setup`, and prints it in
+the `execute` hint. A missing path fails before a key is minted or a VM booted.
+- Checked with a stub `just` on PATH, 5 cases: with `--limit`/`--target`, `=` form, none, missing file (exit 2),
+  missing value (exit 2). No config means the same behaviour as before.
+- Not changed: an empty CONFIG still falls back to `sssf.config.yaml`, not the team roster that `execute` defaults
+  to. Today the two hold the same four models, so it is harmless. Pass `--config` whenever the roster differs.
+
+**2. Team prompts de-domained.** The team prompts carried fretboard examples and "a previous run" stories: chord
+cards, minor keys, `F major with A# instead of Bb`, the chromatic-synth story, London/GMT in Chrome 154, and "18 of
+one build's 20 tool errors". Each story's rule is kept in domain-neutral words; the story is dropped. Examples are
+now a tax calculation (`3 × $19.99 + 8.25% = $64.92`, `8.25% of $59.97 = $4.95`, both half-up), from no brief we
+have run. Changed: `team.md`, `planner/`, `builder/`, `reviewer/`, `test_designer/system.md` and
+`tool_contracts.md`, 53+/43−. The permissions selftest still passes (340 cells): the prompts are still write-locked.
+- **This is a factory change for the team arm.** The next team run is not prompt-identical to team1/team2, amort,
+  mtg1, mix1 or rmix1, and its pre-registration must say so. The stories were coaching (see harness restraint);
+  whether removing them costs anything is a question the next run answers, not this entry.
+
+**3. `sssf.team-sonnet.config.yaml`:** `sssf.team.config.yaml` with every model line (the default plus the
+planner, reviewer and documenter pins) on `anthropic/claude-sonnet-5.5`. The loaded configs differ in `.model` on
+the defaults and all six agents, and nothing else. Gate C's parser yields exactly one model. Host pi answered a
+`--thinking high` ping through OpenRouter. Not yet run on a VM.

@@ -4,9 +4,10 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Start here (next session):** NEXTSTEPS 7.4, the 5.5 seat-test prep, which is the stated direction. Before
-the next greenfield VM run, `just target sync greenfield --push`. The 7.3 runtime fixes (CHANGELOG 2026-10-02e)
-are not on the target yet, and that run's pre-registration must name them as factory changes.
+**Start here (next session):** 7.4 is closed (CHANGELOG 2026-10-03): `mount --config`, the team prompts de-domained,
+and an all-Sonnet team roster (`sssf.team-sonnet.config.yaml`). Next: pre-register the first 5.5 seat test. Before
+any greenfield VM run, `just target sync greenfield --push`. The target is at `526aa07`, which lacks the 2026-10-02e
+runtime fixes and the 2026-10-03 prompt change. That run's pre-registration must name both as factory changes.
 
 **Recently run (2026-10-02):** an adversarial review of the whole repo by four read-only reviewers, with every
 high-severity claim verified (private Claude Doc "Adversarial Codebase Review — 2026-10-02"). Closed the same day:
@@ -229,8 +230,7 @@ host — pi's built-in openrouter entry for opus-5.5 returns 404.
 
 ## 7. Adversarial review 2026-10-02 — remaining (original items 1–3 closed: CHANGELOG 2026-10-02 to 2026-10-02e)
 
-Numbers are kept as first queued, because the CHANGELOG cites them, so 2 is gone. Suggested order: **4** (seat
-tests are next), then **7** (small, same teardown file as 2026-10-02), **6** (cheap), **5** (needed before real
+Numbers are kept as first queued, because the CHANGELOG cites them, so 2 and 4 are gone. Suggested order: **7** (small, same teardown file as 2026-10-02), **6** (cheap), **5** (needed before real
 projects), and **3** (needs a corpus calibration session).
 
 Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ranked:
@@ -245,10 +245,6 @@ Full report: private Claude Doc "Adversarial Codebase Review — 2026-10-02". Ra
    zero clicks landed. Apps still pass at 1/77 (gf3-1) or 20/41 (rmix1), with controls blocked or vanishing. Before
    any ratio becomes a failure, run `render_smoke_corpus.sh` and check it fires on the known-bad apps and nothing
    else.
-4. **Before the 5.5 seat tests:**
-   - strip fretboard terms and "a previous run" stories from the team prompts
-   - build a Sonnet 5.5 roster on the team prompts
-   - `mount` must forward `--config` (gate C pings the wrong roster)
 5. **Before real projects:** gate commands (`lint`/`typecheck`/`build`/`test`) in `app.manifest.yaml`. Bun + TS is
    hard-wired today.
 6. **Cheap cleanup:**
