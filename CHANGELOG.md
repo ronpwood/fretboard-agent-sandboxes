@@ -6228,3 +6228,151 @@ Artifacts: `.sandbox/runs/s55t1-20261003-2467f5-artifacts/` (84 generation recor
 **Torn down 2026-10-03 (Ron's decision, same day):** harvested again with the tree clean, key revoked and verified
 absent from OpenRouter, VM destroyed, record closed, `reap` clean. Final billed spend **$4.468**, matching the
 pre-teardown per-generation reconciliation.
+
+
+## 2026-10-03d — PRE-REGISTRATION: s55m1, the all-Sonnet team arm on the meeting planner
+
+**Approved by Ron before mounting** (2026-10-03, "Approve as written, mount it"). Nothing above the mount record
+changes after the approval commit.
+
+**The question:** s55t1 showed that all-Sonnet clears a brief whose values are table lookups (2026-10-03c). The
+meeting planner is the brief where edges are the defects. Three team arms ran it, and each shipped or dodged edge
+classes in a different way:
+- **mtg1** (flash, glm reviewer): shipped the DST-span class.
+- **mix1** (Opus 5 planner + reviewer): clean, but the span class was unreachable under its spec (2026-10-02d).
+- **rmix1** (Opus 5.5 reviewer only): shipped the span class in both directions, a reference column in the spring
+  gap, and London's winter label in Chrome 154. Its reviewer found 6 real defects outside the key.
+
+**With Sonnet 5.5 in every seat, does the team arm ship zero reachable value defects on the edge-heavy brief, and
+does its key reach the edges no planner has yet written down (a meeting that spans a transition)?** Cost is
+recorded, not scored.
+
+**The arm:** `team` ADW (`adw_team_sdlc.py`, MAX_REVISIONS=2), roster `sssf.team-sonnet.config.yaml`, unchanged since
+s55t1. Thinking: planner, test designer and reviewer `high`; builder, scout and documenter `medium`. Brief
+`prompts/meeting-planner.md`, greenfield at **`a16a6c3`** (already synced and pushed; the host has not moved its sync
+paths since). **N=1**, **$40 key limit**.
+
+**The brief, oracle and GRID are verbatim from 2026-09-28f.** The brief and the app shell are byte-identical between
+mtg1's pin `b4906f7` and `a16a6c3` (`git diff --stat` is empty). The oracle is `specs/oracles/meeting_oracle.ts`:
+rule-based, independent of Intl/tzdb, self-test 5/5 including `spanPower`, re-run 2026-10-03. The GRID is 17 zones ×
+22 instants with all ordered pairs.
+
+### Comparisons, and what each one holds
+
+| arm | planner | builder | reviewer | holds | differs |
+|---|---|---|---|---|---|
+| `mtg1` (2026-09-28g) | gemini-3.8-flash | deepseek-v4.1-flash | glm-5.3 | brief, oracle, chain | every model; factory +42 files |
+| `mix1` (2026-09-29c, corrected 10-02d) | Opus 5 | deepseek-v4.1-flash | Opus 5 | brief, oracle, chain | every model; factory +42 files |
+| `rmix1` (2026-09-30c) | gemini-3.8-flash | deepseek-v4.1-flash | Opus 5.5 | brief, oracle, chain | every model; factory +36 files |
+
+No comparison isolates one variable. This run asks whether the cheapest uniform frontier roster reaches the
+standard the mixed rosters set. It does not ask which seat earns it.
+
+### The factory moves, and that is named here
+
+Since rmix1's pin `6f54f9e`, the factory paths have moved by 36 files (+1315/−168). For this brief, the changes that
+bear on the known defect classes:
+- **The 2026-09-30d reviewer rules, written FROM rmix1's misses.** A value the user reads off the page is checked in
+  real Chromium (`render_smoke.py --eval`). A user-visible value built from `Intl` display names is a finding. The
+  rmix1 London/Chrome 154 story that motivated the second rule was removed on 2026-10-03; the rule remains. **If
+  this arm avoids rmix1's class 3, the rule is a candidate cause, not only the model.**
+- Heading guards on `amendments_ruled`/`values_swept`, and the reviewer's frozen-spec diff hint (2026-09-30d).
+- The grader lock (2026-10-02), suite changes surfaced to the reviewer (2026-10-02b), the 2026-10-02e runtime fixes,
+  and the de-domained team prompts (2026-10-03).
+
+### Launch
+
+```
+just sbx mount s55m1 --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.team-sonnet.config.yaml
+just sbx lifecycle execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team
+```
+
+**Expected cost: $6–20.** On CoF, Sonnet used 0.35× team2's input tokens (6.3M vs 17.9M) at about $0.71 per million,
+blended and cached. The meeting planner drew 21.8M (mtg1) to 47.1M (mix1) input tokens on other rosters. Scaling by
+0.35 gives 7.6–16.5M, or about $5–12. The top of the range allows for three reviews, which rmix1 used. The **$40
+limit** is about 2× the top, so a third review cannot be cut off.
+
+### Mount-time checks
+
+0. Gates A–F pass (gate E: credit covers the open run). HEAD `a16a6c3`, tree clean, `prompts/meeting-planner.md`
+   present, pi version recorded.
+1. Gate C lists exactly one model, `anthropic/claude-sonnet-5.5`, and passes.
+2. The process args end in `--config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`. The live planner pi
+   process carries `--model anthropic/claude-sonnet-5.5 --thinking high`.
+
+### Recorded in flight, at plan, BEFORE any outcome
+
+- `V` and trap counts, and P5 per edge class.
+- **The span class's reachability, by `spanPower` on the committed spec's own endpoint rule (2026-10-02d).**
+  - Power 0 for every profile the spec allows: the span class is declared **unreachable under this spec**, and P4's
+    span rows are reported as "no power", never "exact".
+  - Power > 0: the profiles with the most biting cases are fixed then (mtg1's `owl` and `shortnight` if the spec's
+    hours admit them) and carried into the sweep verbatim.
+- Whether the design offers wall-time input (gap/overlap reachability) and editable hours (span and wrapped-hours
+  reachability).
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument):** every review has a `value_check` for every effective `V` and a declared `value_sweep.*`,
+  **and the sweep script compares each row to the frozen expected value**, read from the script itself, not the
+  envelope. **Recorded:** whether the entries carry real actuals or boilerplate (the open NEXTSTEPS 7 item 8).
+- **P2:** at least one amendment is proposed and ruled on, and every accepted ruling is correct on first principles
+  (checked by us).
+- **P3:** every trap cites an existing `V` row. **Recorded:** whether `spec_form` needed a correction.
+- **P4 (primary):** zero reachable value defects, judged by our sweep with the 2026-09-28f rules verbatim. It sweeps
+  each known class explicitly:
+  - (a) **DST span:** classification of meetings crossing the member's **own** transition, on the
+    pre-registered biting profiles. If the spec makes it unreachable, it is reported as "no power" and excluded
+    from P4, not counted as met.
+  - (b) **gap walls:** any wall→instant path (input or generated column) that lands a spring-gap wall on a silent
+    wrong instant.
+  - (c) **`Intl` display names:** every user-visible zone label read in **both** Playwright's bundled Chromium and
+    the installed Google Chrome, plus a code read. A label derived from `Intl` display names is a defect, even if
+    both browsers happen to agree.
+  - (d) **wrapped hours and end-inclusive cores,** judged under the spec's **declared** policy. With no policy
+    declared, it is recorded as a gap, as in mix1/rmix1, not as a defect.
+  A feature the app does not offer makes its rows N/A, recorded.
+- **P5 (the edge-key bet):** at plan, before any amendment, the key has at least one row each for a DST transition
+  instant, a gap or overlap wall, a date rollover, **and a meeting that spans its own zone's transition**. No planner
+  has ever written the last one (mtg1, mix1, rmix1). s55t1's planner wrote 317 rows unprompted, so I predict it here.
+  A miss on the span row alone repeats the pattern "the key guards only the edges it contains".
+- **P6 (looking):** the builder reads at least one screenshot, and the reviewer reads at least one `V` value through
+  `render_smoke.py --eval` in Chromium.
+- **P7 (the reviewer seat):** in at least one review, the Sonnet reviewer checks something outside the key (an
+  independent probe, oracle or derivation that is not a `V` row), as rmix1's Opus reviewer did six times.
+- **P8 (robustness):** no non-model loss; every `provider_retry` and every timeout is recorded.
+
+### Outcome measures, in order
+
+0. **"Would you use it? Deploy, or MVP?"** Ron's judgment, recorded **before** any scored item.
+1. P4's sweep, mutation-tested before it is believed: planted errors that include **one span-specific and one
+   gap-specific mutation**, so the classes this brief is known for are proven visible to the sweep.
+2. A scripted real-browser interaction pass with zero console errors, and the render gate's click coverage.
+
+### How the result reads
+
+| P4 | P5 (span row at plan) | reading |
+|---|---|---|
+| met | met | All-Sonnet closes the edge brief by the key itself, which no earlier roster did. It is the frozen-roster candidate for edge-heavy work too |
+| met | missed | Clean, but not because the key guarded the span. Read the spanPower record: with power 0 the class was untested (mix1's situation); with power > 0, credit design or review and say which |
+| missed | met | The key named the edge and the code still shipped it. That is a review or sweep failure: read P1's script and P7 |
+| missed | missed | The edge pattern repeats on Sonnet. A frontier reviewer seat (rmix1) or planner (mix1) is still needed for edge-heavy briefs, so price an all-Sonnet + Opus-reviewer roster |
+
+### Recorded, not scored
+
+- `V` counts at plan and at the end; amendments and their rulings; traps and the edge classes they name.
+- For each reviewer finding: a `V` sweep or an outside-the-key probe, and whether it became a key row.
+- Whether the app uses Intl/tzdb, a hand-rolled table or fixed offsets.
+- The review trajectory. Accept/reject is not a quality ranking.
+- Tokens per seat (uncached, cache read, cache write, output), wall clock, and billed $ per seat, reconciled per
+  generation **before teardown**, including planner subagent sessions (`~/.pi/agent/sessions/subagents/`, which the
+  trace pull misses).
+
+### Confounds
+
+- N=1 against N=1 per comparison. Model and sampling are not separable. A clean P4 earns a replicate before any
+  roster freeze.
+- Every comparison moves every model **and** 36–42 files of factory, including reviewer rules written from rmix1's
+  own misses.
+- The installed Google Chrome version at judging time is recorded. Class (c) is browser-version-sensitive by nature.
+- The pi and Claude Code versions are recorded at mount.
