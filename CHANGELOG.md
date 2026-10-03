@@ -6116,3 +6116,21 @@ recorded here in a follow-up commit, before mounting, because approval came befo
 of `mount --config`.
 **Check 2, partial:** the process args end in `--config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`. run.log
 shows `planner openrouter/anthropic/claude-sonnet-5.5`. The planner's reasoning effort will be read from the trace.
+
+**In-flight observation, recorded 2026-10-03T08:41:20-07:00 (commit time) BEFORE any outcome** (the test designer is running; no build, no review):
+- **Check 2 completed:** the live planner's pi process runs with `--model anthropic/claude-sonnet-5.5 --thinking high`,
+  and its trace carries `thinking_delta` events. The usage field `reasoning` reads 0 on every generation, because
+  the Anthropic route does not populate it; thinking is billed as output. Caching works: cache reads grow every turn.
+- The committed spec `e03cfb3` (`specs/13837788_circle-of-fifths-guitar.md`, 90 KB) has **317 `V` rows** at plan
+  (team2: 78 at plan, 101 at the end), 15 requirements and 12 traps. The planner fixed the DOM contract in the
+  requirements (ids, classes, `data-*`), so most of the UI can be checked mechanically.
+- **P7 MET at plan:** `scale()` rows cover all 26 keys (13 major + 13 minor, with F#/Gb and D#/Eb both spelled),
+  including E# (F# major, D# minor) and Cb (Gb major, Eb minor). `fretboardCells()` rows cover every key, including
+  E# named on the F# neck (V223, V224). I hand-checked the extreme rows; all are correct.
+- **Scope decisions that bear on the predictions:**
+  - The spec has **no chord diagrams or voicings**. Chord cards carry a `.capo-shape` instead (R9). P4b is judged
+    on the per-instance form the spec states: every `.chord-card` carries its numeral, name, function, notes and
+    capo shape, in every key.
+  - **Audio is optional**, listed under `## Left to the builder` as "a 'listen' Web Audio button — only if guarded".
+    No `V` row covers sound. **If the builder adds no audio, P5 (T1) is NOT OBSERVABLE and is reported as such,
+    not as met.** bare-s55 shipped audio, so a missing channel is also a scope difference against it.
