@@ -6224,3 +6224,7 @@ spread, unlike mix1, where two Opus seats were 98.5% of the bill.
 
 Artifacts: `.sandbox/runs/s55t1-20261003-2467f5-artifacts/` (84 generation records, `sweep_s55t1.ts`, `chromium_compare.ts`, `chromium_read.js`, `interact.js`, `narrow.py`); screenshots `specs/greenfield-judge/judge-s55t1-{home,360}.png`, traces in
 `.sandbox/traces/s55t1-20261003-2467f5/`.
+
+**Torn down 2026-10-03 (Ron's decision, same day):** harvested again with the tree clean, key revoked and verified
+absent from OpenRouter, VM destroyed, record closed, `reap` clean. Final billed spend **$4.468**, matching the
+pre-teardown per-generation reconciliation.
