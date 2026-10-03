@@ -6036,6 +6036,12 @@ just sbx lifecycle execute <id> prompts/greenfield.md adws/adw_sssf_config/sssf.
 and $2–5 of output. The range is wide because Sonnet's turn count and thinking volume are unknown. The **$40 limit**
 is roughly 2.5× the top of the range, so a third review cannot be cut off, and it still bounds a cache failure.
 
+**Synced 2026-10-03T15:28Z:** the greenfield pin moves from `526aa07` to **`a16a6c3`** (synced from host `6ffc824`, the
+approval commit). The diff is exactly 24 files: the 2026-10-02e runtime fixes (`agent_pi.py` + selftest,
+`render_smoke.py` + selftest + 4 fixtures, test_4 in 5 ADWs) and the 2026-10-03 changes (6 team prompt files, the
+new roster, `mount.just`). The leak check is clean, and the manifest, build, test and rosters gates pass. The pin is
+recorded here in a follow-up commit, before mounting, because approval came before the sync.
+
 ### Mount-time checks
 
 0. Gates A–F pass, and gate E confirms credit covers the open run. HEAD is the pin recorded at approval, the tree
