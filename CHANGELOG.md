@@ -5975,3 +5975,129 @@ have run. Changed: `team.md`, `planner/`, `builder/`, `reviewer/`, `test_designe
 planner, reviewer and documenter pins) on `anthropic/claude-sonnet-5.5`. The loaded configs differ in `.model` on
 the defaults and all six agents, and nothing else. Gate C's parser yields exactly one model. Host pi answered a
 `--thinking high` ping through OpenRouter. Not yet run on a VM.
+
+
+## 2026-10-03b — PRE-REGISTRATION: s55t1, the team arm with Sonnet 5.5 in every seat
+
+**Approved by Ron before mounting** (2026-10-03, "Approve as written, sync and mount it"). Nothing above the mount
+record changes after the approval commit.
+
+**The question:** bare Sonnet 5.5 reached a correct 31/32 **MVP** in one 2-minute turn for $0.33 (2026-09-30e).
+Ron's verdict was "Opus was ready to deploy, Sonnet did a great MVP". It never opened a browser, and its audio played
+from a table no test asserted (T1 strict fail). **With the model held at Sonnet 5.5, does the team process (a
+frozen answer key, a red suite, a builder who looks, an independent reviewer with revisions) turn the MVP into
+something Ron would deploy?** Cost and wall clock are recorded, not scored.
+
+**The arm:** `team` ADW (`adw_team_sdlc.py`, MAX_REVISIONS=2), roster `sssf.team-sonnet.config.yaml`, which is
+`sssf.team.config.yaml` with every model line on `anthropic/claude-sonnet-5.5`. Thinking is held: planner, test
+designer and reviewer `high`; builder, scout and documenter `medium`. Brief `prompts/greenfield.md`, target
+greenfield, **N=1**, **$40 key limit**.
+
+**The brief is byte-identical** at all three pins: bare-s55 (`59b1738`), team2 (`d6d461c`) and the current
+`526aa07` (`git diff --stat` on `prompts/greenfield.md` is empty for both). The **app shell** matches team2's pin
+exactly. Against bare-s55's pin it gained `apps/app/test-dom.ts` and a revised `app.test.ts` render smoke.
+
+### Comparisons, and what each one holds
+
+| arm | model | process | holds | differs |
+|---|---|---|---|---|
+| `bare-s55` (2026-09-30e) | Sonnet 5.5 | one Claude Code turn | **model**, brief | process, harness (Claude Code vs pi), app shell |
+| `team2` (2026-09-26g) | flash roster (deepseek/gemini/glm) | team | brief, app shell, chain | model, team prompts (de-domained 2026-10-03), factory since `d6d461c` |
+| `team1` (2026-09-26d) | flash roster | team, before the 09-26e levers | brief | as team2, plus the levers |
+
+Against bare-s55, the move is the process. Against team2, it is the model **plus** the factory changes listed below.
+Neither comparison isolates one variable, and this run does not claim to.
+
+### The factory moves, and that is named here
+
+The greenfield sync before mounting carries everything since `526aa07`: the **2026-10-02e runtime fixes** (pi orphan
+kill, test_4 after the last fix, render exit codes, the click pass) and **2026-10-03** (`mount --config`, the
+de-domained team prompts, the new roster). Since team2's `d6d461c`, the factory paths have moved by 35 files
+(+1349/−1075). That includes the 09-30d levers (heading guards, the frozen-spec diff, real-browser value reads),
+2026-10-02's grader lock, and 2026-10-02b's suite changes surfaced to the reviewer.
+
+**The prompt confound is specific.** team2's prompts carried stories drawn from team1's defects **on this same
+brief** (minor-key spelling, a diagram per chord card, F major with A#). Those stories are now gone; the rules
+remain. So this run also tests, crudely, whether the de-domained rules still carry the classes the stories named
+(P4a, P7). The sync must show exactly the expected paths. The leak grep over the synced paths must have zero hits.
+The new pin is recorded in the approval commit.
+
+### Launch
+
+```
+just target sync greenfield --push
+just sbx mount s55t1 --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.team-sonnet.config.yaml
+just sbx lifecycle execute <id> prompts/greenfield.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team
+```
+
+**Expected cost: $8–15.** team2 put 17.9M input tokens through 206 turns (builder 9.0M, reviewer 5.3M, planner
+2.0M, test designer 1.2M, documenter 0.4M; peak occupancy 169k). The OpenRouter Anthropic route caches: mix1 hit
+97.1%. At Sonnet 5.5's $2/$10 (cache read $0.20, write $2.50), that gives about $3.5 of cache reads, $1.5 of writes
+and $2–5 of output. The range is wide because Sonnet's turn count and thinking volume are unknown. The **$40 limit**
+is roughly 2.5× the top of the range, so a third review cannot be cut off, and it still bounds a cache failure.
+
+### Mount-time checks
+
+0. Gates A–F pass, and gate E confirms credit covers the open run. HEAD is the pin recorded at approval, the tree
+   is clean, the brief is present, and the pi version is recorded.
+1. **First live use of `mount --config`:** gate C's log lists exactly one model,
+   `anthropic/claude-sonnet-5.5`, and its ping passes. This is the positive roster check that rmix1 could only do
+   partially (2026-09-30b check 0).
+2. The process args end in `--config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`. The planner's first
+   `agent_sessions` row shows `anthropic/claude-sonnet-5.5`. The reasoning effort the trace sends for the planner
+   is `high`.
+
+### Predictions (a miss is a result)
+
+- **P1 (instrument):** every review has a `value_check` for every effective `V`, plus a declared `value_sweep.*`.
+- **P2:** at least one amendment is proposed and ruled on.
+- **P3:** every trap in the committed spec cites an existing `V` row. **Recorded:** whether `spec_form` needed a
+  correction.
+- **P4 (primary):** zero reachable value defects, judged by **our** sweep (team2's `sweep_team2.test.ts`, adapted to
+  this run's module surface), not the run's. It names two sub-classes because the prompt stories about them are
+  gone:
+  - (a) note spelling shown in the UI, in every reachable key
+  - (b) a chord diagram on every diatonic chord card (or the per-instance form of whatever the spec states)
+- **P5 (the process question): T1 passes.** Some committed test asserts the values reaching the audio channel,
+  and the pitches asserted are the ones played, not a parallel table. bare-s55 failed this strictly. The builder
+  prompt still asks for it, in neutral words.
+- **P6 (posture vs harness):** the builder runs `render_smoke.py` with `--screenshot` at least once, and the
+  reviewer reads at least one `V` value in real Chromium (`--eval`). bare-s55 never looked. A miss here, under
+  prompts that ask for it, says Sonnet's "doesn't look" posture outlasts instructions.
+- **P7 (de-domained key):** at plan, before any amendment, the key has spelling rows for at least one sharp key,
+  one flat key and one minor key. The planner prompt no longer names those variants. A miss is evidence that
+  the removed wording was doing work.
+- **P8 (robustness):** no non-model loss. Every `provider_retry` and every timeout is recorded.
+
+### Outcome measures, in this order
+
+0. **"Would you use it? Deploy, or MVP?"** Ron's judgment, recorded **before** any scored item, as for bare-s55.
+1. Part A /20 + Part B /12 (`specs/greenfield-cof-experiment.md`, frozen), every gate re-run by us. **Expected to
+   saturate** (bare-s55 and bare Opus 5 both scored 31), so the score is reported, not leaned on.
+2. P4's sweep, T1/T2, and the real-browser interaction pass with zero console errors.
+
+### How the result reads
+
+| P4 | Ron: deploy? | reading |
+|---|---|---|
+| met | yes | The team process closes the MVP → deploy gap on the same model. All-Sonnet is a frozen-roster candidate at a fraction of mix1's cost |
+| met | no | The values are right but it is still an MVP. The process buys correctness, not product; the deploy gap is planner scope or model, which points to 1a/1b (Sonnet draft → Opus complete) |
+| missed | yes | It looks deployable but carries a value defect our sweep found. The reviewer seat is the suspect; compare rmix1 |
+| missed | no | The process added cost without moving Sonnet. Re-check P7: if it missed too, the de-domaining may be the cause, not the model |
+
+### Recorded, not scored
+
+- `V` counts at plan and at the end; amendments and rulings; traps, and the variants they name.
+- For each reviewer finding: a `V` sweep, or an outside-the-key probe (rmix1's P7 behaviour).
+- Review trajectory. Accept/reject is not a quality ranking (fan-out 3).
+- Lines, files, tests and asserts, against bare-s55's 616 / 8 / 10 / 322 and team2's.
+- Tokens per seat (uncached input, cache read, cache write, output), wall clock, and dollars billed per seat,
+  reconciled per generation **before teardown**.
+
+### Confounds
+
+- N=1 against N=1 on both sides. Model and sampling are not separable. A clean separation earns a replicate before
+  any roster freeze.
+- Against bare-s55: harness (pi vs Claude Code), app shell and the factory all differ, alongside the process.
+- Against team2: the model, the de-domained prompts and 35 files of factory change all move together.
+- The pi version and the Claude Code version on the image are recorded at mount.
