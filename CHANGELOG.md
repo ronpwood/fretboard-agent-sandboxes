@@ -6672,3 +6672,20 @@ app." It was given after the run had finished. The diagnosis follows separately 
 verdict above as user error. **Timing, recorded honestly:** it arrived after my headless-Chromium probe results (the
 app renders and the core flows work) had been posted in chat. His re-test verdict will follow with those results
 visible. It is still given before any of our scored sweeps has run.
+
+**Before Ron's re-test verdict, at his request ("dig deeper before I weigh in"): an engineering read of the
+delivered code.** This is a code read plus the LA/Hong Kong probe. It is not the scored sweep, which has still not
+run. Shown to Ron before his verdict:
+- **LA + Hong Kong, 9–17 both, "no good time": correct.** LA 16–24Z and HK 01–09Z do not overlap. With LA
+  09–18 and HK 08–18, the app finds HK 8–9 AM = LA 5–6 PM, labelled "previous day".
+- **Size:** `planner.ts` is 159 lines (pure, `Intl` formatter cached). `main.ts` is 287 lines, with one state object,
+  slot re-renders and delegated events. There are no structural problems.
+- **UX gaps, all spec-shaped:**
+  - zone entry is IANA only ("Los Angeles" is refused)
+  - members cannot be edited, and their working hours are not shown in the member row
+  - partial slots sort count ties by start time, so organizer-midnight slots come first (R8 as written)
+  - there is no near-miss hint
+- **Small code defects found by reading:**
+  - remove and select key on `name`, so with duplicate names, Remove removes the first one
+  - the default date is today's **UTC** date, not the organizer's local date (Approach: "default today in organizer
+    zone")
