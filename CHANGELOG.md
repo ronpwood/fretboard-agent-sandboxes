@@ -6693,3 +6693,10 @@ run. Shown to Ron before his verdict:
 **Measure 0, Ron's re-test verdict (verbatim, 2026-10-04):** "MVP — correct engine, needs one UX revision". Given
 after the engineering read above and before any scored sweep. **R3 (deployable or better): MISSED.** s55m1 was
 "deployable (slight interface fix)".
+
+**Harvested** 4 commits to `refs/sandbox/s55m2-20261004-553451`; traces home (5 agent streams); no planner
+subagent sessions. **Cost, reconciled per generation before teardown:** 60/60 ids resolved, all
+`claude-sonnet-5.5-20260928`, summing to **$2.5533** against the key's **$2.55337** (the $0.0001 gap is gate D's
+ping). 2.80M input tokens (90.4% cached), 138k output. Wall clock **15.6 min** (16:44:43–17:00:21Z). Per seat:
+reviewer $0.88 (21 gens, 3 reviews), builder $0.65, planner $0.52, test designer $0.45, documenter $0.06. (s55m1:
+$3.61, 3.43M input, ~27 min.)
