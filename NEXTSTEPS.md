@@ -9,7 +9,7 @@ closes, write its result entry in the changelog and delete it here.
   for $2.55.
 - **The verdict did not:** Ron said MVP ("correct engine, needs one UX revision"), where s55m1 was deployable.
 - The variance sits in the **planner seat's UX design**: same roster, structurally different spec.
-- **DECIDED 2026-10-04c: all-Sonnet is FROZEN as the team default** (Ron: "correct engine, needs one UX pass"). Next: sync greenfield so VMs get it; then §0, the UX seat idea. Was: an Opus
+- **DECIDED 2026-10-04c: all-Sonnet is FROZEN as the team default** (Ron: "correct engine, needs one UX pass"). Synced to greenfield `2612858` (pushed). Next: §0, the UX seat idea. Was: an Opus
   planner seat (the mix1 shape, on all-Sonnet otherwise), a usability check the reviewer can rule on, or accept
   "engine-grade, needs a UX pass".
 - s55m2 is torn down. NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.

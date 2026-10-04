@@ -6855,3 +6855,8 @@ s55m2's):
 
 **Not yet on greenfield.** VMs run greenfield's copy, so a `CONFIG`-less `execute ... team` still gets the flash
 roster there until `just target sync greenfield` runs.
+
+**Synced to greenfield 2026-10-04 and pushed:** `2612858` "factory sync 2026-10-04", from host `be2df52`. 4 files
+changed: the roster header, `adw_team_sdlc.py`, `adws.just` and `execute.just`. Leak check clean; gates manifest,
+build, test and rosters ok. Greenfield's `just --dry-run adw team` resolves `sssf.team-sonnet.config.yaml`. **The
+next greenfield pin is `2612858`.** A `CONFIG`-less `execute … team` on a fresh VM now runs all-Sonnet.
