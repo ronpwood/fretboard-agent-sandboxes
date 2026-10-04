@@ -6647,3 +6647,17 @@ live planner pi carries `--model anthropic/claude-sonnet-5.5 --thinking high`.
   - If the build takes the linear end and the sweep finds span misses, the result is **R1 missed, attributed to the
     planner's delegation** (design), not to builder disobedience. It is reported beside the hint's text.
   - If the build reads the end, R1 can be met, and R2 is credited to the builder, not the spec.
+
+**In-flight, mid-run (review_2 rejected; revise_2 → review_3 pending), recorded BEFORE any sweep of ours:**
+- **Build** in 123 s. The span rule is **read at the end, by the builder's choice:** `isAvailable` computes
+  `endLocal = minOfDay + duration + (offsetAt(end) − offsetAt(start))`, which is the oracle's true end reading. It
+  also handles spans past midnight (`endLocal > 1440` fails). If P4(a) holds, R2's credit goes to the **builder**,
+  per the rule fixed above.
+- **review_1 rejected** (R12): every timeline working-hours bar is drawn 15 min too long (`+ 15*MIN` on an
+  inclusive end), **measured in real Chromium** (34.375% vs 33.33%), and is outside the key. That makes P7 met, and
+  P6 reviewer side met. It also noted no durable tests in `app.test.ts`. `values_swept` failed first on coverage (no
+  entries) and the in-session retry passed with 92 ids. Whether they are boilerplate is read at judging (P1).
+- **revise_1:** the builder proposed **A1 (V93–V95, timeline bar extents)**, and review_2 accepted it after
+  re-deriving and measuring in Chromium (P2).
+- **review_2 rejected:** bars built from `findWindows(step 15)` on the axis grid draw off-quarter-hour hours
+  (09:10–16:50) 14 min short at each end, and the axis-end clip overdraws. This is a second out-of-key probe.
