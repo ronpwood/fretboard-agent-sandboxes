@@ -6534,3 +6534,63 @@ Artifacts: `.sandbox/runs/s55m1-20261003-b37ef8-artifacts/`: `span_power.ts`, `s
 **Torn down 2026-10-03 (Ron's decision, same day):** tree clean, key revoked and verified absent from OpenRouter, VM
 destroyed, record closed, `reap` clean. Final billed spend **$3.614**, matching the pre-teardown per-generation
 reconciliation. Ron: "This is the most impressive team I've seen posted to date."
+
+## 2026-10-04a — PRE-REGISTRATION: s55m2, a replicate of s55m1 (all-Sonnet team arm, meeting planner)
+
+**Approved by Ron before mounting** (2026-10-04, "yes, pre-register and mount the replicate"). Nothing above the mount
+record changes after the approval commit.
+
+**The question:** s55m1 (2026-10-03d/e) shipped 0 value defects in 5.04M checks, with the DST-span class reachable
+and exact. Its confounds section required a replicate before any roster freeze: "A clean P4 earns a replicate".
+**Was s55m1's result the roster or one good sample?** Cost is recorded, not scored.
+
+**Everything is held constant, verified at pre-registration:**
+- Same `team` ADW, roster `sssf.team-sonnet.config.yaml`, thinking levels, brief `prompts/meeting-planner.md`,
+  greenfield pin **`a16a6c3`**, $40 limit, and oracle `specs/oracles/meeting_oracle.ts` with the GRID unchanged.
+- `git diff --stat 6ffc824 HEAD` touches only `CHANGELOG.md`, `NEXTSTEPS.md` and `specs/greenfield-judge/*.png`. No
+  factory, prompt, roster, gate or oracle file has moved since s55m1 mounted.
+- NEXTSTEPS 7 item 8 (`values_swept` boilerplate) is deliberately **not** fixed first, so the pair stays clean.
+
+**The only variables are sampling, the date, and provider-side state** (the model id is recorded per generation; s55m1
+billed `claude-sonnet-5.5-20260928` throughout).
+
+### Launch
+
+```
+just sbx mount s55m2 --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.team-sonnet.config.yaml
+just sbx lifecycle execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team
+```
+
+**Expected cost: $3–8** (s55m1: $3.61, one revision). The top allows for three reviews.
+
+### Mount-time checks, recorded in flight, predictions, outcome measures
+
+The mount-time checks 0–2 are **verbatim from 2026-10-03d**. So are the in-flight records, including **spanPower on the
+committed spec's own endpoint rule, run before any outcome**, with the most-biting profiles fixed then and carried
+into the sweep. P1–P8, the outcome measures 0–2 (Ron's "would you use it?" first) and the reading table are also
+verbatim from 2026-10-03d. P4 is swept by s55m1's harness (`sweep_s55m1.ts`, adapted only to this run's exports, with
+the adaptation diff recorded) and mutation-tested again with the span, gap and Kathmandu mutations.
+
+### Replication criteria (new, the point of this run)
+
+- **R1 (primary):** P4 met again. That is zero reachable value defects across classes (a)–(d) under the 2026-09-28f
+  rules, **with the span class's power > 0**. If this run's spec makes span unreachable, R1 is reported as "met,
+  span untested", which is weaker than s55m1 and is not a replication of its headline.
+- **R2:** the span class is closed by the same mechanism or a stronger one: the end-reading rule is stated (prose or
+  a row) and implemented verbatim. **Recorded:** whether a span row appears at plan this time (P5). My prediction is
+  that it misses again (1/1 so far), with the rule stated in prose.
+- **R3:** Ron's measure-0 verdict is deployable or better.
+- **Habits, recorded as replicating or not:** boilerplate `value_checks` (P1, 2/2 so far), no builder screenshot (P6,
+  1/1 on this brief), and the reviewer's out-of-key probe (P7, 2/2).
+
+**How it reads:**
+- R1 and R3 met: all-Sonnet is 3/3 across two briefs. **Freeze it as the production roster**, then fix item 8.
+- R1 missed: s55m1 was partly a good sample, as harn2 was (2026-09-23). Price an all-Sonnet + Opus-5.5-reviewer
+  roster before freezing.
+- R1 met with no span power: inconclusive on the headline. Decide whether to replicate again.
+
+### Confounds
+
+- N=2 total on this brief. Two clean runs bound the defect rate loosely and do not prove it zero.
+- Provider-side model updates under the same id are possible. The generation records carry the dated model id.
+- pi, Claude Code and the installed Chrome versions are recorded at mount and at judging.
