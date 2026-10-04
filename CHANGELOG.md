@@ -6816,3 +6816,7 @@ Artifacts: `.sandbox/runs/s55m2-20261004-553451-artifacts/`:
 - `ui_read.py`, `ui_compare.{ts,out}`, `ui_{chromium,chrome,mut}.json`
 - `rev_sweep.out`, `probe*.py`, `la_hk.png`, `probe_*.png`
 - 60 generation records
+
+**Torn down 2026-10-04 (Ron's decision, same day):** tree clean; key revoked and verified absent from OpenRouter; VM
+destroyed; key file shredded; record closed. Final billed spend **$2.553**, matching the pre-teardown per-generation
+reconciliation.

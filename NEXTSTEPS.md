@@ -12,7 +12,7 @@ closes, write its result entry in the changelog and delete it here.
 - The freeze rule (R1 and R3) is **not met**, so all-Sonnet is not frozen. **Ron to decide the lever:** an Opus
   planner seat (the mix1 shape, on all-Sonnet otherwise), a usability check the reviewer can rule on, or accept
   "engine-grade, needs a UX pass".
-- NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.
+- s55m2 is torn down. NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.
 - **Open UI tickets:**
   - s55m1: timeline legend
   - s55m2: zone search, editable members with visible hours, near-miss ranking, member ids, organizer-local default
