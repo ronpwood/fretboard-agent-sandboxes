@@ -6689,3 +6689,7 @@ run. Shown to Ron before his verdict:
   - remove and select key on `name`, so with duplicate names, Remove removes the first one
   - the default date is today's **UTC** date, not the organizer's local date (Approach: "default today in organizer
     zone")
+
+**Measure 0, Ron's re-test verdict (verbatim, 2026-10-04):** "MVP — correct engine, needs one UX revision". Given
+after the engineering read above and before any scored sweep. **R3 (deployable or better): MISSED.** s55m1 was
+"deployable (slight interface fix)".
