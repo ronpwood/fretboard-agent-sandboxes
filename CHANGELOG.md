@@ -6661,3 +6661,9 @@ live planner pi carries `--model anthropic/claude-sonnet-5.5 --thinking high`.
   re-deriving and measuring in Chromium (P2).
 - **review_2 rejected:** bars built from `findWindows(step 15)` on the axis grid draw off-quarter-hour hours
   (09:10–16:50) 14 min short at each end, and the axis-end clip overdraws. This is a second out-of-key probe.
+
+**Run complete:** 18/18 phases, approved at the final review. Commits `b9c9bed` (red suite), `65adf78` (build),
+`c0f41fb` (docs).
+
+**Measure 0, Ron's verdict, recorded 2026-10-04 BEFORE any scored item (verbatim):** "Did not deliver a working
+app." It was given after the run had finished. The diagnosis follows separately and does not edit this line.
