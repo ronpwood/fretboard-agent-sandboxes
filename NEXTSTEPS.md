@@ -4,11 +4,19 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Start here (next session):** s55m1 is judged (CHANGELOG 2026-10-03e). All-Sonnet 5.5 passed the meeting planner with
-0 value defects in 5.04M checks, the DST-span class reachable and exact for the first time, for $3.61. With s55t1 that
-is 2/2. Next: **a replicate of s55m1** (same pin, same roster) before freezing all-Sonnet as the production roster.
-Then NEXTSTEPS 7 item 8 (`values_swept` accepts boilerplate, seen 2/2 on Sonnet). Ron's UI ticket for s55m1 is the
-timeline legend (solid green vs "underline"). s55m1 is torn down.
+**Start here (next session):** s55m2, the s55m1 replicate, is judged (CHANGELOG 2026-10-04b).
+- **The engine replicated:** 0 value defects in 6.01M checks, with the DST span reachable (1,856 biting) and exact,
+  for $2.55.
+- **The verdict did not:** Ron said MVP ("correct engine, needs one UX revision"), where s55m1 was deployable.
+- The variance sits in the **planner seat's UX design**: same roster, structurally different spec.
+- The freeze rule (R1 and R3) is **not met**, so all-Sonnet is not frozen. **Ron to decide the lever:** an Opus
+  planner seat (the mix1 shape, on all-Sonnet otherwise), a usability check the reviewer can rule on, or accept
+  "engine-grade, needs a UX pass".
+- NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.
+- **Open UI tickets:**
+  - s55m1: timeline legend
+  - s55m2: zone search, editable members with visible hours, near-miss ranking, member ids, organizer-local default
+    date
 
 **Recently run (2026-10-02):** an adversarial review of the whole repo by four read-only reviewers, with every
 high-severity claim verified (private Claude Doc "Adversarial Codebase Review — 2026-10-02"). Closed the same day:
