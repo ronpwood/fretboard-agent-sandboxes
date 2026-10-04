@@ -6594,3 +6594,11 @@ the adaptation diff recorded) and mutation-tested again with the span, gap and K
 - N=2 total on this brief. Two clean runs bound the defect rate loosely and do not prove it zero.
 - Provider-side model updates under the same id are possible. The generation records carry the dated model id.
 - pi, Claude Code and the installed Chrome versions are recorded at mount and at judging.
+
+**Mounted** `s55m2-20261004-553451` on greenfield, adw `3afcf978`, pid 1787, `team` ADW via `execute <id>
+prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team`, with a $40 limit, at
+2026-10-04T16:43Z. **Check 0 PASSED:** gates A–F; VM HEAD `a16a6c3` matches the pin; tree clean; brief present (676
+bytes); pi 0.87.1 and Claude Code 2.1.284 (the same image DRIFT as s55m1). **Check 1 PASSED:** gate C passed every
+roster model, and the roster names only `openrouter/anthropic/claude-sonnet-5.5` (on the host and on the VM).
+**Check 2 PASSED:** the process args end in `--config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`, and the
+live planner pi carries `--model anthropic/claude-sonnet-5.5 --thinking high`.
