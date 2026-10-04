@@ -6700,3 +6700,119 @@ subagent sessions. **Cost, reconciled per generation before teardown:** 60/60 id
 ping). 2.80M input tokens (90.4% cached), 138k output. Wall clock **15.6 min** (16:44:43–17:00:21Z). Per seat:
 reviewer $0.88 (21 gens, 3 reviews), builder $0.65, planner $0.52, test designer $0.45, documenter $0.06. (s55m1:
 $3.61, 3.43M input, ~27 min.)
+
+
+## 2026-10-04b — s55m2 judged: the engine replicates (0 value defects in 6.01M checks, DST span reachable and exact), the verdict does not (MVP vs deployable); $2.55
+
+Pre-registered in 2026-10-04a. Judged on the harvested tree (`refs/sandbox/s55m2-20261004-553451`, 4 commits), by the
+rule-based oracle, plus Python `zoneinfo` for zones the oracle does not model.
+
+### Replication criteria
+
+| | criterion | result |
+|---|---|---|
+| R1 | P4 met again, with span power > 0 | **MET.** 0 value defects in 6,001,270 engine checks, 9,216 organizer-midnight walls and 3,492 UI checks across two browsers. **1,856** span cases bite (a linear end would give the wrong verdict), and all are exact. |
+| R2 | span closed by the same or a stronger mechanism | **MET in outcome, by a WEAKER mechanism.** The spec delegated the end reading ("builder's choice") and had no span trap. The **builder** chose the true end reading (`+ (oE − oS)`), so credit goes to the builder, per the rule fixed in flight. s55m1's planner had stated the rule unconditionally. |
+| R3 | Ron: deployable or better | **MISSED.** "MVP — correct engine, needs one UX revision" (s55m1: deployable). |
+
+**The pre-registered reading table has no row for "R1 met, R3 missed".** Read plainly: **all-Sonnet's engine
+replicated on the edge-heavy brief, and its product quality did not.** The freeze rule ("R1 and R3 met") is not
+satisfied, so all-Sonnet is **not** frozen on this evidence. What to do with that is Ron's call (below).
+
+### Predictions (P1–P8, verbatim from 2026-10-03d)
+
+| | result |
+|---|---|
+| P1 | **MET, and the boilerplate habit did NOT recur.** All three reviews carry real per-row actuals: 92/95/96 entries with 62/87/88 distinct values, against s55m1's and s55t1's `"sweep OK"`. The first review needed one `values_swept` retry (no entries at all). The reviewer's `value_sweep.ts` re-run on the harvest gives 96/96 OK. Its expected values are typed literals, as in s55m1, not parsed from `plan.md`. |
+| P2 | **MET.** A1 (V93–V95) and A2 (V96), timeline bar extents, were proposed by the builder and accepted with re-derivation. **Checked on first principles:** for example, V96 is 09:10 EST = 14:10Z, 550/1440 = 38.194%, and 460/1440 = 31.944%. All four rows are correct. |
+| P3 | **MET after one correction** (one trap with no `V` citation; recorded in flight). |
+| P4 | **MET** (detail below). |
+| P5 | **MISSED on the span row, and the spec delegated it** (recorded in flight). The other edge classes were covered at plan. |
+| P6 | **MET on both sides** (s55m1: the builder side missed). The builder ran `render_smoke ... screenshot` and **read `/tmp/a.png` 4 times**. The reviewer measured in Chromium in every review. |
+| P7 | **MET twice.** review_1: every working-hours bar is 15 min too long. review_2: off-quarter-hour hours are quantised 14 min short at each end. Both were measured in Chromium, are outside the key, became A1/A2, and were fixed. |
+| P8 | **MET.** 0 `provider_retry`, 0 timeouts. The only retries were the `spec_form` and `values_swept` gates. |
+
+### P4 detail (0 misses)
+
+| class | checks | result |
+|---|---|---|
+| A. offset, `UTC±HH:MM` label, 12h and 24h time, day offset vs every reference zone, at GRID instants (17 zones) | 7,861 | exact |
+| C. fit (via `findWindows([m], t, len, 1440)`): every 15-min instant of the own local day × 9 durations × 7 profiles × 17 zones × 57 dates | 5,844,552 | exact |
+| **C.span**: meetings crossing the zone's OWN transition, on the pre-registered biting profiles | **15,960** | **exact**: **1,856** biting |
+| D. search origin `localToUtc(date, 0, organizer)` | 969 | exact |
+| E. `findWindows` + `rankSlots`: 6 rosters × every organizer rotation × 57 dates × 3 durations × steps 15/30 | 15,732 | exact |
+| F. `describeMeeting` rows at the top 6 ranked starts | 23,172 | exact |
+| G. wall → instant (R5): every 15-min wall: **gap → forward 76/76, overlap → earlier 76/76**, ordinary 92,872 | 93,024 | exact |
+| G'. **organizer-midnight path** (class (b) as pre-registered): Havana, Asunción, Santiago, Cairo, Beirut, Scoresbysund and Gaza, every 15-min wall on transition days, against **Python `zoneinfo`**. Includes **16 midnight gaps and 4 midnight overlaps** | 9,216 | exact |
+| U. **rendered UI**: 6 rosters × 10 DST-sensitive dates × 3 durations, 12h/24h alternating, first 4 choices clicked: items, no-overlap state, auto-selection, rows, selection state. In **Playwright Chromium 153 and Google Chrome 154.0.8037.93** | 3,492 | exact, 0 console or page errors |
+
+- **Class (c), `Intl` display names: avoided by design.** Labels are the IANA id, and offsets are numeric from
+  `offsetMinutes`. The only `Intl` uses are `formatToParts` (offset), `supportedValuesOf` (datalist) and zone
+  validation. The labels are identical in both browsers.
+- **Class (d):** wrapped hours are refused by declared policy (`end <= start` gives an error). End-inclusive holds
+  (C covers 20–24 and 00–24).
+- **Mutation-tested.** Each planted class goes red:
+  - **span** (drop `+ (oE − oS)`): 1,856/1,856 span, plus 190 fit, 216 rank and 64 rows
+  - **gap** (resolve with the offset after): 76/76 G.gap, plus 88/88 zoneinfo gap walls including the 16 midnight ones
+  - **Kathmandu as +5:30:** 17,473 misses across A, C, D, E, F and G
+  - **UI auto-select** (`if (true)` re-select): 754 UI misses
+- **Harness corrections, recorded honestly:** the first UI compare reported 88 and then 17 misses. Both came from MY
+  harness, not the app:
+  - (1) the spec's "keep the user's selection if it is still offered" rule, applied across sequential states
+  - (2) an unrecorded intermediate render (new date at the old duration)
+
+  The fix encodes the spec's rule, and the UI auto-select mutant proves the corrected comparator still sees
+  selection defects.
+
+### Delivery, UX and code defects (recorded beside P4, not value defects)
+
+- **Gates on the harvest:**
+  - 106/106 tests (483 asserts); build ok
+  - only `apps/`, `specs/` and `app_docs/` touched
+  - typecheck and lint were not re-run on the host; the quality phase was green on the VM
+- **Ron's UX ticket (one revision), all spec-shaped.** The builder delivered the DOM contract and R8 as written.
+  - zone entry is IANA only
+  - members cannot be edited, and their hours are not shown in their row
+  - ranked-slot ties sort by start time, so organizer-midnight slots come first
+  - there is no near-miss hint
+- **Two small code defects (code read):**
+  - Remove and selection key on member **name** (duplicates collide)
+  - the default date is today in **UTC**, not in the organizer's zone
+
+### Process (recorded, never scored)
+
+| | s55m2 (replicate) | s55m1 |
+|---|---|---|
+| value defects (our sweep) | **0** (span 1,856 biting) | **0** (span 1,348 biting) |
+| Ron | **MVP** | **deployable** |
+| verdict path | review_3 (2 revisions) | review_2 (1 revision) |
+| `V` rows: plan → end | 92 → 96 | 167 → 170 |
+| span rule | delegated; builder read the end | stated; builder implemented it |
+| `value_checks` | real actuals | boilerplate |
+| builder screenshot | yes (4 reads) | no |
+| billed | **$2.55** | $3.61 |
+| wall clock | 15.6 min | ~27 min |
+
+### What this changes
+
+1. **The value engine replicates; the product does not.** That is 2/2 on the meeting planner with 0 value defects,
+   both with the hardest class reachable and exact, at $2.55–$3.61. The verdict split, deployable then MVP, traces
+   to the **spec's UX design**, written by the planner seat. The builder delivered both specs faithfully, and
+   neither reviewer can rule on "is this usable" because nothing in the spec asks it.
+2. **Same roster, same brief, structurally different specs:** 167 vs 92 rows, the span rule stated vs delegated,
+   15- vs 30-minute steps, a hand-rolled table vs `Intl`, a converter vs none. **The planner seat carries most of
+   the run-to-run variance.** That is where a model upgrade (an Opus planner, as in mix1) or a usability gate would
+   act.
+3. **Two "Sonnet habits" from s55m1 did not replicate.** Real `value_checks` this time, and the builder read its
+   screenshots. Both were sampling, not posture. NEXTSTEPS 7 item 8 (boilerplate acceptance) is still a real gate
+   gap, but a less urgent one.
+4. **The builder rescued a delegated edge.** That is the first time on this brief that the code was more careful
+   than the spec. It is good, and it is not something to rely on.
+
+Artifacts: `.sandbox/runs/s55m2-20261004-553451-artifacts/`:
+- `spec.md`, `span_power.{ts,out}`
+- `sweep_s55m2.ts` + `.out`, `mut_{span,gap,kathmandu}.out`
+- `midnight_zi.py`, `midnight_cmp.{ts,out}`
+- `ui_read.py`, `ui_compare.{ts,out}`, `ui_{chromium,chrome,mut}.json`
+- `rev_sweep.out`, `probe*.py`, `la_hk.png`, `probe_*.png`
+- 60 generation records
