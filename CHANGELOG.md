@@ -6602,3 +6602,48 @@ bytes); pi 0.87.1 and Claude Code 2.1.284 (the same image DRIFT as s55m1). **Che
 roster model, and the roster names only `openrouter/anthropic/claude-sonnet-5.5` (on the host and on the VM).
 **Check 2 PASSED:** the process args end in `--config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`, and the
 live planner pi carries `--model anthropic/claude-sonnet-5.5 --thinking high`.
+
+**In-flight observation, recorded at commit time BEFORE any outcome** (the test designer is running; no build, no review):
+- **P3 needed a correction:** the first `spec_form` failed 1 of 14 checks, on one trap with no `V` citation (the
+  machine-time-zone trap). The in-session retry passed. (s55m1: 19 rows with no derivation.)
+- The committed spec `86d540b` (`specs/3afcf978_meeting-planner-timezones.md`, 27 KB) has **92 `V` rows** (s55m1
+  167, mtg1 56, mix1 150, rmix1 53 at plan), 13 requirements and 13 traps. The planner states it derived the values
+  with an independent Python `zoneinfo` brute force.
+- **Design: different from s55m1 at the architecture level** (same brief, same roster):
+  - **Offsets come from `Intl`** (`formatToParts`), not a hand-rolled table. Zone labels are IANA ids and offsets are
+    numeric `UTC±HH:MM`. The add-zone `<datalist>` uses `Intl.supportedValuesOf`, not display names. Class (c) has
+    low exposure by design, and is still swept.
+  - Working hours are `[workStart, workEnd]` with `0 ≤ start < end ≤ 1440`, and `end ≤ start` is refused (R10).
+    Class (d) wrapped hours has a declared policy, refusal. End-inclusive is declared (V66).
+  - The search runs from the organizer's local midnight (`localToUtc(date, 0, zone0)`) over 24 h, in **30-minute
+    steps** (s55m1: 15). Windows are merged runs of valid starts, and partial slots are ranked by count.
+  - **There is no wall-time converter.** The only wall→instant path is the date picker's local midnight in the
+    organizer's zone, with a declared policy: a gap resolves forward and an overlap resolves to the earlier instant
+    (R5, V38–V41). So class (b) is reachable only through an organizer zone whose transition is at midnight (for
+    example America/Havana, America/Asuncion, America/Santiago, Africa/Cairo). The sweep will include those zones
+    as organizers.
+- **P5 at plan:**
+  - Transition instants: covered (V3–V6, plus Sydney season V7 and Lord Howe V11).
+  - Gap and overlap walls: covered (V38–V41, NY and London).
+  - Date rollover: covered (V23–V29, including ±2 days).
+  - Transition days in the search: covered (V36, V37, V42, V63, V64).
+  - **A meeting spanning its own zone's transition: MISSED, and this time the spec explicitly delegates it.** R7's
+    prose says the "entire meeting `[start, start+duration]` lies inside … working hours (same local day, … `end ≤
+    workEnd`)". But the Approach hint gives the linear test `m + duration ≤ workEnd` and adds "(and, for DST days,
+    the end's local minute-of-day as well — **builder's choice**, V rows don't straddle a transition)". No trap names
+    the start-only or linear-end shortcut for spans. **This is weaker than s55m1 on R2's mechanism:** s55m1 stated the
+    end-reading rule unconditionally and listed the shortcut as a trap.
+- **spanPower on R7's rule** (`ok iff start ≥ ws && end ≤ we && end ≤ 1440`; durations are the spec's 15–240;
+  years 2025–2026; 2,280 own-transition spans per profile):
+  - default 09–17, 00–24, 22–24 and 18–24 have power **0**
+  - 00–04 has **508**, 00–03 **496**, 00–03:30 **490**, 00–02:30 **362** (also 01–04 296, 01–03 294, 00–02 188)
+  - **The class is reachable** (hours are editable in the add form). These four top profiles are pre-registered for
+    P4(a) and carried into the sweep verbatim. Script and output:
+    `.sandbox/runs/s55m2-…-artifacts/span_power.{ts,out}`.
+- **How P4(a) is judged, fixed now because the spec delegates it:**
+  - P4(a) is judged by the oracle's true end reading, as in every earlier run. R7's requirement ("entire meeting
+    inside working hours") is the governing text. A builder's-choice hint does not license a wrong verdict for a
+    user.
+  - If the build takes the linear end and the sweep finds span misses, the result is **R1 missed, attributed to the
+    planner's delegation** (design), not to builder disobedience. It is reported beside the hint's text.
+  - If the build reads the end, R1 can be met, and R2 is credited to the builder, not the spec.
