@@ -6667,3 +6667,8 @@ live planner pi carries `--model anthropic/claude-sonnet-5.5 --thinking high`.
 
 **Measure 0, Ron's verdict, recorded 2026-10-04 BEFORE any scored item (verbatim):** "Did not deliver a working
 app." It was given after the run had finished. The diagnosis follows separately and does not edit this line.
+
+**Ron's correction (verbatim, 2026-10-04):** "Sorry currection user error testing now". It withdraws the measure-0
+verdict above as user error. **Timing, recorded honestly:** it arrived after my headless-Chromium probe results (the
+app renders and the core flows work) had been posted in chat. His re-test verdict will follow with those results
+visible. It is still given before any of our scored sweeps has run.
