@@ -70,7 +70,7 @@ PIN=$(python3 -c 'import json;print(json.load(open(".sandbox/targets/greenfield.
 
 # one "roster adw" pair per arm. The team chain only runs on the team roster, so a team fan-out is
 # N replicates, not N models; the same-brief control arm is where the edges show up.
-ARMS=("sssf.team.config.yaml team" "sssf.config.yaml control")
+ARMS=("sssf.team-sonnet.config.yaml team" "sssf.config.yaml control")
 
 for i in "${!ARMS[@]}"; do
   read -r R ADW <<< "${ARMS[$i]}"
@@ -118,8 +118,9 @@ differ, you are not comparing models, you are comparing prompts.
 
 ### 2. The roster — `execute`'s and `setup`'s `CONFIG` argument
 
-The repo ships four rosters: `sssf.config.yaml` (default; the frozen control's roster),
-`sssf.team.config.yaml` (the team arm's: same models, team prompts), `sssf.frontier.config.yaml` and
+The repo ships these rosters: `sssf.config.yaml` (default; the frozen control's roster),
+`sssf.team-sonnet.config.yaml` (the team arm's frozen default: all Sonnet 5.5), `sssf.team.config.yaml` (the team arm on
+flash models), `sssf.team-mix` / `sssf.team-rev` (comparison arms), `sssf.frontier.config.yaml` and
 `sssf.gemniflash.config.yaml`. Retired rosters are in `archive/factory/rosters/`. A roster names an agent's coding agent, model, thinking level, tools and
 prompts — it is the single richest per-run knob.
 

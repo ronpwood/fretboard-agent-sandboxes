@@ -9,7 +9,7 @@ closes, write its result entry in the changelog and delete it here.
   for $2.55.
 - **The verdict did not:** Ron said MVP ("correct engine, needs one UX revision"), where s55m1 was deployable.
 - The variance sits in the **planner seat's UX design**: same roster, structurally different spec.
-- The freeze rule (R1 and R3) is **not met**, so all-Sonnet is not frozen. **Ron to decide the lever:** an Opus
+- **DECIDED 2026-10-04c: all-Sonnet is FROZEN as the team default** (Ron: "correct engine, needs one UX pass"). Next: sync greenfield so VMs get it; then §0, the UX seat idea. Was: an Opus
   planner seat (the mix1 shape, on all-Sonnet otherwise), a usability check the reviewer can rule on, or accept
   "engine-grade, needs a UX pass".
 - s55m2 is torn down. NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.
@@ -36,6 +36,23 @@ Before that, the N=3 replicate set, closed at 2 valid runs by decision (CHANGELO
 harn2/harn3 and the harness-signals spec (CHANGELOG 2026-09-23d–i).
 
 Item numbers in parentheses, such as "4(5)", refer to the queue in CHANGELOG 2026-09-20b.
+
+## 0. IDEA (Ron, 2026-10-04, after s55m2): a UX seat with amendment rights
+
+Not designed yet. s55m2's verdict gap (CHANGELOG 2026-10-04b) was UX the spec never asked for: IANA-only entry, no
+member edit, midnight-first partial ranking, no near-miss hint. Nobody in the team owns "is this usable". Ron wants
+"a usability check or some agent that is thinking about the user experience and has the ability to make
+amendments".
+
+My initial thoughts:
+- **Seat, not gate.** The amendment channel already exists (A1/A2 in s55m2). A UX agent that proposes amendments
+  with first-use tasks as derivations ("add LA and Hong Kong; the user must learn they are 1 h apart") fits the
+  frozen-key machinery. The reviewer then rules on it like any amendment.
+- **Where it acts:** after plan (to amend the spec before build, where it is cheapest) or after review_1 (on the
+  real app, through `render_smoke`). After plan is the bet: s55m2's gaps were all in the spec.
+- **Measure:** Ron's measure 0 on the same brief, with the roster otherwise frozen. s55m2 is the baseline (MVP).
+  The risk is scope creep: a UX seat that adds features the brief never asked for.
+- It is a harness change, so it pairs with the harness-restraint rule: ablate it at the next model refresh.
 
 ## 1. IDEAS (Ron, 2026-09-30, after the bare Sonnet 5.5 run): draft → complete, and MVP → production
 
@@ -209,7 +226,8 @@ A restored one (`git mv` back from `archive/factory/rosters/`) still runs on 073
 | roster | defaults.model | seats that differ |
 |---|---|---|
 | **`sssf.config.yaml` (default / control)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) | planner `gemini-3.8-flash`, reviewer `glm-5.3`, documenter `gpt-6-luna` |
-| `sssf.team.config.yaml` (the team arm, `execute`'s default ADW) | `deepseek-v4.1-flash` | same seats as the default, team prompts |
+| **`sssf.team-sonnet.config.yaml` (the team arm's frozen DEFAULT since 2026-10-04c)** | **`claude-sonnet-5.5`** | none: every seat Sonnet 5.5, team prompts |
+| `sssf.team.config.yaml` (the team arm on flash models) | `deepseek-v4.1-flash` | same seats as the default, team prompts |
 | `sssf.team-mix.config.yaml` (mix1) | `deepseek-v4.1-flash` | planner + reviewer `claude-opus-5.5` (mix1 itself ran `claude-opus-5`), documenter `gpt-6-luna` |
 | `sssf.team-rev.config.yaml` (rmix1, judged 2026-09-30c) | `deepseek-v4.1-flash` | reviewer `claude-opus-5.5` only; otherwise the team roster |
 | `sssf.frontier` | `claude-opus-5.5` | builder + documenter `kimi-k3`, scout `gpt-6-sol` |

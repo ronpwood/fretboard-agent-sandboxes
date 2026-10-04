@@ -130,7 +130,9 @@ adws/adw_modules/     agents.py (roster + validation), agent_pi.py / agent_cc.py
   (host) sandbox_mount/host/render_smoke_corpus.sh — calibrates the smoke over every harvested app;
                       run it before promoting any new assertion.
 adws/adw_sssf_config/ sssf.config.yaml (cheap default; the frozen control's roster),
-                      sssf.team.config.yaml (team arm), sssf.frontier, sssf.gemniflash.
+                      sssf.team-sonnet.config.yaml (team arm DEFAULT, all Sonnet 5.5,
+                      frozen 2026-10-04), sssf.team.config.yaml (team arm on flash),
+                      sssf.team-mix, sssf.team-rev, sssf.frontier, sssf.gemniflash.
                       Retired rosters: archive/factory/rosters/.
                       Every model is `openrouter/<id>`; the first slash splits provider
                       from model id.

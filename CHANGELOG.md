@@ -6820,3 +6820,38 @@ Artifacts: `.sandbox/runs/s55m2-20261004-553451-artifacts/`:
 **Torn down 2026-10-04 (Ron's decision, same day):** tree clean; key revoked and verified absent from OpenRouter; VM
 destroyed; key file shredded; record closed. Final billed spend **$2.553**, matching the pre-teardown per-generation
 reconciliation.
+
+
+## 2026-10-04c — DECISION: all-Sonnet is frozen as the team chain's default roster
+
+**Ron's decision (2026-10-04, verbatim excerpts):** "I am leaning towards 'correct engine, needs one UX pass' And
+freezing with the all-sonnet as the default config." … "With real users interacting with the system, the fact that
+the engine was correct, to me, carries more weight in a post-mortem of how this run did, because UI tweaks and
+changes like this, I would really consider routine maintenance of any application." … "the all Sonnet model team has
+earned its keep as the top default configuration. Our infrastructure allows for other configs to be run in
+comparison against it, and currently they are the bar to beat, so that puts him in the top slot."
+
+**Why, on the record:** three all-Sonnet team runs on two briefs:
+- s55t1 (CoF): deploy-grade, 0 value defects in 13,234 checks, $4.47
+- s55m1 (meeting planner): deployable, 0 in 5.04M, $3.61
+- s55m2 (meeting planner replicate): MVP, 0 in 6.01M, $2.55
+
+The engine replicated, with the hardest edge class reachable and exact both times on the meeting planner. What
+varied was UX design from the planner seat, which Ron classes as user-acceptance work. **Known profile: "correct
+engine, needs one UX pass".** The pre-registered freeze rule (2026-10-04a: R1 and R3) was not met; this is Ron's
+judgment overriding R3, recorded as such.
+
+**What changed** (no model, thinking, prompt or harness line moved; the roster's model lines are byte-identical to
+s55m2's):
+- `adw_team_sdlc.py` (`main` and argparse defaults, usage, docstring), `just/adws.just` (`team_config`) and the
+  `execute.just` comment now name `sssf.team-sonnet.config.yaml`.
+- `sssf.team-sonnet.config.yaml` gets a FROZEN header: "a challenger is a NEW roster run against this one".
+- `sssf.team.config.yaml` (flash) stays under its name, as a comparison arm. Renaming it would orphan every
+  historical reference (precedent: 2026-09-28e).
+- PLAYBOOK §3, TREE, the NEXTSTEPS roster table and the fan-out cookbook are updated.
+- **Unchanged:** `sssf.config.yaml` and the frozen `control`/`tdd` arm. Specs are historical and were not edited.
+- **Verified:** `just --dry-run adw team x` resolves `--config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`,
+  and `adw_team_sdlc.py --help` shows the new usage. `git diff` on the roster outside comments is empty.
+
+**Not yet on greenfield.** VMs run greenfield's copy, so a `CONFIG`-less `execute ... team` still gets the flash
+roster there until `just target sync greenfield` runs.

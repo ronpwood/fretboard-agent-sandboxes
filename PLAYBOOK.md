@@ -68,7 +68,9 @@ Both `sdlc` and `tdd` use it, so an A/B between them stays symmetric.
 ## 3. Picking a model roster
 
 Every roster lives at `adws/adw_sssf_config/*.yaml` — `sssf.config.yaml` (the
-default, and the frozen control's roster), `sssf.team.config.yaml` (the team arm's),
+default, and the frozen control's roster), `sssf.team-sonnet.config.yaml` (the team arm's
+frozen default since 2026-10-04: all Sonnet 5.5), `sssf.team.config.yaml` (the team arm on flash models),
+`sssf.team-mix` and `sssf.team-rev` (comparison arms),
 `sssf.frontier.config.yaml`, `sssf.gemniflash.config.yaml`. Retired rosters are in
 `archive/factory/rosters/`. See who's in one:
 
