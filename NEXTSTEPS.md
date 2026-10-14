@@ -12,6 +12,8 @@ closes, write its result entry in the changelog and delete it here.
 - **DECIDED 2026-10-04c: all-Sonnet is FROZEN as the team default** (Ron: "correct engine, needs one UX pass"). Synced to greenfield `2612858` (pushed). Next: §0, the UX seat idea. Was: an Opus
   planner seat (the mix1 shape, on all-Sonnet otherwise), a usability check the reviewer can rule on, or accept
   "engine-grade, needs a UX pass".
+- **New 2026-10-14 (Ron, while traveling):** §0a, an all-Haiku-5.5 team arm on CoF; §0b, five ideas from the
+  super-board repo. Neither is designed yet.
 - s55m2 is torn down. NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.
 - **Open UI tickets:**
   - s55m1: timeline legend
@@ -53,6 +55,92 @@ My initial thoughts:
 - **Measure:** Ron's measure 0 on the same brief, with the roster otherwise frozen. s55m2 is the baseline (MVP).
   The risk is scope creep: a UX seat that adds features the brief never asked for.
 - It is a harness change, so it pairs with the harness-restraint rule: ablate it at the next model refresh.
+
+## 0a. IDEA (Ron, 2026-10-14): an all-Haiku-5.5 team arm on the CoF brief
+
+Not designed yet. Ron noticed Haiku 5.5 is out. The question: does the team process carry a small model the way
+it carried Sonnet? Bare Sonnet produced an MVP, and the Sonnet team produced "very deployable".
+- **Baseline: s55t1** (CHANGELOG 2026-10-03c), the all-Sonnet team on `prompts/greenfield.md`. Ron said "very
+  deployable"; 0 value defects in 13,234 checks; six planted mutations all caught; $4.47; 28 min; approved at
+  review_1. Hold everything except the model fixed: same brief, same team prompts, current greenfield pin.
+- **Setup (not done yet):**
+  - Haiku 5.5 is not registered. Add it to `sandbox_mount/guest/models.json.tmpl` and to the price table in
+    `.claude/skills/sssf-sandbox-orchestrator/references/models.md`.
+  - Verify the OpenRouter id and the price against what is actually billed. OpenRouter's published price has
+    differed from the billed one before.
+  - Clone `adws/adw_sssf_config/sssf.team-sonnet.config.yaml` to `sssf.team-haiku.config.yaml`, swapping only the
+    model lines.
+- **Cheap first step (small N before fan-out):** host-replay one review phase on Haiku first, about $1. Use the
+  suite-note `run_arm.sh` recipe with a planted defect. If Haiku cannot catch a planted defect as reviewer, a full
+  arm will mostly measure that.
+- **Measures:** Ron's verdict; value defects via the corpus sweep; whether the planner still writes `V` rows
+  unprompted (Sonnet wrote 317); revisions used out of `MAX_REVISIONS=2`; and tokens. Record cost; never score it.
+- **Possible follow-on:** a mixed roster with Haiku building and Sonnet planning and reviewing, which mirrors mix1's
+  frontier-plan/cheap-build shape.
+
+## 0b. IDEAS from super-board (Ron found it 2026-10-14; read the same day)
+
+Source: `~/Dev/forks/super-board` (Eric Tech, v3.1.1, MIT). It is a Claude Code skill pack that drains a GitHub
+Projects board through Build → QA → Review lanes and merges through a gate. Most of it is GitHub plumbing that we do
+not need. The ideas below are the ones that map onto our own open problems, in my order of value. None is designed
+yet. Each one changes the harness, so each one falls under the harness-restraint rule: run a cheap replay before
+adopting it, then ablate it at the next model refresh.
+
+1. **Reviewer forms its own hypotheses before reading the builder's account.**
+   (`skills/super-review/SKILL.md` step 2.) The reviewer reads the ACs and the raw diff, writes 2–4 "what must be
+   true / where it breaks" hypotheses, and only then reads the builder's summary, treating it as claims to check.
+   - Our reviewer prompt (`prompt_engineering_team/reviewer/system.md:37`) says to judge the code, not the summary.
+     But it tells the reviewer to *start from* `previous_envelope.changed_files`, so it still reads the builder's
+     frame first.
+   - The suite-note experiment saw exactly this anchoring once: r1note followed the note, re-greened the test, and
+     called the code fine (CHANGELOG 2026-10-02c).
+   - **Test:** host replay, hypotheses-first versus current, N=3 each, on the planted-cheat fixture, about $5.
+2. **Test-the-tests with mutation proof, plus witness values instead of "consider edge cases".**
+   (`skills/super-qa/SKILL.md` § Test-gap check.)
+   - Every AC maps to an asserting `file:line`, or to `none`. A test that runs the code but asserts nothing about
+     the AC counts as `none`.
+   - Each edge class (boundaries ±1, month end, timezone shift, 0/1/many) is marked pinned, n/a, or a gap with an
+     exact witness value.
+   - A new test that passed on its first run "has not been seen to fail": break the guarded line, see red, restore.
+   - **Why it matters here:** this goes straight at our value-detection gap ("the key only guards edges it
+     contains", amort/mtg1). It is a seat behaviour, not a gate, so it is not the abandoned edge gate in disguise.
+   - **Test:** cheapest as a builder-prompt addition, judged on whether new V rows or edge tests appear. The risk is
+     the planner-seat variance we saw in s55m2.
+3. **ui-refine-loop as a starting design for §0 (the UX seat).** (`skills/ui-refine-loop/`,
+   `workflows/ui-refine-loop.js`.) What carries over:
+   - A **fresh checker every round**, so it is never the agent that made the edits ("a checker that watched the
+     last edits grades the intent, not the pixels").
+   - A design reviewer and a detector that run isolated from each other.
+   - Typed problems routed to fix commands.
+   - Only a short ledger carried between rounds.
+   - Hard stop rules: N rounds; two clean checks in a row; two reverted rounds in a row.
+   - A **finish reviewer** that grades each claimed fix fixed/partial/not-fixed against before/after screenshots.
+   - **Caveat:** it is *visual* polish. s55m2's gaps were *usability and feature* gaps (IANA-only entry, no member
+     edit). Those are spec-level, which is why §0 bets on acting after plan. Its 350–500k tokens per round is also
+     costly. Notably, super-board itself never runs this loop unattended; a human starts it. Borrow the
+     fresh-checker and finish-grader structure, not the Impeccable command set.
+4. **A behavioural eval suite for seat prompts.** (`evals/`, run with `claude plugin eval`.)
+   - Three cases, each built from a seeded throwaway repo, a stubbed `gh`, and a planted situation. Example: an AC
+     with no test, where the seat must rank the gap High and act on it.
+   - The graders are regex/tool-use checks plus an LLM judge that scores against the stated requirement. That is
+     the same rule as our "score versus `cases[].requirement`".
+   - Our seats run on pi, not Claude Code, so the tool does not port. The pattern does: our single-review replay
+     recipe is one case of it.
+   - **Payoff:** harness restraint needs ablation at every model refresh. A standing 3–5-case suite per seat
+     (planted cheat, missing edge row, scope creep) makes that a $5 check instead of a full arm.
+   - It would also have been the cheap first step for §0a.
+5. **Pin review evidence to the reviewed commit.** (`scripts/super-board-merge-gate.sh --expect-head`.) Their merge
+   gate refuses if HEAD moved after review (exit 6: "your evidence is void"), and it confirms the merge sha is an
+   ancestor of base rather than trusting the exit code.
+   - **To check, not to assume:** does our approval and harvest path record the sha that the final review actually
+     audited? We know harvest skips uncommitted VM edits. Grep before treating this as a gap.
+
+Smaller notes, not queued:
+- They take the *minimum* of two adversarial sub-agents' confidence scores ("one strong skeptic is enough").
+- They keep a **verbatim** sub-agent brief, because a reviewer that wrote its own brief once made over-engineering
+  blocking and held a correct PR.
+- "Over-engineering is always should-fix, never blocks alone" is a clean scope-creep rule if the §0 UX seat starts
+  adding features.
 
 ## 1. IDEAS (Ron, 2026-09-30, after the bare Sonnet 5.5 run): draft → complete, and MVP → production
 
