@@ -6860,3 +6860,27 @@ roster there until `just target sync greenfield` runs.
 changed: the roster header, `adw_team_sdlc.py`, `adws.just` and `execute.just`. Leak check clean; gates manifest,
 build, test and rosters ok. Greenfield's `just --dry-run adw team` resolves `sssf.team-sonnet.config.yaml`. **The
 next greenfield pin is `2612858`.** A `CONFIG`-less `execute … team` on a fresh VM now runs all-Sonnet.
+
+## 2026-10-22 — Node October 2026 security release: host patched, factory guests not exposed, fleet-restore bumped to 24
+
+The [Oct 21 Node release](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases) fixes 4 High
+CVEs: two TLS hostname bypasses, a Brotli out-of-bounds write with RCE, and a `dns.resolve` NUL truncation. The
+patched versions are 24.22.1 and 22.23.4; end-of-life lines (20) get no patch.
+
+**Host:** nvm `24.22.1 --reinstall-packages-from=24.21.0`, with the default alias moved to it. v24.21.0 and v22.21.0
+are uninstalled. Ron ran the 24.22.1 .pkg, so `/usr/local/bin/node` went from 22.20.0 to 24.22.1. pi stayed at
+0.99.2. Checks: a `pi -p` round trip to `openrouter/anthropic/claude-sonnet-5.5`; `sbx manage doctor` OK; fretboard
+312/312; the greenfield sync dry-run passes every gate, rosters included. **Gotcha:** a shell or terminal multiplexer
+started before the upgrade keeps the deleted `v24.21.0/bin` on PATH, and Claude Code's tool shell does not load
+nvm, so `pi` is "not found". Restarting Claude Code in the same tab is not enough; run `nvm use default`, or open a
+new terminal, first.
+
+**Factory guests: no Node, so no exposure.** A bare exeuntu VM (`nodeprobe`, created and deleted the same day)
+has no `node`. Its `pi` (`/home/exedev/.local/pi/pi`, reporting 1.3.0) is a standalone ELF binary, and `provision.sh`
+installs no Node. So NEXTSTEPS 0c's "add a `node` image row" step was dropped: the row would read MISSING on every
+mount.
+
+**`fleet-restore.sh` (the archived-sandbox restore, not the factory):** `setup_20.x` → `setup_24.x`, and the guard
+now matches `^v24\.` (it had accepted any Node ≥20). The script always creates a fresh VM, and the image has no
+Node, so in practice it always installs. Verified on `nodeprobe` with the exact command: rc 0, `node` v24.22.1. A
+rerun skips the install (0.01s). The `npm install -g` pi line after it was not exercised.

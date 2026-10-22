@@ -54,8 +54,8 @@ step "installing uv on VM"
 uv run exedev exec "$VM" "command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh" --timeout 180
 
 if [ "$NEEDS_PI" = "true" ]; then
-  step "installing node 20 + pi coding agent (manifest says the app shells out to pi)"
-  uv run exedev exec "$VM" "node --version 2>/dev/null | grep -qE 'v(2[0-9]|[3-9][0-9])' || (curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs)" --root --timeout 300
+  step "installing node 24 + pi coding agent (manifest says the app shells out to pi)"
+  uv run exedev exec "$VM" "node --version 2>/dev/null | grep -qE '^v24\.' || (curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && apt-get install -y nodejs)" --root --timeout 300
   uv run exedev exec "$VM" "npm install -g @earendil-works/pi-coding-agent && pi --version" --root --timeout 300
 fi
 

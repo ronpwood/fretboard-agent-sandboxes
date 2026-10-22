@@ -56,21 +56,6 @@ My initial thoughts:
   The risk is scope creep: a UX seat that adds features the brief never asked for.
 - It is a harness change, so it pairs with the harness-restraint rule: ablate it at the next model refresh.
 
-## 0c. Guest Node vs the October 2026 Node security release (queued 2026-10-22)
-
-The [Oct 21 release](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases) has 4 High CVEs: two
-TLS hostname bypasses, a Brotli RCE, and a `dns.resolve` NUL truncation. The patched versions are 24.22.1 and
-22.23.4, and end-of-life lines get no patch. The host is done (nvm v24.22.1, pi 0.99.2 smoke-tested). The guests are
-still open:
-- **Factory VMs:** Node comes from the exeuntu image, like pi, and `sandbox_mount/guest/toolchain.lock` has no
-  `node` row, so the guest version is unknown. Step 1: add `node <ver> image` and let gate F report it on the next
-  mount. If the image ships EOL or unpatched Node, decide whether provision installs it (`float`), at a toolchain
-  change.
-- **`fleet-restore.sh:57-58`:** installs `setup_20.x` (Node 20 is EOL). Its guard `v(2[0-9]|…)` skips the install
-  on any Node ≥20, so it never takes a patch. Bump it to `setup_24.x` and tighten the guard to the major version.
-- **Gate:** a toolchain change needs one replay, not a fan-out: observe [6/6] + one cheap run, then a CHANGELOG
-  entry. Re-read the image's Node first; this item assumes nothing about it.
-
 ## 0a. IDEA (Ron, 2026-10-14): an all-Haiku-5.5 team arm on the CoF brief
 
 Not designed yet. Ron noticed Haiku 5.5 is out. The question: does the team process carry a small model the way
