@@ -6893,3 +6893,31 @@ and `observe` exits 1 on a failed verify. Per the lock rule (newest *proven*, no
 0.87.1, **not** the 1.3.0 that a bare exeuntu VM reported today (2026-10-22). So the next mount will show pi DRIFT
 again (1.3.0, if the image still ships it). Ratchet again only after that mount passes. Claude Code on the same
 run was 2.1.284 against the lock's 2.1.261; it is left as is.
+
+## 2026-10-22c — pi 1.3.0 smoke on a real mount; toolchain.lock ratcheted to pi13smoke-20261022-026e87
+
+The goal: prove pi 1.3.0, which exeuntu now ships, against the harness on a cheap run before any experiment
+depends on it (memory `feedback_small-n-before-fanout`). 0.87.1 → 1.3.0 is a major version jump.
+
+**Mount** `pi13smoke-20261022-026e87`: default target, `main` at `0cd7d00`, all-Sonnet team roster, $10 limit.
+- Gates A–F PASS. B: 455 lines from `pi --list-models`. C: `anthropic/claude-sonnet-5.5` answered. D: pi reports
+  live cost. E: account remaining $50.42.
+- Observe [6/6]: app 200 anonymous.
+
+**Run** `team` ADW on `prompts/11-tdd-smoke.md`, adw `26917093`: **13/13 phases, success**, 707,555 tokens, pi-reported
+$0.6512, about 4 min. Teardown billed **$0.5408**. 4 commits harvested to `refs/sandbox/pi13smoke-20261022-026e87`
+(not merged; it was a smoke). Ron watched it live in obs.
+
+**Harness contracts on pi 1.3.0:**
+- **Event stream:** every line of all 8 agent session files parses as JSON (0 unparsed). `tool_execution_start`/`_end`
+  are paired 34/34, along with `message_*`, `turn_*`, `agent_*`. The traces recipe pulled 5 agent streams plus the db.
+- **`bash_timeout.ts` loads and works**, despite its type-only `@mariozechner/pi-coding-agent` import: `pi -p
+  --mode json -e …/bash_timeout.ts` with `PI_BASH_TIMEOUT_SECONDS=5`, on `sleep 30; echo done`, returned "Command timed
+  out after 5 seconds". The hook mutates the input, so the run's logged bash args do not show `timeout`. Do not
+  read their absence as the hook failing.
+- **Model and thinking flags apply:** the session headers show `openrouter` / `anthropic/claude-sonnet-5.5`, planner
+  and reviewer `high`, builder `medium`. That matches the roster's default (`medium`) and its per-agent overrides.
+
+**Ratchet (Ron: "ratchet all the drifted rows from this run"):** bun 1.4.2→1.4.4, just 1.58.0→1.59.0, uv
+0.12.10→0.13.4, pi 0.87.1→1.3.0 (one day after 2026-10-22b's 0.85.1→0.87.1), claude 2.1.261→2.1.306. python
+was already ok at 3.12.3. Every row now matches the newest mount that passed.
