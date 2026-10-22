@@ -6884,3 +6884,12 @@ mount.
 now matches `^v24\.` (it had accepted any Node ≥20). The script always creates a fresh VM, and the image has no
 Node, so in practice it always installs. Verified on `nodeprobe` with the exact command: rc 0, `node` v24.22.1. A
 rerun skips the install (0.01s). The `npm install -g` pi line after it was not exercised.
+
+## 2026-10-22b — toolchain.lock: pi baseline ratcheted 0.85.1 → 0.87.1 (run s55m2-20261004-553451)
+
+This was the pending lock bump that every mount since team2 noted as "known image DRIFT". The newest mount that
+proved pi 0.87.1 is s55m2: gates A–F passed, and `observe` [6/6] passed too, since `sbx mount` runs under `set -e`
+and `observe` exits 1 on a failed verify. Per the lock rule (newest *proven*, not newest existing) the baseline is
+0.87.1, **not** the 1.3.0 that a bare exeuntu VM reported today (2026-10-22). So the next mount will show pi DRIFT
+again (1.3.0, if the image still ships it). Ratchet again only after that mount passes. Claude Code on the same
+run was 2.1.284 against the lock's 2.1.261; it is left as is.
