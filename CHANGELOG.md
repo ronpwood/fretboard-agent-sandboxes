@@ -6921,3 +6921,6 @@ $0.6512, about 4 min. Teardown billed **$0.5408**. 4 commits harvested to `refs/
 **Ratchet (Ron: "ratchet all the drifted rows from this run"):** bun 1.4.2→1.4.4, just 1.58.0→1.59.0, uv
 0.12.10→0.13.4, pi 0.87.1→1.3.0 (one day after 2026-10-22b's 0.85.1→0.87.1), claude 2.1.261→2.1.306. python
 was already ok at 3.12.3. Every row now matches the newest mount that passed.
+
+**Synced to greenfield 2026-10-22 and pushed:** `7dcbe0c` "factory sync 2026-10-22", from host `70dc735`. 1 file changed
+(`toolchain.lock`). Gates manifest, build, test and rosters ok. **The next greenfield pin is `7dcbe0c`.**
