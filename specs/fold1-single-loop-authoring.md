@@ -111,7 +111,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 | [1. Shared-session mechanism](#phase-1-shared-session-mechanism) | `session:` key, plus pi resume behaviour proven on the host | selftest green; resume probe answers recorded | `complete` |
 | [2. The fold1 roster](#phase-2-the-fold1-roster) | roster and recipe; prove it differs only by `session:` | diff shows 3 added lines; local dry run joins one session | `complete` |
 | [3. Pre-registration](#phase-3-pre-registration) | measures and predictions on record before any outcome | Ron approves the CHANGELOG entry | `idle` |
-| [4. Pilot pair](#phase-4-pilot-pair) | fold1-a and ctl-a, concurrent, same pin | both judged by the s55m1 sweep | `idle` |
+| [4. Pilot pair](#phase-4-pilot-pair) | fold1-a and ctl-a, concurrent, same pin | both judged by the s55m1 sweep | `complete` |
 | [5. Replicate pair and decision](#phase-5-replicate-pair-and-decision) | fold1-b and ctl-b; apply the decision rule | result entry written; NEXTSTEPS item closed | `idle` |
 
 ### Phase 1: Shared-session mechanism
@@ -222,25 +222,25 @@ key limit each.** Expected cost $3–6 per run, from s55m1 at $3.61 and s55m2 at
 
 #### 1. Mount and run
 
-- [ ] `just sbx mount fold1a --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.fold1.config.yaml`
-- [ ] `just sbx mount ctla --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`
-- [ ] `just sbx lifecycle execute <fold1a-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.fold1.config.yaml team`
-- [ ] `just sbx lifecycle execute <ctla-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team`
-- [ ] Mount-time check: on fold1a, the planner, test_designer and builder pi processes all carry the **same** `--session-id`. On ctla they carry three different ones.
+- [x] `just sbx mount fold1a --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.fold1.config.yaml`
+- [x] `just sbx mount ctla --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.team-sonnet.config.yaml`
+- [x] `just sbx lifecycle execute <fold1a-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.fold1.config.yaml team`
+- [x] `just sbx lifecycle execute <ctla-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team`
+- [x] Mount-time check: on fold1a, the planner, test_designer and builder pi processes all carry the **same** `--session-id`. On ctla they carry three different ones.
 
 #### 2. Judge
 
-- [ ] Run the s55m1 sweep (M0) and collect M1–M8 for both runs. Reconcile cost by generation ids **before** teardown (memory: toolchain-unpin-plan).
-- [ ] Ron's verdict on each app, given blind if practical (arm labels hidden).
-- [ ] Write a CHANGELOG result entry for the pair. Harvest per the sandbox-merge memory: cherry-pick, never ff.
-- [ ] Tear down both.
+- [x] Run the s55m1 sweep (M0) and collect M1–M8 for both runs. Reconcile cost by generation ids **before** teardown (memory: toolchain-unpin-plan).
+- [x] Ron's verdict on each app, given blind if practical (arm labels hidden).
+- [x] Write a CHANGELOG result entry for the pair. Harvest per the sandbox-merge memory: cherry-pick, never ff.
+- [x] Tear down both.
 
 #### Validation — Phase 4
 
 > **Loop gate.** Do not start Phase 5 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] Both runs reached a verdict. A run lost to a non-model cause (mount, provider, deadlock) is rerun, not counted, and its cause is recorded (memory: n3-set-results)
-- [ ] The pilot result entry exists, with every P1–P6 marked met, missed or no power
+- [x] Both runs reached a verdict. A run lost to a non-model cause (mount, provider, deadlock) is rerun, not counted, and its cause is recorded (memory: n3-set-results)
+- [x] The pilot result entry exists, with every P1–P6 marked met, missed or no power
 
 ### Phase 5: Replicate pair and decision
 
@@ -268,6 +268,8 @@ key limit each.** Expected cost $3–6 per run, from s55m1 at $3.61 and s55m2 at
 - [ ] Four judged runs (2 fold1, 2 control) on one greenfield pin, each with M0–M8 recorded
 
 ## Notes
+
+**Pilot result (CHANGELOG 2026-10-29c):** one value-defect class each, and they are different classes (ctla: DST span via a linear end; fold1a: midnight DST gap → null day bounds). Ron's verdict was non-blind: ctla conditional Deploy, fold1a MVP. Q1: the author did amend its own spec (A1, test_design). Q2: no shorting seen (M4 100%/100%, M6 no weakening). The pilot alone decides nothing.
 
 **Why fold three seats at once, against the article's "one at a time".** The article's rule targets
 systems with many overlapping domain subagents. Ours has one authoring chain whose handoffs are the

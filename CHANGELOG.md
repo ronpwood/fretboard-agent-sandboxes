@@ -7259,3 +7259,15 @@ That is the same kind of amendment ctla's independent test designer made. M2 = 0
 - **So fold1 does not beat the control on the pilot.** Both pairs are required. Pair 2 is to be judged blind.
 
 **Cost:** pi-reported fold1a $4.82 vs ctla $2.99. Billed spend is reconciled per generation before teardown.
+
+**Cost, reconciled per generation before teardown** (`GET /api/v1/generation`, using each arm's live key; ids from the
+`agent_end` payloads, with db and raw streams agreeing exactly; no planner subagent sessions on either VM):
+- **fold1a:** 64/64 resolved, **$4.4110**, against the key's $4.4111.
+- **ctla:** 52/52 resolved, **$2.7939**, against $2.794.
+- Every generation is `anthropic/claude-sonnet-5.5-20260928`.
+- pi's own estimates ($4.82 / $2.99) ran about 8% high.
+- Recorded, never scored.
+
+**Torn down 2026-10-29 (Ron: "tear down the pilot"):** both keys revoked, VMs destroyed, records closed. Spend is
+recorded at $4.41114447 / $2.794009296. 4 commits each are in `refs/sandbox/<id>`, and traces and artifacts are home.
+`reap`: no orphans.
