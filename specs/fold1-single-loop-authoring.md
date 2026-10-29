@@ -3,6 +3,7 @@ plan: fold1-single-loop-authoring
 created: 2026-10-29T09:11:56-07:00
 modified:
   - 2026-10-29T09:11:56-07:00
+  - 2026-10-29T13:45:00-07:00
 commits:
   - 294627f
 agents:
@@ -13,7 +14,7 @@ back_refs:
   - specs/team-ownership-prompts.md — the team chain and charter this arm runs unchanged
   - specs/team-default-consolidation.md — sssf.team-sonnet is the frozen default a challenger must beat
 forward_refs: []
-status: draft
+status: building
 ---
 
 # Plan: fold1 — one session authors the spec, the tests and the build
@@ -106,7 +107,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 | Phase | Purpose | Done when | Status |
 |---|---|---|---|
-| [1. Shared-session mechanism](#phase-1-shared-session-mechanism) | `session:` key, plus pi resume behaviour proven on the host | selftest green; resume probe answers recorded | `idle` |
+| [1. Shared-session mechanism](#phase-1-shared-session-mechanism) | `session:` key, plus pi resume behaviour proven on the host | selftest green; resume probe answers recorded | `complete` |
 | [2. The fold1 roster](#phase-2-the-fold1-roster) | roster and recipe; prove it differs only by `session:` | diff shows 3 added lines; local dry run joins one session | `idle` |
 | [3. Pre-registration](#phase-3-pre-registration) | measures and predictions on record before any outcome | Ron approves the CHANGELOG entry | `idle` |
 | [4. Pilot pair](#phase-4-pilot-pair) | fold1-a and ctl-a, concurrent, same pin | both judged by the s55m1 sweep | `idle` |
@@ -116,32 +117,32 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 
 #### 1. Config key
 
-- [ ] Add `session: Optional[str] = None` to `AgentConfig` (`adws/adw_modules/data_types.py`), with a comment in the file's existing style.
-- [ ] In `agents.py`, `_agent_session_id` looks up and stores under `key = agent.session or agent.name`. `save_agent_map` writes the same key, and the stored entry keeps the `model` check, so a model change still starts a new session.
-- [ ] `validate()`: agents sharing a `session` must share `model` and `coding_agent`. They may differ in `thinking`, `tools`, `writes` and prompts, which pi takes per send.
-- [ ] Check `run.agent_map` consumers (`grep -rn agent_map adws/`) and the tracer's `agent_session_row`, and adjust any that assume one agent per session id.
+- [x] Add `session: Optional[str] = None` to `AgentConfig` (`adws/adw_modules/data_types.py`), with a comment in the file's existing style.
+- [x] In `agents.py`, `_agent_session_id` looks up and stores under `key = agent.session or agent.name`. `save_agent_map` writes the same key, and the stored entry keeps the `model` check, so a model change still starts a new session. **Built differently:** `agent_map.json` stays keyed by agent name, since the visualizer's `agent_sessions` mirror and the traces recipe read it that way. Each entry gains a `session` field, and `_agent_session_id` falls back to any entry with the same `session` and `model`.
+- [x] `validate()`: agents sharing a `session` must share `model` and `coding_agent`. They may differ in `thinking`, `tools`, `writes` and prompts, which pi takes per send.
+- [x] Check `run.agent_map` consumers (`grep -rn agent_map adws/`) and the tracer's `agent_session_row`, and adjust any that assume one agent per session id. Only `runner.py` (the map itself) and `agents.py` read it. `agent_session_row` keys on the agent and takes the session id as data, so three rows sharing one id is fine.
 
 #### 2. Selftest
 
-- [ ] `adws/adw_modules/session_share_selftest.py`, in the shape of `permissions_selftest.py`: two agents sharing a key get the same id, an unshared agent gets its own, and a model mismatch raises on `validate()`.
+- [x] `adws/adw_modules/session_share_selftest.py`, in the shape of `permissions_selftest.py`: two agents sharing a key get the same id, an unshared agent gets its own, and a model mismatch raises on `validate()`. It also checks that the builder's own fix/revise re-entry stays in the shared session.
 
 #### 3. pi resume probe (host, pi 1.3.0 per toolchain.lock)
 
 The design rests on how pi treats per-send flags when it resumes a session. That is a claim to
 check, not inherit. Run three probes with two sends each into one `--session-id`:
 
-- [ ] **System prompt.** Send 1: `--system-prompt "Your codename is ALPHA"`. Send 2: `--system-prompt "Your codename is BETA"`, asking "codename?". BETA means the prompt is replaced per send, which the design assumes. ALPHA, or both, changes the arm: record it and stop for Ron.
-- [ ] **Thinking.** Send 2 with a different `--thinking` level is accepted, and the raw output shows the new level.
-- [ ] **Tools.** Send 1 calls a tool that send 2's `--tools` omits (for example `write`). Send 2 does not error on history containing a call to a tool now filtered out. This matters because the planner has `subagent_*` tools and the builder does not.
+- [x] **System prompt.** Send 1: `--system-prompt "Your codename is ALPHA"`. Send 2: `--system-prompt "Your codename is BETA"`, asking "codename?". BETA means the prompt is replaced per send, which the design assumes. ALPHA, or both, changes the arm: record it and stop for Ron. **BETA**, effectively a replace. See Notes for the source-level proof.
+- [x] **Thinking.** Send 2 with a different `--thinking` level is accepted, and the raw output shows the new level. `thinking_level_change: high` was recorded on resume.
+- [x] **Tools.** Send 1 calls a tool that send 2's `--tools` omits (for example `write`). Send 2 does not error on history containing a call to a tool now filtered out. This matters because the planner has `subagent_*` tools and the builder does not. It read back `hello-fold1` with no error.
 
 #### Validation — Phase 1
 
 > **Loop gate.** Do not start Phase 2 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `uv run --with pydantic --with pyyaml python -m adws.adw_modules.session_share_selftest` — sharing, isolation and mismatch refusal behave as specified
-- [ ] `uv run --with pydantic --with pyyaml python -m adws.adw_modules.permissions_selftest` — write lanes unchanged for every roster, including the new one
-- [ ] `uv run --with pydantic --with pyyaml --with python-dotenv --with rich python -m adws.adw_modules.agent_pi_selftest` — the pi wrapper still parses events
-- [ ] The three probe outcomes are written into this plan's Notes, with the pi version
+- [x] `uv run --with pydantic --with pyyaml --with python-dotenv --with rich python -m adws.adw_modules.session_share_selftest` — sharing, isolation and mismatch refusal behave as specified ok (0 failures).
+- [x] `uv run --with pydantic --with pyyaml python -m adws.adw_modules.permissions_selftest` — write lanes unchanged for every roster, including the new one 400 cells OK. The fold1 roster doesn't exist until Phase 2, so this is re-run in Phase 2's gate.
+- [x] `uv run --with pydantic --with pyyaml --with python-dotenv --with rich python -m adws.adw_modules.agent_pi_selftest` — the pi wrapper still parses events OK.
+- [x] The three probe outcomes are written into this plan's Notes, with the pi version
 
 ### Phase 2: The fold1 roster
 
@@ -324,6 +325,32 @@ artifact the run can produce. It would show self-correction across a freeze with
 - **N=2.** harn3 showed that one run is sampling. A split pair is not a result, so the decision rule
   says so in advance.
 
+**Phase 1 probe results (2026-10-29, pi 1.3.0 = toolchain.lock, installed to a scratch prefix;
+host pi is 0.99.2; `openrouter/anthropic/claude-sonnet-5.5`; total cost under $0.01).**
+- **System prompt: effectively replaced per send.** The model's own answer, `CODENAME=BETA; EARLIER=none`, was not
+  taken as evidence. pi records every `--system-prompt` as a system message in the session, in a `preamble`
+  section: send 1 stored `{"preamble": "...ALPHA."}` and send 2 stored `{"preamble": "...BETA."}`. pi-ai's
+  `resolveTranscript` keeps mid-conversation system messages only when the model's compat sets
+  `supportsMidConvoSystemMessages`. Otherwise `collapseSystemMessages` sends one head message built by
+  `getCurrentSystemMessage`, which merges sections **by name**, so the later preamble overwrites the earlier one.
+  Our host `~/.pi/agent/models.json` and the guest `models.json.tmpl` both route this model through
+  `openai-completions` with **no compat block**, so the flag defaults to false (`openai-completions.js`
+  ~l.1296). Net: each phase's request carries only that phase's role prompt.
+  - **This holds only while that's true.** If a model entry gains `supportsMidConvoSystemMessages: true`, or the
+    model moves to pi's built-in `anthropic-messages` catalog entry, the old prompts stay in the history as
+    "Updated system prompt section" messages. The latest still wins, but the history keeps them. Check this at
+    any models.json change during the experiment.
+  - Side effect: the head system message changes at every phase boundary, so the cached prefix is lost there.
+    That's cost only, as predicted.
+- **Thinking: applied per send.** The p2 and t2 session files record `thinking_level_change: low → high` on
+  resume. Reasoning-token counts were 0 even on a *fresh* `high` call for these easy prompts, so they can't
+  discriminate. The recorded level change is the evidence.
+- **Tools: a history with a now-filtered tool is fine.** Send 1 (`read,write`) wrote `probe.txt` via `write`.
+  Send 2 (`read` only) resumed that history and read it back with no error.
+- Probe gotchas, for anyone repeating this: `pi -p` blocks on a non-TTY stdin (agent_pi passes DEVNULL; a
+  shell probe needs `</dev/null`), and Sonnet 5.5 on OpenRouter rejects `--thinking off` ("Reasoning is
+  mandatory"). The probe script is not kept; it's 30 lines of the above.
+
 **Side check, nearly free, not part of this plan.** The article names a `prompt-audit` Claude API
 skill that flags outdated instructions. Running it read-only over
 `adws/adw_data/prompt_engineering_team/` fits the harness-restraint memory (ablate coaching at each
@@ -332,7 +359,11 @@ model refresh). Queue it separately if it surfaces anything.
 ## Amendments
 
 <details>
-<summary>— no amendments yet</summary>
+<summary>2026-10-29T13:45:00-07:00 — Phase 1 complete; agent_map keying differs from the plan</summary>
 
-Post-execution changes are appended here, newest at the bottom, by the `update` and `sync` workflows.
+Phase 1 was built and its gate passed. One deviation from task 1.1: `agent_map.json` stays keyed by agent
+name, with a `session` field per entry, instead of being keyed by `agent.session or agent.name`. The reason is
+that external readers (the visualizer's `agent_sessions` type, the traces recipe) expect one entry per agent.
+The pi resume probe confirmed the design's assumption, with a dependency on models.json compat that is now
+recorded in Notes.
 </details>
