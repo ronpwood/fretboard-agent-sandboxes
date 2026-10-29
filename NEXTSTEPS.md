@@ -14,6 +14,8 @@ closes, write its result entry in the changelog and delete it here.
   "engine-grade, needs a UX pass".
 - **New 2026-10-14 (Ron, while traveling):** §0a, an all-Haiku-5.5 team arm on CoF; §0b, five ideas from the
   super-board repo. Neither is designed yet.
+- **New 2026-10-29:** §0d, the fold1 arm (one authoring session vs the team's three handoffs). The spec is written and
+  ready to build, starting at Phase 1.
 - s55m2 is torn down. NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.
 - **Open UI tickets:**
   - s55m1: timeline legend
@@ -141,6 +143,24 @@ Smaller notes, not queued:
   blocking and held a correct PR.
 - "Over-engineering is always should-fix, never blocks alone" is a clean scope-creep rule if the §0 UX seat starts
   adding features.
+
+## 0d. PLANNED (Ron, 2026-10-29): fold1, one session authors the spec, the tests and the build
+
+**Spec:** `specs/fold1-single-loop-authoring.md` (status: draft). Source: the claude.com article "when to fold
+subagents into your main agent loop". Its rule is to fold one unit and keep the subagent only if the folded version
+scores worse end to end.
+
+- **The arm:** planner, test_designer and builder share **one pi session** through a new `session:` roster key.
+  Prompts, gates, write lanes, models and the reviewer (still fresh-context) are byte-identical to
+  `sssf.team-sonnet`. No chain change.
+- **Ron's questions:**
+  - Q1: does the agent that wrote the spec still propose amendments to it?
+  - Q2: does writing tests and code in one mind short the red-suite step's independence? (M4–M7 in the spec)
+- **Size:** 2 pairs (fold1 and a fresh control, concurrent, same greenfield pin) on `prompts/meeting-planner.md`,
+  judged by the s55m1 sweep. Expected cost $3–6 per run. $40 limit each.
+- **First step:** Phase 1's pi resume probe. Does `--system-prompt` replace per send on a resumed session? If not,
+  the arm is different: stop and re-plan.
+- Pre-registration needs Ron's approval before mounting (spec Phase 3).
 
 ## 1. IDEAS (Ron, 2026-09-30, after the bare Sonnet 5.5 run): draft → complete, and MVP → production
 
