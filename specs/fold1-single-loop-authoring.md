@@ -212,7 +212,7 @@ Cost and process, recorded and never scored (memory: cost is recorded, never sco
 
 > **Loop gate.** Do not start Phase 4 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] The CHANGELOG pre-registration entry is committed, with Ron's approval quoted
+- [x] The CHANGELOG pre-registration entry is committed, with Ron's approval quoted
 - [ ] `just target show greenfield` — host_sha equals the commit that contains Phases 1–2
 
 ### Phase 4: Pilot pair
@@ -385,4 +385,16 @@ dirs) makes it fail.
 The Phase 2 smoke gate originally asked for "one session_id in agent_map.json", and the broken mechanism would
 have passed it. It now asks for history continuity in the session file. The general lesson: test what the
 mechanism is *for* (shared context), not its identifier.
+</details>
+
+<details>
+<summary>2026-10-29T15:10:00-07:00 — Phase 3 drafted (CHANGELOG 2026-10-29b); P1 and M1 sharpened against the control record</summary>
+
+Reading the controls changed P1. In s55m1 and s55m2 **every** build-side amendment came from a revise phase,
+turning a reviewer finding into V rows. Neither proposed one before review. "fold1 proposes fewer amendments"
+therefore sits at a floor of 0 and cannot be measured. The pre-registration splits M1 into M1a (pre-review,
+recorded only) and M1b (amend-vs-code-only when review finds a value or requirement gap; both controls amended every
+time), and P1 now predicts on M1b. P2's control baseline was verified: 14/14 `spec_frozen` checks passed first time
+across both controls. The CHANGELOG entry supersedes this plan's Phase 3 §2–§3 wherever they differ. Ron approved it as written
+2026-10-29.
 </details>

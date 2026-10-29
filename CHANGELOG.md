@@ -6924,3 +6924,170 @@ was already ok at 3.12.3. Every row now matches the newest mount that passed.
 
 **Synced to greenfield 2026-10-22 and pushed:** `7dcbe0c` "factory sync 2026-10-22", from host `70dc735`. 1 file changed
 (`toolchain.lock`). Gates manifest, build, test and rosters ok. **The next greenfield pin is `7dcbe0c`.**
+
+## 2026-10-29 — fold1 Phases 1–2 built: a `session:` roster key; the first smoke folded nothing and passed anyway
+
+The source is the claude.com article "Building agents: when to fold subagents into your main agent loop" (read
+2026-10-29, Ron: "see if it has good ideas we might want to a/b test"). The plan is
+`specs/fold1-single-loop-authoring.md` (NEXTSTEPS 0d). The arm: planner, test_designer and builder share **one pi
+session**. The reviewer and documenter stay fresh. Prompts, gates, write lanes and models are held identical to
+team-sonnet.
+
+**Built** (`a692cce`, `d612136`):
+- `AgentConfig.session`, plus `validate()` refusing session-mates whose model or `coding_agent` differ.
+- `agent_map.json` stays keyed by agent name and gains a `session` field (the visualizer and traces read it by
+  name).
+- `_pi_session_dir()`.
+- `session_share_selftest`.
+- `sssf.fold1.config.yaml`: team-sonnet plus 3 `session: author` lines, and nothing else outside comments.
+- `just adw fold1`.
+
+**pi 1.3.0 resume probe** (scratch install; host pi is 0.99.2):
+- `--system-prompt` is **effectively replaced per send**. pi stores it as a `preamble` section, and with no
+  `supportsMidConvoSystemMessages` compat (our models.json routes Sonnet 5.5 via `openai-completions` with no compat
+  block) it collapses system messages into one head message merged by section name. The model's own claim
+  ("EARLIER=none") was not taken as evidence. The source was read.
+- `--thinking` and `--tools` apply per send. A history containing a call to a now-filtered tool resumes cleanly.
+
+**The defect, caught by the smoke and not by the selftest:**
+- Smoke 1 (`fold1smk`, throwaway worktree, `prompts/11-tdd-smoke.md`) passed **15/15**, $0.69, with one session id
+  across the three seats in `agent_map.json`, and **folded nothing**.
+- pi resolves `--session-id` inside `--session-dir`, and that directory was `<agent>/pi_sessions`. Each seat opened
+  a fresh session that happened to have the same id.
+- The selftest checked ids only, and so did the Phase 2 gate as first written. Both would have passed a broken arm,
+  and a mounted pair would have been control-vs-control.
+- Fixed: session-mates share the directory. The selftest asserts it and fails on the old code (mutation-checked).
+  The gate now requires history continuity in the session file.
+
+**Smoke 2 (`fold1smk2`): met.**
+- One `author/pi_sessions/…-author-d329.jsonl` holds Plan Task → Test Design Task → Build Task in order, with a
+  `preamble`-only system update at each boundary. The reviewer and documenter have their own sessions.
+- 13/13 phases, approved on review_1, **608,650 tokens, $0.65**. For the same brief on the team arm:
+  pi13smoke, 707,555 tokens, $0.65 (2026-10-22c). That is N=1 each and records only, never a comparison.
+- There were 3 ordinary in-session gate corrections (`spec_form` traps, `tests_red` load failure, `values_swept`
+  coverage), none of them `spec_frozen`, and 0 amendments.
+
+**Lesson (general):** test what a mechanism is *for*, not its identifier. Matching ids were the receipt for a
+service that never happened.
+
+## 2026-10-29b — PRE-REGISTRATION: fold1 vs team-sonnet on the meeting planner, two pairs
+
+**Approved by Ron before mounting** (2026-10-29, "approve as written, sync greenfield and mount the pilot pair").
+Nothing above the mount record changes after the approval commit.
+
+**The question:** the team arm hands its context over three times before the first review (planner → test designer →
+builder), and its docstring names the loss ("the why is gone after the first handoff"). Does running the three
+authoring seats as **one continuous session**, with every gate still in the harness and the reviewer still fresh,
+change what ships on the edge-heavy brief? Ron asked two specific questions:
+- **Q1:** does the agent that wrote the spec still amend it?
+- **Q2:** does writing the tests and the code in one mind short the independence the red-suite step exists for?
+
+Cost is recorded, not scored.
+
+**The arms** (both `team` ADW, `adw_team_sdlc.py`, MAX_REVISIONS=2, Sonnet 5.5 in every seat, with identical thinking
+levels):
+
+| arm | roster | differs from control |
+|---|---|---|
+| **fold1** | `sssf.fold1.config.yaml` | planner, test_designer and builder share one pi session (`session: author`). Each phase still sends its own role prompt, which pi effectively replaces per send (2026-10-29) |
+| **ctl** | `sssf.team-sonnet.config.yaml` (frozen default) | — |
+
+**Design: 2 pairs, each pair mounted concurrently on the same greenfield pin.**
+- Pilot: `fold1a` + `ctla`. Replicate: `fold1b` + `ctlb`.
+- Brief `prompts/meeting-planner.md`. Oracle `specs/oracles/meeting_oracle.ts`. GRID and sweep rules verbatim from
+  2026-09-28f / 2026-10-03d, including the four span-biting profiles and the mutation-tested sweep (a span mutation
+  and a gap mutation planted before the sweep is believed).
+- s55m1 and s55m2 are **historical context only**. Since their pin `a16a6c3`: node 24, pi 0.87.1 → 1.3.0, the
+  toolchain ratchet, and this `session:` change (inert for team-sonnet: no agent names a session, and paths are
+  unchanged). The fresh `ctl` runs are the controls.
+- **Pin:** a new greenfield sync from host `d612136` or later (`just target sync greenfield --push`, a PUBLIC repo).
+  It happens once, before the pilot, and never mid-pair.
+- **$40 key limit per run.** Expected $3–6 per run: s55m1 cost $3.61 and s55m2 $2.55. fold1's author session re-reads
+  its growing history at each phase, mostly cached. The smoke showed no cost difference. The limit is far above
+  three reviews.
+
+### Measures (all four runs, the same procedure for both arms)
+
+**M0, primary, unchanged from s55m1:**
+- Ron's verdict ("Would you use it? Deploy, or MVP?"), recorded **before** any scored item and given **blind to the
+  arm** where practical.
+- Then reachable value defects by our sweep, every known class: (a) DST span with `spanPower` at plan, (b) gap walls,
+  (c) `Intl` labels in both browsers, (d) wrapped hours under the declared policy.
+
+**Q1, amending your own spec.** The `### A<n> — <role> (<phase>)` heading attributes every amendment.
+- **M1a:** amendments proposed **before any review** (test_design, build, fix_*). Both controls proposed **0** pre-review
+  (s55m1, s55m2). This is a floor, so it is recorded, not predicted.
+- **M1b, the real Q1 test:** for each review finding that changes a user-visible value or adds a requirement, does the
+  revise phase **amend the spec** (new or corrected V rows) or **fix the code only**? Both controls amended every
+  time: s55m1 A1 (V168–V170), s55m2 A1–A2 (V93–V96). The ratio is amended / (amended + code-only).
+- **M2:** `spec_frozen` corrections per phase, meaning attempts to edit the frozen sections in place.
+
+**Q2, test independence:**
+- **M4:** generated-suite coverage at `commit_tests`, as the fraction of frozen V ids with at least one assertion that
+  computes that row's value. A script maps the rows, and every miss and a 10-row sample of hits are confirmed by
+  reading (memory: measure, don't eyeball).
+- **M5, the blind-spot signal:** `review_1` blocking findings that are value or behaviour defects. At that point both
+  suites are green by construction, so each such finding is something the arm's own red suite let through. Each one
+  is checked on first principles.
+- **M6:** build-side edits to the generated suite, from the captured diff against `red_sha` (added and removed). Each
+  removed or changed assertion is classified as weakened, corrected under an amendment, or neutral.
+- **M7:** the `tests_red` first-try result, and any write-lane breach during test_design.
+
+**Recorded, never scored:**
+- **M8:** wall clock per phase and to `commit_build`; tokens and billed $ per seat, reconciled per generation
+  **before teardown**; peak context occupancy of the author session as a share of 1M (memory: context rot, not
+  overflow).
+- V count and traps at plan, P5-style edge coverage at plan, and the review trajectory (accept/reject is not a
+  quality ranking).
+
+### Predictions (a miss is a result)
+
+- **P1 (Q1, M1b):** fold1 amends **less often** than the control when review finds a value or requirement gap. Across
+  both fold1 runs, at least one finding is fixed code-only where the control pattern is to amend. The reason: a mind
+  that owns the spec treats the finding as its own implementation slip.
+- **P2 (Q1, M2):** fold1 has **≥1** `spec_frozen` correction across its two runs. The controls had none: all 14 `spec_frozen`
+  checks across s55m1 and s55m2 passed on the first attempt (`gate_results` in their trace DBs, read 2026-10-29).
+- **P3 (Q2, M5):** fold1's review_1 value or behaviour findings are **≥** its paired control's, in both pairs.
+- **P4 (Q2, M4):** coverage is within 10 points of the paired control. Independence loss shows in *what* is asserted,
+  not *how much*.
+- **P5 (primary, M0):** fold1 ships **0** reachable value defects in both runs.
+- **P6 (M8):** fold1 reaches `commit_build` faster than its paired control in both pairs.
+
+### Decision rule (fixed now)
+
+- **fold1 replaces the default** only if, across both pairs: value defects ≤ control, Ron's verdict is no worse, and
+  M5 is no worse.
+- **Team stands** if fold1 is worse on any of those in both pairs. fold1 is then recorded as a measured negative.
+- **Split pairs decide nothing.** Ron chooses between a third pair and closing.
+- A run lost to a non-model cause is rerun, not counted, and its cause recorded.
+- If fold1 wins, the default flip is a separate Ron-approved change, following team-default-consolidation's
+  procedure. If fold1 loses narrowly, the follow-up named in the spec is a one-line truthful bridge note ("you wrote
+  the spec and tests earlier in this session"), held back now as a second variable.
+
+### Confounds
+
+- **N=2 per arm.** Sampling and arm are not separable inside a pair. That is why the decision rule needs both pairs.
+- **fold1 also changes where prompts sit.** Each phase's role prompt arrives as a head-system replacement over a
+  growing history, not over a fresh one. That is part of the arm, not separable from continuity.
+- **The role prompts tell fold1 a teammate wrote the spec and tests,** which is false. This is accepted, to keep the
+  prompts byte-identical.
+- The pi compat dependency: if `models.json` changes during the experiment, re-probe before the next mount.
+- Chrome version at judging (class c) and pi/Claude Code versions are recorded at mount.
+
+### Launch (per pair, after the sync)
+
+```
+just sbx mount fold1a --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.fold1.config.yaml
+just sbx mount ctla   --target greenfield --limit 40 --config adws/adw_sssf_config/sssf.team-sonnet.config.yaml
+just sbx lifecycle execute <fold1a-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.fold1.config.yaml team
+just sbx lifecycle execute <ctla-id>   prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-sonnet.config.yaml team
+```
+
+### Mount-time checks
+
+0. Gates A–F pass, VM HEAD equals the new pin, the tree is clean, and the brief is present.
+1. Gate C lists exactly `anthropic/claude-sonnet-5.5`.
+2. The process args name the arm's roster.
+3. **fold1 only:** once test_design starts, the VM has **one** `sessions/<adw>/author/pi_sessions/*.jsonl`, and its
+   user turns read Plan Task then Test Design Task. **ctl only:** no `author/` directory exists. This is the check
+   smoke 1 proved necessary.
