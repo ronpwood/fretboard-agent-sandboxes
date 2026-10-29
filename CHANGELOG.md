@@ -7091,3 +7091,95 @@ just sbx lifecycle execute <ctla-id>   prompts/meeting-planner.md adws/adw_sssf_
 3. **fold1 only:** once test_design starts, the VM has **one** `sessions/<adw>/author/pi_sessions/*.jsonl`, and its
    user turns read Plan Task then Test Design Task. **ctl only:** no `author/` directory exists. This is the check
    smoke 1 proved necessary.
+
+**Synced:** greenfield `5f2b594` "factory sync 2026-10-29", from host `bf3a8cb`, pushed. It adds exactly the 5 fold1
+files: leak check clean, gates manifest/build/test/rosters ok. `prompts/meeting-planner.md` and `apps/` are
+byte-identical to s55m1's pin `a16a6c3` (676 bytes; the only diff since then is an added `prompts/clarinet.md`).
+
+**Mounted (pilot pair), each with its own lifecycle phases and a `new-id` id, mounted one after the other and executed
+together at 2026-10-29T13:59:47-07:00, $40 limit each:**
+- **fold1a** `fold1a-20261029-c3e3c6`, adw `dd78351a`, pid 1689.
+- **ctla** `ctla-20261029-f5a42f`, adw `3bed9217`, pid 1675.
+
+**Check 0 PASSED on both:** gates A–F, HEAD `5f2b594` matches the pin, brief present.
+- **Toolchain DRIFT on both (image):** pi **1.4.0** (lock 1.3.0), uv 0.13.6, claude 2.1.312.
+- Because the fold mechanism depends on pi internals, **the Phase 1 resume probe was re-run on pi 1.4.0 before
+  execute**, with the same results as 1.3.0:
+  - `CODENAME=BETA`, with preamble sections merged by name.
+  - `thinking_level_change` low→high recorded.
+  - A filtered-tool history resumes cleanly.
+  - pi-ai's `getCurrentSystemMessage` is byte-identical between versions, and the `supportsMidConvoSystemMessages:
+    false` default and `resolveTranscript` collapse are unchanged.
+- Both arms run 1.4.0, so the pair is symmetric. s55m1/s55m2 ran 0.87.1 (historical only, as registered).
+
+**Check 1 PASSED on both:** gate C pinged only `anthropic/claude-sonnet-5.5`.
+
+**Check 2 PASSED on both:**
+- The ADW argv carries `--config …team-sonnet…` (the `team` recipe's default) and then the arm's `--config`. argparse
+  takes the last, so fold1a runs `sssf.fold1.config.yaml` and ctla runs `sssf.team-sonnet.config.yaml`.
+- Confirmed live, not inferred from argv:
+  - fold1a's planner pi carries `--session-id sssf-dd78351a-author-dd65 --session-dir …/dd78351a/author/pi_sessions`.
+  - ctla's planner pi carries `sssf-3bed9217-planner-f589` under `…/planner/pi_sessions`.
+  - Both are `--model anthropic/claude-sonnet-5.5 --thinking high`.
+
+**Process note (Ron to see):** both fold1 smokes (2026-10-29) ran the team chain on the host, in a throwaway
+worktree. The orchestrator skill's hard rule 2 forbids ADWs on the host. The spec's Phase 2 gate asked for a host
+smoke, and that was the spec's error. The next smoke of a factory change goes on a cheap mount (pi13smoke's shape,
+2026-10-22c). An added benefit is that it runs the image's real pi, which would have surfaced the 1.4.0 drift at
+smoke time.
+
+**Check 3 PASSED** when fold1a entered test_design: there is one `sessions/dd78351a/author/pi_sessions/*.jsonl`, and
+its user turns read Plan Task → Test Design Task. ctla has no `author/` directory.
+
+**In-flight, recorded 2026-10-29T14:18:11-07:00 BEFORE any outcome** (both arms past test_design; neither has built or been reviewed):
+- **Specs at plan:**
+  - fold1a: `specs/dd78351a_timezone_meeting_planner.md`, 43 KB, **174 V rows**, 15 traps.
+  - ctla: `specs/3bed9217_meeting-planner-timezones.md`, 30 KB, **95 V rows**, 13 traps.
+  - That is the same spread as s55m1 (167) vs s55m2 (92) on one roster: planner variance, not yet attributable to
+    the arm.
+- **Endpoint rule, the span class's home:**
+  - **fold1a states it, unconditionally:** `attendance` examines `[start, start+duration)` *minute by minute in
+    the person's local time* and requires every minute inside `[startMin, endMin)` (end-exclusive). A per-minute
+    local reading is the true end reading by construction. There is no span row: no `attendance` row on a DST
+    date, and its DST rows use 00:00–24:00 or day lengths.
+  - **ctla delegates it:** R4 requires "the entire meeting (start to start+duration) inside the working hours
+    (start-inclusive, end-inclusive)" on the participant's own clock. It does not say how the end is read, and its
+    derivations are linear ("V52: 23:00 + 60 = 1440 ≤ endMin"). There is no span trap. This is s55m2's pattern
+    ("builder's choice").
+  - Per 2026-10-03d, P4(a) is judged on the oracle's true end reading in both arms.
+- **spanPower** for each spec's own rule and hours domain is computed **before the sweep is run**, with s55m1's
+  `span_power.ts` adapted per rule. Both specs allow arbitrary non-wrapping hours, so power > 0 is expected for
+  profiles such as 00–03.
+- **Process:** ctla had one ordinary `tests_red` correction in test_design (in-session, then passed). fold1a's
+  planner phase ran longer than ctla's, consistent with its larger spec. Wall clock is indicative only (concurrent
+  arms on shared vCPU).
+- **Measure 0 will not be blind for the pilot:** Ron is watching both arms in obs, where the roster and the author
+  session are visible. This is recorded as non-blind. The replicate pair can be judged blind.
+
+**Runs complete** (recorded before Measure 0 and before any sweep). Both were approved on review_1 with no revise
+phase. Each needed one `tests_red` correction (test_design) and one `values_swept` correction (review_1), both
+in-session.
+- **fold1a** (adw `dd78351a`): 13/13 phases. Commits `9d9f328` spec, `64cd3c0` red suite, `d25237b` build, `20aef8c`
+  docs. **4,964,410 tokens, $4.8234 pi-reported.**
+- **ctla** (adw `3bed9217`): 13/13 phases. Commits `a3bdb09`, `b5ad304`, `6c70da9`, `c82516d`. **2,466,411 tokens,
+  $2.9949 pi-reported.**
+- Both are harvested to `refs/sandbox/<id>` in `../greenfield-sandboxes`. Billed spend is reconciled per generation
+  before teardown.
+
+**Q1, M1a: each arm has exactly one pre-review amendment, from its test_design phase, and the reviewer accepted
+both.**
+- fold1a A1 "test designer (test_design)" adds coverage for controls that R2–R5 name but no frozen row observed.
+  **The spec's own author amended its spec across the freeze.**
+- ctla A1 "test designer (test_design)" adds V96–V100 for R5/R7/R8 behaviours the frozen rows only sampled.
+- Both historical controls had 0 pre-review amendments.
+- **M1b has no power in this pair:** review_1 approved both, so no finding existed to amend or fix code-only.
+- **M2 = 0 in both:** no `spec_frozen` correction.
+
+**Measure 0, Ron's verdict, recorded 2026-10-29T14:37:12-07:00 BEFORE any scored item (verbatim, NON-blind: Ron watched both arms in obs):**
+"https://ctla-20261029-f5a42f.exe.xyz/ Looks usable and would Deploy if all logic proves itself.
+https://fold1a-20261029-c3e3c6.exe.xyz/ looks like an MVP more features ended up in CTLA may have come from the
+design. Also want to check logic on this one to see if it holds up."
+- **ctla: Deploy, conditional on the sweep.** **fold1a: MVP.**
+- Ron attributes the feature gap to *design*, meaning the plan, which in fold1 is the same mind as the build.
+  Whether that is the arm or planner variance (s55m1 deployable vs s55m2 MVP on one roster) is what the replicate
+  pair is for.
