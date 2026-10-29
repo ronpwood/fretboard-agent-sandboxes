@@ -5,6 +5,7 @@ modified:
   - 2026-10-29T09:11:56-07:00
   - 2026-10-29T13:45:00-07:00
   - 2026-10-29T14:40:00-07:00
+  - 2026-10-29T16:30:00-07:00
 commits:
   - 294627f
 agents:
@@ -15,7 +16,7 @@ back_refs:
   - specs/team-ownership-prompts.md — the team chain and charter this arm runs unchanged
   - specs/team-default-consolidation.md — sssf.team-sonnet is the frozen default a challenger must beat
 forward_refs: []
-status: building
+status: abandoned
 ---
 
 # Plan: fold1 — one session authors the spec, the tests and the build
@@ -112,7 +113,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 | [2. The fold1 roster](#phase-2-the-fold1-roster) | roster and recipe; prove it differs only by `session:` | diff shows 3 added lines; local dry run joins one session | `complete` |
 | [3. Pre-registration](#phase-3-pre-registration) | measures and predictions on record before any outcome | Ron approves the CHANGELOG entry | `idle` |
 | [4. Pilot pair](#phase-4-pilot-pair) | fold1-a and ctl-a, concurrent, same pin | both judged by the s55m1 sweep | `complete` |
-| [5. Replicate pair and decision](#phase-5-replicate-pair-and-decision) | fold1-b and ctl-b; apply the decision rule | result entry written; NEXTSTEPS item closed | `idle` |
+| [5. Replicate pair and decision](#phase-5-replicate-pair-and-decision) | fold1-b and ctl-b; apply the decision rule | result entry written; NEXTSTEPS item closed | `fail` |
 
 ### Phase 1: Shared-session mechanism
 
@@ -246,20 +247,20 @@ key limit each.** Expected cost $3–6 per run, from s55m1 at $3.61 and s55m2 at
 
 #### 1. Replicate
 
-- [ ] fold1b and ctlb run exactly as Phase 4, on the same pin.
+- [ ] `fail` fold1b and ctlb run exactly as Phase 4, on the same pin. — not run: Ron closed fold1 after the pilot (CHANGELOG 2026-10-29d)
 
 #### 2. Decide
 
-- [ ] Apply the decision rule from Phase 3. Write the closing CHANGELOG entry: P1–P6 across N=2, the Q1 and Q2 answers in one paragraph each, and the decision.
-- [ ] If fold1 wins: a separate, Ron-approved change makes it the default, following team-default-consolidation's procedure. This plan does not flip the default.
-- [ ] Delete the NEXTSTEPS item, and update memory with a `project_fold1-results` entry.
+- [ ] `fail` Apply the decision rule from Phase 3. Write the closing CHANGELOG entry: P1–P6 across N=2, the Q1 and Q2 answers in one paragraph each, and the decision. — not run: Ron closed fold1 after the pilot (CHANGELOG 2026-10-29d)
+- [ ] `fail` If fold1 wins: a separate, Ron-approved change makes it the default, following team-default-consolidation's procedure. This plan does not flip the default. — not run: Ron closed fold1 after the pilot (CHANGELOG 2026-10-29d)
+- [ ] `fail` Delete the NEXTSTEPS item, and update memory with a `project_fold1-results` entry. — not run: Ron closed fold1 after the pilot (CHANGELOG 2026-10-29d)
 
 #### Validation — Phase 5
 
 > **Loop gate.** The plan is not complete until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `grep -n "fold1" NEXTSTEPS.md` — no open item remains
-- [ ] `grep -n "fold1" CHANGELOG.md` — pre-registration, pilot and closing entries all present
+- [ ] `fail` `grep -n "fold1" NEXTSTEPS.md` — no open item remains — not run: Ron closed fold1 after the pilot (CHANGELOG 2026-10-29d)
+- [ ] `fail` `grep -n "fold1" CHANGELOG.md` — pre-registration, pilot and closing entries all present — not run: Ron closed fold1 after the pilot (CHANGELOG 2026-10-29d)
 
 ## Global Validation
 
@@ -399,4 +400,13 @@ recorded only) and M1b (amend-vs-code-only when review finds a value or requirem
 time), and P1 now predicts on M1b. P2's control baseline was verified: 14/14 `spec_frozen` checks passed first time
 across both controls. The CHANGELOG entry supersedes this plan's Phase 3 §2–§3 wherever they differ. Ron approved it as written
 2026-10-29.
+</details>
+
+<details>
+<summary>2026-10-29T16:30:00-07:00 — closed by Ron after the pilot; status abandoned (human decision)</summary>
+
+Ron chose not to run the replicate pair: "it really comes down to the logic, which failed its mark on both counts."
+fold1 showed no advantage, and the team default stands. Phase 5 is marked `fail` with that reason. The `session:`
+key and the fold1 roster remain, inert unless named. Follow-ups are in NEXTSTEPS 0d (bare Sonnet on the meeting
+planner; an Opus builder seat).
 </details>

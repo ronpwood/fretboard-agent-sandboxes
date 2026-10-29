@@ -7271,3 +7271,30 @@ That is the same kind of amendment ctla's independent test designer made. M2 = 0
 **Torn down 2026-10-29 (Ron: "tear down the pilot"):** both keys revoked, VMs destroyed, records closed. Spend is
 recorded at $4.41114447 / $2.794009296. 4 commits each are in `refs/sandbox/<id>`, and traces and artifacts are home.
 `reap`: no orphans.
+
+## 2026-10-29d — DECISION: fold1 closed after the pilot; no replicate pair; the team default stands
+
+**Ron (verbatim):** "I'm going to forgo doing a blind run. I don't think it would have changed my verdict on the user
+interface I was looking at, and it really comes down to the logic, which failed its mark on both counts. […] I think
+our factories are in good shape as is, and it was good for us to explore. We are truly seeing some random results in
+the builder seat, and that probably deserves more focus and attention, either with a better skill set that we
+provide to that seat or a stronger model."
+
+**Closed below the registered N.** The pre-registered rule needed two pairs. This is an owner's decision, not a
+rule outcome: fold1 showed no advantage on any measure and cost more ($4.41 vs $2.79), so a replicate could only
+have confirmed "do not adopt". `sssf.fold1.config.yaml` and the `session:` key stay, since they are inert unless
+named. `team-sonnet` remains the default.
+
+**What the pilot does show:**
+1. **Q1:** the spec's author amends its own spec (fold1a A1).
+2. **Q2:** one mind writing both tests and code did not weaken the red suite (M4 100%, no edits).
+3. **Both shipped defects began in the plan.** ctla's spec delegated the end reading with linear derivations, and
+   the builder followed them. fold1a's spec never considered a nonexistent midnight. The builder-seat variance Ron
+   sees is what the builder does inside gaps the spec leaves: s55m2's builder chose the true end, ctla's chose
+   linear.
+4. **The frozen team default is now 2/3 exact on the DST-span class on this brief** (s55m1, s55m2 exact; ctla
+   shipped). It is exact whenever the spec states the rule, and a coin-flip when the spec delegates it.
+
+**Open (NEXTSTEPS 0d, rewritten):** a bare Sonnet 5.5 arm on the meeting planner, judged by the same oracle (the
+team arm has never been compared to bare on this brief), and an Opus builder seat on the otherwise all-Sonnet team
+roster (never run; it tests Ron's builder-seat hypothesis directly).
