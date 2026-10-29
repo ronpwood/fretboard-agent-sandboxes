@@ -167,7 +167,7 @@ def execute(run, phase: Phase, call: AgentCall) -> EnvelopeBase:
             thinking=agent.thinking,
             session_id=session_id,
             # absolute: these are read by the pi subprocess, which runs in repo_root
-            session_dir=str((agent_dir / "pi_sessions").resolve()),
+            session_dir=_pi_session_dir(run, agent),
             raw_output_path=str((agent_dir / "raw_output.jsonl").resolve()),
             tools=agent.tools,
             extensions=agent.harness_engineering,
@@ -312,6 +312,14 @@ def _agent_session_id(run, agent: AgentConfig) -> str:
                 return other["session_id"]
         return f"sssf-{run.adw_id}-{agent.session}-{new_id(4)}"
     return f"sssf-{run.adw_id}-{agent.name}-{new_id(4)}"
+
+
+def _pi_session_dir(run, agent: AgentConfig) -> str:
+    """Where pi keeps the session file. pi resolves --session-id INSIDE this
+    directory, so session-mates must share it too: a shared id under per-agent
+    dirs silently opens a fresh session for each (fold1 smoke, 2026-10-29).
+    Unshared agents keep their own <agent>/pi_sessions, exactly as before."""
+    return str((run.session_dir / (agent.session or agent.name) / "pi_sessions").resolve())
 
 
 def _event_forwarder(run, phase: Phase, agent_name: str):

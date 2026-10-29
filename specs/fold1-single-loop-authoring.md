@@ -4,6 +4,7 @@ created: 2026-10-29T09:11:56-07:00
 modified:
   - 2026-10-29T09:11:56-07:00
   - 2026-10-29T13:45:00-07:00
+  - 2026-10-29T14:40:00-07:00
 commits:
   - 294627f
 agents:
@@ -108,7 +109,7 @@ Status markers: `- [ ]` idle · ``- [ ] `wip` `` in progress · `- [x]` complete
 | Phase | Purpose | Done when | Status |
 |---|---|---|---|
 | [1. Shared-session mechanism](#phase-1-shared-session-mechanism) | `session:` key, plus pi resume behaviour proven on the host | selftest green; resume probe answers recorded | `complete` |
-| [2. The fold1 roster](#phase-2-the-fold1-roster) | roster and recipe; prove it differs only by `session:` | diff shows 3 added lines; local dry run joins one session | `idle` |
+| [2. The fold1 roster](#phase-2-the-fold1-roster) | roster and recipe; prove it differs only by `session:` | diff shows 3 added lines; local dry run joins one session | `complete` |
 | [3. Pre-registration](#phase-3-pre-registration) | measures and predictions on record before any outcome | Ron approves the CHANGELOG entry | `idle` |
 | [4. Pilot pair](#phase-4-pilot-pair) | fold1-a and ctl-a, concurrent, same pin | both judged by the s55m1 sweep | `idle` |
 | [5. Replicate pair and decision](#phase-5-replicate-pair-and-decision) | fold1-b and ctl-b; apply the decision rule | result entry written; NEXTSTEPS item closed | `idle` |
@@ -148,19 +149,19 @@ check, not inherit. Run three probes with two sends each into one `--session-id`
 
 #### 1. Roster
 
-- [ ] `cp sssf.team-sonnet.config.yaml sssf.fold1.config.yaml`. Add `session: author` under `planner`, `test_designer` and `builder`, and replace the header comment with a fold1 header that cites this spec.
+- [x] `cp sssf.team-sonnet.config.yaml sssf.fold1.config.yaml`. Add `session: author` under `planner`, `test_designer` and `builder`, and replace the header comment with a fold1 header that cites this spec.
 
 #### 2. Recipe
 
-- [ ] In `just/adws.just`, add a `fold1 *ARGS` recipe beside `team`: `uv run adws/adw_team_sdlc.py --config adws/adw_sssf_config/sssf.fold1.config.yaml "$@"`. The sandbox launch passes the config explicitly anyway (Phase 4).
+- [x] In `just/adws.just`, add a `fold1 *ARGS` recipe beside `team`: `uv run adws/adw_team_sdlc.py --config adws/adw_sssf_config/sssf.fold1.config.yaml "$@"`. The sandbox launch passes the config explicitly anyway (Phase 4).
 
 #### Validation — Phase 2
 
 > **Loop gate.** Do not start Phase 3 until every box below is `[x]`, or is `fail`-marked with a reason.
 
-- [ ] `diff <(grep -v '^#' adws/adw_sssf_config/sssf.team-sonnet.config.yaml) <(grep -v '^#' adws/adw_sssf_config/sssf.fold1.config.yaml)` — exactly three added `session: author` lines; nothing else differs outside comments
-- [ ] `uv run --with pydantic --with pyyaml --with python-dotenv --with rich python -c "import sys; sys.path.insert(0,'adws'); from adw_modules import agents; agents.validate(agents.load_config('adws/adw_sssf_config/sssf.fold1.config.yaml'), ['planner','test_designer','builder','reviewer','documenter'])"` — the roster loads and validates
-- [ ] A cheap local smoke on the host (`prompts/11-tdd-smoke.md` via `just fold1`, or a plan-plus-test-design stop) shows planner and test_designer with **one** `session_id` in `agent_map.json`, and the reviewer with a different one
+- [x] `diff <(grep -v '^#' adws/adw_sssf_config/sssf.team-sonnet.config.yaml) <(grep -v '^#' adws/adw_sssf_config/sssf.fold1.config.yaml)` — exactly three added `session: author` lines; nothing else differs outside comments Exactly 3 lines.
+- [x] `uv run --with pydantic --with pyyaml --with python-dotenv --with rich python -c "import sys; sys.path.insert(0,'adws'); from adw_modules import agents; agents.validate(agents.load_config('adws/adw_sssf_config/sssf.fold1.config.yaml'), ['planner','test_designer','builder','reviewer','documenter'])"` — the roster loads and validates It validates. The permissions selftest now covers it: 460 cells OK.
+- [x] A cheap local smoke on the host (`prompts/11-tdd-smoke.md` via the team chain on the fold1 roster, in a throwaway git worktree, with `PI_PATH` set to pi 1.3.0) shows that the **history carries over**: one pi session file under `sessions/<adw>/author/pi_sessions/` holds the planner's, test designer's and builder's turns in order, and the reviewer's session is separate. Matching `session_id`s in `agent_map.json` are **not** evidence. Smoke 1 had matching ids and three fresh sessions (Amendments). **Smoke 2 (`fold1smk2`, 2026-10-29): met.** There is one file, `author/pi_sessions/…-author-d329.jsonl`, holding Plan Task → Test Design Task → Build Task in order, with a `preamble`-only system update at each boundary. The reviewer and documenter have their own sessions. 13/13 phases, approved on review 1, $0.65. There were 3 ordinary gate corrections, all resolved in-session (`spec_form` traps, `tests_red` suite failed to load, `values_swept` coverage), none of them `spec_frozen`, and 0 amendments, as expected on a smoke brief.
 
 ### Phase 3: Pre-registration
 
@@ -366,4 +367,22 @@ name, with a `session` field per entry, instead of being keyed by `agent.session
 that external readers (the visualizer's `agent_sessions` type, the traces recipe) expect one entry per agent.
 The pi resume probe confirmed the design's assumption, with a dependency on models.json compat that is now
 recorded in Notes.
+</details>
+
+<details>
+<summary>2026-10-29T14:30:00-07:00 — Phase 2 smoke caught a Phase 1 defect: matching ids, three fresh sessions</summary>
+
+Smoke 1 (`fold1smk`, throwaway worktree, pi 1.3.0) passed 15/15 phases for $0.69, and `agent_map.json` showed
+planner, test_designer and builder on one id, `sssf-fold1smk-author-da51`. **Nothing was folded.** pi resolves
+`--session-id` inside `--session-dir`, and `agents.execute` passed a per-agent `<agent>/pi_sessions` directory, so
+each seat opened a fresh session that happened to have the same id. The evidence: three session files with that
+id, one per agent dir, each starting with its own role's task.
+
+Fix: `_pi_session_dir(run, agent)` keys the directory by `agent.session or agent.name`. Unshared agents keep the
+same path as before. `session_share_selftest` now asserts the directory. A mutation check (reverting to per-agent
+dirs) makes it fail.
+
+The Phase 2 smoke gate originally asked for "one session_id in agent_map.json", and the broken mechanism would
+have passed it. It now asks for history continuity in the session file. The general lesson: test what the
+mechanism is *for* (shared context), not its identifier.
 </details>

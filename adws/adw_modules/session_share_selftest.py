@@ -16,6 +16,7 @@ See specs/fold1-single-loop-authoring.md.
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 from . import agents
@@ -51,6 +52,18 @@ def main() -> int:
         failures.append("share: builder's own re-entry (fix/revise) left the shared session")
     if opens("reviewer") == planner:
         failures.append("isolate: the reviewer joined the author session")
+
+    # pi resolves --session-id INSIDE --session-dir: a shared id under per-agent
+    # dirs opens a fresh session each time (the 2026-10-29 smoke shipped exactly that).
+    run.session_dir = Path("/tmp/sssf-selftest")
+    dirs = {name: agents._pi_session_dir(run, by_name[name])
+            for name in ("planner", "test_designer", "builder", "reviewer")}
+    if len({dirs["planner"], dirs["test_designer"], dirs["builder"]}) != 1:
+        failures.append(f"share: session-mates get different pi session dirs: {dirs}")
+    if dirs["reviewer"] == dirs["planner"]:
+        failures.append("isolate: the reviewer's pi session dir is the author's")
+    if dirs["reviewer"] != str((run.session_dir / "reviewer" / "pi_sessions").resolve()):
+        failures.append(f"isolate: an unshared agent's pi session dir moved: {dirs['reviewer']}")
 
     try:
         agents.validate(cfg, REQUIRED)
