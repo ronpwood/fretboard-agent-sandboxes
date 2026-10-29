@@ -7183,3 +7183,79 @@ design. Also want to check logic on this one to see if it holds up."
 - Ron attributes the feature gap to *design*, meaning the plan, which in fold1 is the same mind as the build.
   Whether that is the arm or planner variance (s55m1 deployable vs s55m2 MVP on one roster) is what the replicate
   pair is for.
+
+## 2026-10-29c — fold1 pilot pair judged: each arm ships one reachable value-defect class, and they are different classes; Ron's verdict favours the control
+
+**Judging:** two sweep agents (one per arm, identical briefs), adapted from the s55m2 kit, judged only by
+`meeting_oracle.ts` (self-test 5/5 in both). In both arms spanPower came first, then planted mutants (every one
+caught in its targeted family) before any sweep result was believed. **Both headline defects were re-verified by
+hand on the host against the harvested code** (not inherited from the agents): see below. Artifacts are in
+`.sandbox/runs/<id>-artifacts/`.
+
+| | **fold1a** (fold1) | **ctla** (control) |
+|---|---|---|
+| Measure 0 (Ron, non-blind) | **MVP** | **Deploy, if the logic holds** |
+| Oracle checks / misses | 6,685,542 / **0** | 5,593,446 / **1,800** (1,642 engine) |
+| DST span (class a), spanPower > 0 | **exact**: 1,604/1,604 biting cases | **SHIPPED**: 1,318/1,318 biting C.span, plus 324 C.fit ending on the transition, plus 158 windows. UI 103 misses, identical in Chromium 156.0.8078.4 and Chrome 156.0.8078.73 |
+| Gap/overlap walls (class b), oracle zones | exact (G.wall 144,504; gap→null 1,140; overlap→earlier 1,140) | exact |
+| **Midnight DST gap** (class b at 00:00; zoneinfo plus hand derivation, as s55m2's G') | **SHIPPED**: 16/72 day-bounds wrong (Havana, Santiago, Cairo, Beirut; 2025 + 2026; the gap date and the day before) | exact (G' 9,216 including 16 gaps at 00:00; hand-checked on Havana) |
+| Intl display-name labels (class c) | none | none |
+| Wrapped hours (class d) | refused by declared policy | refused by declared policy |
+
+**ctla's defect, verified on the host:**
+- `planner.ts:24` reads `lp.minutes + durationMin <= p.endMin`, a linear end.
+- NY 00:00–03:00, 2025-03-09, 06:00Z, 90 min → the app says `true`. The true end is 03:30 EDT.
+- NY 00:00–02:30, 2025-11-02, 05:45Z, 60 min → the app says `false`. The true end is 01:45 EST.
+- Both end walls were cross-checked with Intl.
+- **Reach:** through the form. Anyone whose hours touch the 01:00–03:00 band on a DST date in their own zone. Weekday
+  hours are enough (the US and EU switch on Sunday, and ctla's spanny roster ticks all days).
+- **Origin:** the spec delegated the end reading, with linear derivations (recorded at plan), and the builder chose
+  linear. This is s55m2's pattern; s55m2's builder chose correctly.
+
+**fold1a's defect, verified on the host:**
+- `tz.ts:35` is `zonedTimeToUtc(date, 0, tz)!`, with no guard for a nonexistent midnight.
+- America/Havana: `dayBounds("2025-03-08")` has `end: null`, and `dayBounds("2025-03-09")` has `start: null`.
+- `commonWindows([Ana Havana 9–17, Ben London 9–17], "2025-03-08", Havana)` → `[]`. The truth is 14:00–17:00Z.
+- In the UI (both browsers), 2025-03-09 freezes for about 115 s and then lists 20,157 windows starting in 1970.
+- **Reach:** the zone must be typed (Havana is not in the datalist). A user in Cuba, Chile, Egypt or Lebanon hits it
+  twice a year.
+- **Origin:** R2 defines the day as midnight→midnight and lists 23/24.5/25 h days, but never a nonexistent midnight.
+  No key row, no trap.
+
+**Other recorded (non-value) findings:**
+- ctla: timeline hour text is an index, not the wall hour, on 23 and 25 h days (232/961 cells; spec silent). The
+  `aria-pressed=""` highlight never matches.
+- Both: `type=time` caps at 23:59, so 24:00 hours are hash-only.
+
+### Predictions
+
+| | result |
+|---|---|
+| **P1** (Q1, M1b: fold1 amends less when review finds a gap) | **NO POWER**: both approved on review_1, so there was nothing to amend |
+| **P2** (≥1 `spec_frozen` correction across fold1's runs) | **0 after the pilot**; open until fold1b |
+| **P3** (fold1 M5 ≥ control) | met trivially: 0 vs 0. Neither suite let a defect reach review; both shipped defects reached no one |
+| **P4** (M4 coverage within 10 pts) | **MET**: 100% (174/174) vs 100% (95/95), confirmed by reading a 10-row sample per arm |
+| **P5** (fold1 ships 0 reachable value defects) | **MISSED**: the midnight-gap class |
+| **P6** (fold1 faster to commit_build) | **MISSED**: 1,783 s vs 1,304 s. The cause is the plan (1,008 vs 403 s). test_design + build were 578 vs 779 s. Indicative only: concurrent arms on shared vCPU |
+
+**Q1 (does the author amend its own spec?): yes, in the pilot.** fold1a's test_design phase, the planner's own
+mind, proposed A1 (coverage for controls named in R2–R5 that no frozen row observed), and the reviewer accepted it.
+That is the same kind of amendment ctla's independent test designer made. M2 = 0 in both.
+
+**Q2 (does one mind short the red suite's independence?): no sign of it in this pair.**
+- M4 is 100% in both.
+- M6: neither build touched its generated suite. fold1a grew the fixed suite by 61 lines.
+- **Both arms shipped one defect class their own suite could not see, because their own spec did not contain it.**
+  The red suite guards only the edges its spec names (memory: "key only guards edges it contains"), whether or not
+  the same mind wrote both. The test designer's independence did not save ctla: it tested the planner's delegated
+  linear rows faithfully.
+
+**Against the decision rule (pair 1 of 2):**
+- **value defects:** 1 class each, a tie by class. The reaches differ: ctla's is a form-reachable edge for
+  early-hours users in any DST zone; fold1a's needs a typed zone in one of 4 countries.
+- **Ron's verdict:** fold1a is worse (MVP vs conditional Deploy). The condition on that Deploy, "if all logic proves
+  itself", is **not met** for ctla.
+- **M5:** equal.
+- **So fold1 does not beat the control on the pilot.** Both pairs are required. Pair 2 is to be judged blind.
+
+**Cost:** pi-reported fold1a $4.82 vs ctla $2.99. Billed spend is reconciled per generation before teardown.
