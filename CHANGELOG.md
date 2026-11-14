@@ -7481,3 +7481,89 @@ recognise the baselines):** "This is a very deploy-ready app."
 - **The reviewer's "206/206":** its own sweep ran "196/196 under happy-dom", but the planner routed V194–V196 to a
   real-browser check. To be verified.
 - **Billed-cost reconciliation.**
+
+## 2026-11-14d — fab1 judged: 0 value defects in 18.3M checks, wrapped hours powered for the first time; P2 missed as worded (no straddling-meeting row)
+
+**Judging:** one sweep agent, adapted from the ctla kit, ran host-side on a byte-identical copy of the harvested app
+(`diff -r` rc=0). Truth comes only from `meeting_oracle.ts`, which was not edited. Power was established first. Every
+claim below was **re-verified on the host, not inherited**: `bun test` re-run, the mutant summary and sweep logs read,
+the hand check re-run, and three crossing meetings worked by hand. Files are in
+`.sandbox/runs/fab1-20261114-130dc0-artifacts/judge/`.
+
+**Tiers, never summed:**
+- **oracle:** 16 catalogue zones the oracle models.
+- **ext:** 36 catalogue zones on the oracle's own rule functions, with declared std/dst.
+- **lhi:** Lord Howe. Modelled, but not in the catalogue.
+- **supp:** Cairo, Jerusalem and Santiago, from Python zoneinfo, reported separately.
+- **Agreement check:** the oracle's rules match zoneinfo for every modelled zone, 2025–2027. The sweep refuses to run
+  otherwise.
+
+| class | oracle | ext | lhi | supp |
+|---|---|---|---|---|
+| (a) DST span | 9,819 / 0 | 14,308 / 0 | 1,081 / 0 | 3,368 / 0 |
+| (b) dayStart/daySlots, incl. no-midnight days | 11,744 / 0 | 26,424 / 0 | 734 / 0 | 2,202 / 0 |
+| (c) labels | 361,312 / 0 | 774,016 / 0 | 24,968 / 0 | 97,169 / 0 |
+| (d) wrapped/overnight hours | 1,744,800 / 0 | 3,727,904 / 0 | 120,992 / 0 | 362,976 / 0 |
+| base | 3,222,945 / 0 | 6,905,017 / 0 | 222,351 / 0 | 667,208 / 0 |
+
+The UI was also checked in happy-dom on transition days, with teams of 8 and picked meetings that cross transitions:
+ext 82,276 / 0, supp 144,854 / 0. Host `bun test`: 212 pass, 0 fail.
+
+**Power:**
+- **Mutants:** 8/8 caught by their targeted family: linear end, linear meetingStatus (supp), local-00:00 dayStart
+  (supp), offset taken once per day, Kathmandu truncated, wrapped treated as empty, `UTC-02:-30`, day marker only at 00:00.
+- **The span class is powered on the end-time display path:** all 832 crossing meetings differ under the linear mutant.
+- **On the status/verdict path, only in supp (51 biting cases, Jerusalem and Cairo).** Every US/EU/AU/NZ/LHI transition
+  falls on Sunday between 01:00 and 03:59, which is always off and night, so a wrong reading cannot change a status
+  there. **This is a property of the brief's status model, not a gap in the sweep.**
+
+**Hand-verified crossing meetings, app = truth:**
+- New York 2026-03-08 06:30Z, 60 min: `01:30–03:30`, not 02:30.
+- Sydney 2026-04-04 15:30Z, 120 min: `02:30–03:30`.
+- St John's 2026-11-01 03:30Z, 90 min: `01:00–01:30`.
+
+These are the cases ctla's linear end failed.
+
+**Predictions:**
+
+| | result |
+|---|---|
+| P1 (primary) | **MET:** 0 reachable value defects across (a)–(d) in every tier. Span is powered as described above. |
+| P2 | **MISSED as worded.** The end rule is stated and normative, with clock-change-day rows (V25/26, V142/143, V151/152). **No V row has a meeting that straddles a transition**; all 55 boot states were checked (`vrow_straddle.out`). The app handles straddling meetings exactly anyway. |
+| P3 | **MET:** V32 Cairo, V33 Santiago. The local-00:00 mutant is caught on Santiago. |
+| P4 | **MET:** 0 amendments in the run, against ≥1 for every baseline. |
+| P5, P6 | **MET** (2026-11-14c). |
+| P7 | **MET at the top of the range:** Ron, "very deploy-ready". |
+
+**Against the reading rule:**
+- **Literal reading:** "P1 met, P2 missed" means **the result matches what Sonnet already does; the planner seat did
+  not change the spec on the pre-registered signal.** That reading stands.
+- **Recorded beside it, not instead of it:**
+  - fab1 is the first arm on this brief clean across all four classes **including wrapped hours (class d, 5.96M
+    checks)**, a class every baseline refused by declared policy.
+  - It specified the no-midnight class that fold1a shipped as a defect.
+  - It drew zero amendments.
+  - **N=1.**
+
+**Other findings:**
+- **Spec ambiguity:** R4's prose ("the whole slot lies inside") disagrees with its encoded rule (`s + 30`) in 6 of
+  1,144 slots that straddle a transition. All 6 are supp-only, on a misaligned home grid. The app follows the encoded
+  rule, which the spec makes normative.
+- **The reviewer's 206/206:** 196 rows were checked under happy-dom, and V194–V196 in **real Chromium** via
+  `render_smoke --eval`, as the planner's team note routed them. Its envelope records the exact rgb pairs, the
+  geometry, and a passing render gate.
+- **Downstream "impressed by the spec"** (Ron, watching OBS): **not supported by a lexical count.** That count is crude
+  and only a smell test. Evaluative words per 1k thinking words for fab1's test designer / builder / reviewer were
+  0.8 / 0.5 / 0.0, against 1.6–2.3 / 0–1.2 / 0–1.3 for the baselines. The sampled hits describe the seat's own work,
+  not the spec.
+  - **What is measured:** the builder decided little (about 3,300 lines in 7.7 min, about 4.3K thinking words), while
+    the test designer did the heavy lifting (17.1K thinking words, about 2× ctla's). It considered and declined "a
+    throwaway implementation".
+
+**Cost, reconciled per generation before teardown** (`GET /api/v1/generation` with the run's live key, run on the VM):
+- 131/131 generations resolved, **$63.8617**: Fable 5.2 (`-20261109`) 74 gens, $59.52; Sonnet 5.5 (`-20260928`) 57
+  gens, $4.34.
+- The key shows $63.93. The $0.06 gap is gate pings and the VM smokes.
+- pi's estimate was $63.69, 0.3% low.
+- Records are in `gens/`.
+- Recorded, never scored.
