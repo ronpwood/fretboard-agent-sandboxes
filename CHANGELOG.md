@@ -7423,3 +7423,61 @@ just sbx lifecycle execute fab1-20261114-130dc0 prompts/meeting-planner.md adws/
 **Launched** `fab1-20261114-130dc0` on greenfield, adw `de1c382c`, pid 3068, at 2026-11-14T16:25Z. The `team` ADW was
 started with `execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-plan.config.yaml team` and
 a $40 limit. The planner's `agent_start` reports `openrouter/anthropic/claude-fable-5.2`.
+
+## 2026-11-14c — fab1 run record (before any sweep): accepted at review_1, 0 amendments, $63.69; Ron "very deploy-ready"
+
+**Recorded before the oracle sweep exists**, so nothing below is shaped by it.
+
+**Run:** adw `de1c382c` ran from 16:25Z to 20:28Z, and the status is success.
+
+| phase | seat | wall | cost (pi) |
+|---|---|---|---|
+| plan | Fable 5.2 | 3h29m | $59.47 |
+| test_design | Sonnet 5.5 | 17.8 min | $2.30 |
+| build + test_1 | Sonnet 5.5 | 8.5 min | ≈ $0.75 |
+| review_1 | Sonnet 5.5 | 6.7 min | $1.09: approved, 16/16 R, 206/206 V |
+| document | Sonnet 5.5 | 14 s | $0.06 |
+
+The total is $63.69 by pi's own report. The billed cost is reconciled per generation before teardown.
+
+**Key limit raised mid-run, three times, by Ron in the OpenRouter dashboard:** $40 → $60 at about 18:31Z, → $70 at
+about 19:35Z, and → $80 at about 19:56Z. Each raise was made because the plan was about to exhaust the key before
+writing the spec. The pre-registered $40 came from my $6–12 estimate, which **missed by about 5×**. I priced Fable
+from Sonnet's per-phase costs, not from its reasoning volume.
+
+**The plan phase, measured from the planner's raw stream:**
+- Output dominated the cost, about 94% of it reasoning: 20–46K tokens per turn at $40/M.
+- Cache misses on turns lasting several minutes cost about $2.50 at the 2h mark. My reading is that the 5-minute
+  TTL expired between turns; I have not verified that.
+- Unprompted (the planner prompts and the charter never mention render smoke), it:
+  - read the gate code;
+  - built an independent Python reference model (`/tmp/plan/ref.py`), handed off as
+    `context_handoff/reference/reference_model.py`, "a calculator, not an authority";
+  - wrote every V literal by hand, then asserted it against that model (`rows*.py`, five generations);
+  - probed happy-dom against the behaviour of a real browser;
+  - ran the real render gate on throwaway prototypes ("154 buttons… 61 s");
+  - cross-checked the zone data across zoneinfo, Bun Intl and Chromium 159 (350 transitions, all agree).
+- `/tmp/plan/` was copied home to `.sandbox/runs/fab1-20261114-130dc0-artifacts/plan_tmp/`.
+
+**The spec** (`specs/de1c382c_meeting-planner.md`) has 206 V rows in 21,431 words. Sonnet's plan commits had 92–167
+rows in 4,194–5,802 words. It also has 25 traps, each citing its rows, and team notes that list measured happy-dom
+facts. Ron's name appears 0 times (Ron lost the bet).
+
+**In-flight predictions (judging pending):**
+- **P2:** rule stated (instant arithmetic), and there are clock-change-day rows: V25, V26, V142, V143, V151, V152.
+  Whether any *meeting* straddles a transition is still open. The sweep agent was asked to settle it.
+- **P3: met.** V32 (Cairo) and V33 (Santiago) are days with no midnight, with the algorithm and a trap stated.
+- **P4:** 0 amendments across test_design, build and review. Every Sonnet baseline had at least one.
+- **P5: met.** 3h29m against ctla's 403 s.
+- **P6: met.** No history-editing 400 over 30+ planner turns.
+
+**Measure 0, Ron (non-blind; sunk-cost risk named before the verdict; Ron declined blind serving because he would
+recognise the baselines):** "This is a very deploy-ready app."
+- **P7 met at the top of the range:** the strongest verdict on this brief, in the same category as s55m1's
+  "deployable".
+- The builder-seat UX hypothesis is weakened, not refuted. The builder transcribed a spec that fixes every UI string.
+
+**Open:**
+- **The reviewer's "206/206":** its own sweep ran "196/196 under happy-dom", but the planner routed V194–V196 to a
+  real-browser check. To be verified.
+- **Billed-cost reconciliation.**
