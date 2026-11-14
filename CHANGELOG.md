@@ -7331,3 +7331,8 @@ Audited every runtime pin against the OpenRouter and pi.dev live catalogs. **No 
     hydrogen $0.0031, k3.1-pro $0.0042, gpt-6.1-sol $0.0040, fable-5.2 $0.0191.
 - **Not exercised:** a full ADW run on any changed roster. The guest pi 1.3.0 path was not tested either, so
   greenfield needs a factory sync before a VM sees the changes. Fable 5.2 was not tested across a rejoined session.
+
+**Synced 2026-11-14T16:11Z:** the greenfield pin moves from `5f2b594` to **`b67ea20`** "factory sync 2026-11-14"
+(synced from host `396017a`, pushed). It adds exactly the 5 refresh files: three rosters, the new
+`sssf.team-fable-plan` roster, and the guest registry. Gates manifest/build/test/rosters ok, leak check clean,
+pristine ok. The guest pi 1.3.0 path is still unexercised until the next greenfield mount.
