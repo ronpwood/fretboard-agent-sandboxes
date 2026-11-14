@@ -294,6 +294,15 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
   it needs its own inventory. `adw_prompt.py` stays regardless (provision.sh).
 - **`.claude/skills/sssf/templates/`**: the installer's copy has neither `tdd` nor `team` and a drifted
   `gates.py`. Re-template it, or retire it with the ADW cut.
+- **CANDIDATE, gated on fab1 (Ron, 2026-11-14): a 2×2 spec transplant to find the seat that matters.** The
+  idea is to hold a spec fixed and vary the downstream team.
+  - **Plan factor:** ctla's spec (Sonnet, delegated a linear end) vs fab1's spec (Fable).
+  - **Downstream factor:** a Sonnet team vs a cheap team (deepseek builders, glm reviewer).
+  - **Gate:** fab1 meets P1 **and** P2 (CHANGELOG 2026-11-14b). Otherwise its spec is not a clean treatment.
+  - **Needs:** a `--spec <path>` flag on `adw_team_sdlc.py` that skips the planner, commits the given spec as the
+    frozen baseline, and hands the test designer a `PlanOutput` envelope. Write a spec, smoke it on a cheap mount, then
+    pre-register at N=1 per cell, about $10–15. No planner spend, which matters: fab1's plan phase alone was $16+,
+    about 80% of it reasoning at $40/M, with cache misses on multi-minute turns.
 - **Ablation candidate, low priority (Ron, 2026-11-14): `team.md:78` "write your reasoning down".**
   It is the charter's only general instruction to explain; the report `summary` and the amendment
   `Why` line are load-bearing, so keep those. Test: team-sonnet with only that line removed, small N,
