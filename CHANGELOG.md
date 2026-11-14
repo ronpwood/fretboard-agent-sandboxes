@@ -7335,4 +7335,87 @@ Audited every runtime pin against the OpenRouter and pi.dev live catalogs. **No 
 **Synced 2026-11-14T16:11Z:** the greenfield pin moves from `5f2b594` to **`b67ea20`** "factory sync 2026-11-14"
 (synced from host `396017a`, pushed). It adds exactly the 5 refresh files: three rosters, the new
 `sssf.team-fable-plan` roster, and the guest registry. Gates manifest/build/test/rosters ok, leak check clean,
-pristine ok. The guest pi 1.3.0 path is still unexercised until the next greenfield mount.
+pristine ok. The guest path is still unexercised until the next greenfield mount.
+*(Corrected 2026-11-14b: the VM image ships pi **1.5.2**, not the lock's 1.3.0; gate F reports it as image DRIFT.)*
+
+## 2026-11-14b — PRE-REGISTRATION: fab1, team-sonnet with a Fable 5.2 planner, on the meeting planner
+
+**Approved by Ron before execute** (2026-11-14, "Approve and launch"). Mounted before approval, at Ron's request ("mount a greenfield sandbox for the Fable planner
+challenger"). Nothing above the launch record changes after the approval commit.
+
+**The question:** fold1 (2026-10-29c/d) found that defects begin in the plan. Every team-sonnet plan on this brief so
+far left the DST end reading to the builder ("builder's choice, V rows don't straddle a transition"). ctla's builder
+chose a linear end and shipped the DST-span class; s55m1's and s55m2's builders chose correctly. **Does a stronger
+planner close the edge in the spec itself?** This is the first Fable model in this project. Cost is recorded, never scored.
+
+**Held constant:**
+- `team` ADW; brief `prompts/meeting-planner.md`; oracle `specs/oracles/meeting_oracle.ts`, GRID unchanged.
+- The roster is `sssf.team-fable-plan.config.yaml`, identical to `sssf.team-sonnet.config.yaml` except the planner
+  model line (`claude-fable-5.2`, still at `thinking: high`).
+
+**Differs from the baselines, recorded:**
+- greenfield pin `b67ea20` (the 2026-11-14 refresh; no prompt, gate or oracle change since `5f2b594`).
+- pi on the VM is 1.5.2. The image has drifted past the lock's 1.3.0, and the baselines already varied: s55m1 and
+  s55m2 ran pi 0.87.1, and ctla ran 1.4.0 (run records).
+
+### ZDR exemption (Ron, 2026-11-14: "Allow non-ZDR for this run")
+
+- **Finding:** Fable 5.2 has **no zero-data-retention endpoint**. Anthropic requires 30-day retention for it.
+- **What failed:** the first `setup` failed gate C with "No endpoints found matching your data policy (Zero data
+  retention)". Sonnet 5.5 passed.
+- **The recipe change:** `setup.just` now carries an explicit `ZDR_EXEMPT` list (one entry, with the approval inline).
+  An exempt model is pinged with `data_collection: deny`, and only `zdr: true` is dropped. The gate prints
+  `[ZDR-EXEMPT ...]`.
+- **This breaks the invariant that every sandbox call is ZDR, for one seat on one roster.**
+- **Open account-policy question:** the host's own key reached Fable 5.2 earlier today. So the account-wide
+  OpenRouter privacy setting, which the gate comments say enforces ZDR on the agents' calls, does not currently
+  block non-ZDR routes. That should be confirmed in the dashboard.
+
+### Mount-time checks (done)
+
+`fab1-20261114-130dc0` on greenfield, $40 limit.
+- **Gates:** A–F pass when run against the roster (`setup <id> <config>`). Fable is EXEMPT; Sonnet 5.5 passes under ZDR.
+- **VM HEAD** is `b67ea20`, which matches the pin.
+- **Agent-path smoke (VM key, pi 1.5.2, `--session-id`, `thinking: high`):**
+  - Fable made a bash tool call and replied correctly.
+  - The same session, rejoined with 3 prior turns replayed, made a second tool call and replied "alpha, beta". There
+    was **no history-editing 400**.
+  - Trivial prompts produced 0 reasoning tokens (adaptive). On a DST question, Fable used 273 reasoning tokens and
+    returned thinking text, against Sonnet's 209. Fable answered correctly: the meeting ends 03:30 EDT, 30 minutes
+    past the window.
+
+### Launch (after approval)
+
+```
+just sbx lifecycle execute fab1-20261114-130dc0 prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-plan.config.yaml team
+```
+
+**Expected cost: $6–12.** Sonnet arms on this brief cost $2.55–3.61. The planner seat runs at $8/$40.
+
+### Predictions
+
+- **P1 (primary): 0 reachable value defects across classes (a)–(d), with spanPower > 0.** This is judged by the
+  s55m2/fold1 sweep kit, mutation-tested first. It matches the 2/3 baseline; it does not beat it.
+- **P2: the spec states the DST end-reading rule AND carries at least one V row whose window straddles a transition,
+  at plan.** Baseline: 0/3 Sonnet plans did this. **This is the planner signal.**
+- **P3: the spec names the nonexistent-midnight day bound** (Havana, Santiago, Cairo or Beirut, or the rule in general).
+  Baseline: 0/4 plans, counting fold1a. Prediction: yes, at low confidence.
+- **P4: fewer value amendments downstream than the baseline median.** Recorded: the count, and who proposed each.
+- **P5: the plan phase takes longer and costs more than ctla's** (403 s). Recorded: plan wall time, plan $, total $.
+- **P6: no history-editing 400 in any rejoined Fable session.** The smoke supports this. Recorded from the generation
+  records.
+- **P7: Ron's measure-0 verdict is unchanged in distribution** (baselines: deployable, MVP, deploy-if-logic-holds).
+  The UX gap belongs to the builder seat.
+
+**How it reads:**
+- **P1 and P2 met:** evidence that the planner seat closes edges at spec time. Then price a replicate before any
+  freeze talk. A challenger replaces the default only by beating it.
+- **P1 met, P2 missed:** the result matches what Sonnet already does. The planner seat did not change the spec.
+- **P1 missed:** a stronger planner alone does not close the class.
+
+### Confounds
+
+- **N=1.** It can fail to disprove the seat; it cannot prove it.
+- The pin and the VM pi version moved since the baselines.
+- The planner's routing is non-ZDR (Anthropic, 30-day retention). Every other seat is ZDR.
+
