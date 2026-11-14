@@ -318,6 +318,10 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
     (`team.md:78` and the "answer for what you claim" framing). Support for "charter steering" = the prototyping
     share of the planner's spend drops and the spec's P2/P3 hold. This overlaps the `team.md:78` ablation
     below; run it as one experiment.
+  - **Ron's prediction (2026-11-14, recorded before either arm runs):** the light-charter arm does about the same
+    amount of prototyping. The accountability is the model's own disposition, not the charter's wording ("as I switch
+    jobs and reports, I always felt I'd answer for my work"). That is a third reading, consistent with the
+    2026-09-30 bare-Sonnet finding that posture is model. If it holds, the bare-Fable arm should prototype too.
   - **Measure in both:** the planner's (or bare agent's) spend split between prototyping and spec-writing, from
     fab1's own split. Budget: expect $30–60 per Fable arm. Recorded, never scored, but it sets the key limit.
 - **Ablation candidate, low priority (Ron, 2026-11-14): `team.md:78` "write your reasoning down".**
