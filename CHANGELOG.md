@@ -7567,3 +7567,12 @@ These are the cases ctla's linear end failed.
 - pi's estimate was $63.69, 0.3% low.
 - Records are in `gens/`.
 - Recorded, never scored.
+
+**Torn down 2026-11-14 (Ron: "ready to tear it down and push the commits"):**
+- The key was revoked, and the gate confirmed it is absent from `/api/v1/keys`. The VM was destroyed and the record
+  closed. Spend is recorded at $63.925942354. The tree was clean.
+- `reap` found no orphans.
+- Home: 4 commits in `refs/sandbox/fab1-…`, traces, artifacts (`plan_tmp/`, `judge/`, `gens/`).
+- The gold-standard export is local only: `~/Dev/learning/fab1-meeting-planner`. It contains the spec, app, docs, the
+  team's commits replayed, `provenance/` (the reference model, the planner's scratch, the judge kit) and
+  `provenance/planner_thinking.html`, the planner's 74 turns of thinking summaries as a readable timeline.
