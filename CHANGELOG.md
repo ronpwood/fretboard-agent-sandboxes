@@ -7419,3 +7419,7 @@ just sbx lifecycle execute fab1-20261114-130dc0 prompts/meeting-planner.md adws/
 - The pin and the VM pi version moved since the baselines.
 - The planner's routing is non-ZDR (Anthropic, 30-day retention). Every other seat is ZDR.
 
+
+**Launched** `fab1-20261114-130dc0` on greenfield, adw `de1c382c`, pid 3068, at 2026-11-14T16:25Z. The `team` ADW was
+started with `execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-plan.config.yaml team` and
+a $40 limit. The planner's `agent_start` reports `openrouter/anthropic/claude-fable-5.2`.
