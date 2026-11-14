@@ -294,6 +294,11 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
   it needs its own inventory. `adw_prompt.py` stays regardless (provision.sh).
 - **`.claude/skills/sssf/templates/`**: the installer's copy has neither `tdd` nor `team` and a drifted
   `gates.py`. Re-template it, or retire it with the ADW cut.
+- **Ablation candidate, low priority (Ron, 2026-11-14): `team.md:78` "write your reasoning down".**
+  It is the charter's only general instruction to explain; the report `summary` and the amendment
+  `Why` line are load-bearing, so keep those. Test: team-sonnet with only that line removed, small N,
+  judged on defects (tokens as the efficiency measure). Run it apart from the Fable-planner challenger.
+  The 2026-11-14 measurement: recording thinking costs ~nothing; reasoning is ~27% of Sonnet spend.
 
 ## 5. A 0731 control roster, if any A/B is wanted
 
@@ -327,12 +332,13 @@ A restored one (`git mv` back from `archive/factory/rosters/`) still runs on 073
 
 | roster | defaults.model | seats that differ |
 |---|---|---|
-| **`sssf.config.yaml` (default / control)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) | planner `gemini-3.8-flash`, reviewer `glm-5.3`, documenter `gpt-6-luna` |
+| **`sssf.config.yaml` (default / control)** | **`deepseek-v4.1-flash`** (since 2026-09-20, pushed to greenfield `601d880`) | planner `gemini-4-hydrogen` (since 2026-11-14; was `gemini-3.8-flash`), reviewer `glm-5.3`, documenter `gpt-6-luna` |
 | **`sssf.team-sonnet.config.yaml` (the team arm's frozen DEFAULT since 2026-10-04c)** | **`claude-sonnet-5.5`** | none: every seat Sonnet 5.5, team prompts |
 | `sssf.team.config.yaml` (the team arm on flash models) | `deepseek-v4.1-flash` | same seats as the default, team prompts |
 | `sssf.team-mix.config.yaml` (mix1) | `deepseek-v4.1-flash` | planner + reviewer `claude-opus-5.5` (mix1 itself ran `claude-opus-5`), documenter `gpt-6-luna` |
 | `sssf.team-rev.config.yaml` (rmix1, judged 2026-09-30c) | `deepseek-v4.1-flash` | reviewer `claude-opus-5.5` only; otherwise the team roster |
-| `sssf.frontier` | `claude-opus-5.5` | builder + documenter `kimi-k3`, scout `gpt-6-sol` |
+| `sssf.frontier` | `claude-opus-5.5` | builder + documenter `kimi-k3.1-pro`, scout `gpt-6.1-sol` (both since 2026-11-14) |
+| `sssf.team-fable-plan` (challenger, drafted 2026-11-14, never run) | `claude-sonnet-5.5` | planner `claude-fable-5.2`; otherwise byte-identical to team-sonnet |
 | `sssf.gemniflash` | `gemini-3.8-flash` | none |
 
 Model refresh 2026-09-30 (CHANGELOG 2026-09-30): `claude-opus-5` → `claude-opus-5.5`, `gpt-5.6-luna` →

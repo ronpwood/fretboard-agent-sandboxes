@@ -7298,3 +7298,36 @@ named. `team-sonnet` remains the default.
 **Open (NEXTSTEPS 0d, rewritten):** a bare Sonnet 5.5 arm on the meeting planner, judged by the same oracle (the
 team arm has never been compared to bare on this brief), and an Opus builder seat on the otherwise all-Sonnet team
 roster (never run; it tests Ron's builder-seat hypothesis directly).
+
+## 2026-11-14 — model refresh: gemini-4-hydrogen planner (control + team), kimi-k3.1-pro and gpt-6.1-sol in frontier, a Fable 5.2 planner challenger drafted
+
+Audited every runtime pin against the OpenRouter and pi.dev live catalogs. **No pin was missing or retired.**
+
+- **Swapped (approved by Ron):**
+  - Planner `gemini-3.8-flash` → `gemini-4-hydrogen` in `sssf.config.yaml` **and** `sssf.team.config.yaml`.
+    Hydrogen is the Gemini 4 "workhorse" tier, released 2026-11-12: $1.50/$7.50, 1M context.
+    **This changes the control arm's planner.** Control runs before this date ran 3.8 Flash.
+  - In frontier, builder and documenter `kimi-k3` → `kimi-k3.1-pro` (released 2026-10-23). It is the
+    post-trained successor and costs $2/$10 against $3/$15. The benchmark gains are Moonshot's own.
+  - Frontier scout `gpt-6-sol` → `gpt-6.1-sol` (same price, already registered).
+- **Drafted, not run:** `sssf.team-fable-plan.config.yaml`. It is team-sonnet with the planner on `claude-fable-5.2`
+  ($8/$40, `thinking: high`), a challenger to the frozen default (fold1 found the defects begin in the plan). The
+  risks are in its header. The main one: Fable 5.2 enforces the preserved-thinking history-editing check on every
+  account, so a rejoined planner session must replay unedited.
+- **Registered:** `kimi-k3.1-pro`, `gemini-4-hydrogen`, `claude-fable-5.2` in the guest tmpl, each next to its
+  predecessor, plus host `~/.pi/agent/models.json`. Host pi 0.99.2's built-in catalog lists none of the three.
+  Every swapped-out id stays registered.
+- **Kept:** `deepseek-v4.1-flash`. The dated `-1017` snapshot exists, but the undated id already serves
+  `deepseek-flash`. Also kept: `glm-5.3` (flashx/prime are variants), `gpt-6-luna` (newest Luna), and Opus 5.5 in
+  frontier (Fable 5.2 trials in the challenger instead).
+- **Price notes, recorded and not scored:** Gemini 3.8 Flash and 3.6 Flash intro pricing ends 2027-01-01, and both
+  rates double (3.8: $0.75/$3.75 → $1.50/$7.50). The source is secondary reporting of Google's pricing page.
+  OpenRouter already publishes 3.8 Flash at $0.825/$4.125. The Sonnet 5.5 published cache read is now $0.10, not
+  the registry's $0.20. Neither registry rate was `--fix`ed (NEXTSTEPS "do not tidy").
+- **Verified:**
+  - All three new registry rates match OpenRouter (`check_rates.py`). The 8 rows it flags existed before this change.
+  - All five touched rosters pass `agents.validate()`, which resolves each model through host `pi --list-models`.
+  - Each new id completed a real host `pi -p` call with one `bash` tool call and the correct reply:
+    hydrogen $0.0031, k3.1-pro $0.0042, gpt-6.1-sol $0.0040, fable-5.2 $0.0191.
+- **Not exercised:** a full ADW run on any changed roster. The guest pi 1.3.0 path was not tested either, so
+  greenfield needs a factory sync before a VM sees the changes. Fable 5.2 was not tested across a rejoined session.
