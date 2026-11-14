@@ -303,6 +303,23 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
     frozen baseline, and hands the test designer a `PlanOutput` envelope. Write a spec, smoke it on a cheap mount, then
     pre-register at N=1 per cell, about $10–15. No planner spend, which matters: fab1's plan phase alone was $16+,
     about 80% of it reasoning at $40/M, with cache misses on multi-minute turns.
+- **CANDIDATES (Ron, 2026-11-14, from watching fab1's planner): is Fable a solo worker, or is the charter steering it?**
+  Unprompted, fab1's planner built an independent oracle (`/tmp/plan/ref.py`), probed happy-dom, and ran the real
+  render gate on throwaway prototypes. The plan phase cost $25+. There are two readings:
+  - **Solo worker:** Ron: "a better bare-metal model than a team collaborator… trust issues".
+  - **Charter steering:** `team.md` "you will answer for what you claim" was written as a manager reporting to a CEO,
+    and Fable acts on it as one would, by prototyping first. Anthropic: earlier-model prompts are often too
+    prescriptive for Fable 5.2.
+
+  Two arms, both after fab1 is judged:
+  - **Bare Fable 5.2 on the meeting planner.** The same harness as the bare Sonnet arm (31/32), the same oracle.
+    Support for "solo worker" = it beats team-fable.
+  - **Light-charter team-fable.** The fab1 roster with only the accountability coaching removed
+    (`team.md:78` and the "answer for what you claim" framing). Support for "charter steering" = the prototyping
+    share of the planner's spend drops and the spec's P2/P3 hold. This overlaps the `team.md:78` ablation
+    below; run it as one experiment.
+  - **Measure in both:** the planner's (or bare agent's) spend split between prototyping and spec-writing, from
+    fab1's own split. Budget: expect $30–60 per Fable arm. Recorded, never scored, but it sets the key limit.
 - **Ablation candidate, low priority (Ron, 2026-11-14): `team.md:78` "write your reasoning down".**
   It is the charter's only general instruction to explain; the report `summary` and the amendment
   `Why` line are load-bearing, so keep those. Test: team-sonnet with only that line removed, small N,
