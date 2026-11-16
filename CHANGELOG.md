@@ -7705,3 +7705,9 @@ runs out mid-plan loses the comparison. I have no basis for a tighter estimate a
 ```
 just sbx lifecycle execute <fabm1-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-med.config.yaml team
 ```
+
+**Launched** `fabm1-20261116-680d16` on greenfield `5eb5efc`, adw `266d79e5`, pid 3296, at 2026-11-16T15:41Z. The `team`
+ADW was started with `execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-med.config.yaml
+team`. The key had $79.61 and the account $113.40 left (gate E, re-run before launch). The run log shows the planner on
+`openrouter/anthropic/claude-fable-5.2`, session `sssf-266d79e5-planner-7cbd`, and its pi session records
+`thinkingLevel: "medium"`.
