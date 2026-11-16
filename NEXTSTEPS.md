@@ -306,7 +306,12 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
     frozen baseline, and hands the test designer a `PlanOutput` envelope. Write a spec, smoke it on a cheap mount, then
     pre-register at N=1 per cell, about $10–15. No planner spend, which matters: fab1's plan phase alone was $16+,
     about 80% of it reasoning at $40/M, with cache misses on multi-minute turns.
-- **RUNNING 2026-11-16 as fabm1 (`fabm1-20261116-680d16`), approved by Ron:** roster `sssf.team-fable-med.config.yaml`, pre-registration
+- **NEXT (Ron, 2026-11-16): fabm2–4, three full-chain replicates of fabm1 at `medium`** on the same pin `5eb5efc`,
+  roster unchanged, $20 keys, scored on H1–H4 at plan. Question: did fabm1 drop H3/H4 because of effort or by
+  sampling? Pre-register after fabm1's P6 sweep. **Fold in a provider smoke (Ron):** the check-0 prompt pinned
+  through OpenRouter provider routing to each of Google, Azure and Anthropic, under $1. Record each replicate's
+  planner provider; pi's `x-session-id` keeps a session on one provider. The `high` side stays at N=1.
+- **DONE 2026-11-16 as fabm1 (`fabm1-20261116-680d16`), approved by Ron (P6 sweep pending):** roster `sssf.team-fable-med.config.yaml`, pre-registration
   CHANGELOG 2026-11-16 (check 0 = a high-vs-medium reasoning-token smoke before execute; `low` runs only if `medium`
   holds). **CANDIDATE (2026-11-14d): a Fable 5.2 planner at `thinking: medium`**, otherwise the fab1 roster, on the same brief
   and oracle. fab1's plan cost $59.52, about 94% of it reasoning, at `high`. Question: does the spec hold (rows, traps,
