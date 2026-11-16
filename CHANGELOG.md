@@ -7577,10 +7577,10 @@ These are the cases ctla's linear end failed.
   team's commits replayed, `provenance/` (the reference model, the planner's scratch, the judge kit) and
   `provenance/planner_thinking.html`, the planner's 74 turns of thinking summaries as a readable timeline.
 
-## 2026-11-16 — PRE-REGISTRATION (DRAFT, not yet approved): fabm1, the fab1 roster with the Fable 5.2 planner at `thinking: medium`
+## 2026-11-16 — PRE-REGISTRATION: fabm1, the fab1 roster with the Fable 5.2 planner at `thinking: medium`
 
-**Status: drafted, not approved.** Nothing has been mounted or run. Ron approves this text before execute, and nothing
-above the launch record changes after the approval commit.
+**Approved by Ron before execute** (2026-11-16, "topped up, approved — launch it"). Nothing above the launch record
+changes after the approval commit. The account was topped up to $113.40 before launch (gate E re-run).
 
 **The question:** fab1 ran its planner at `thinking: high`. The plan cost $59.52 billed and took 3h29m. Downstream
 cost $4.34. **Was most of the planner's reasoning needed for this brief, or does the spec hold at `medium`?**

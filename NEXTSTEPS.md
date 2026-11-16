@@ -306,7 +306,7 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
     frozen baseline, and hands the test designer a `PlanOutput` envelope. Write a spec, smoke it on a cheap mount, then
     pre-register at N=1 per cell, about $10–15. No planner spend, which matters: fab1's plan phase alone was $16+,
     about 80% of it reasoning at $40/M, with cache misses on multi-minute turns.
-- **DRAFTED 2026-11-16 as fabm1, awaiting Ron's approval:** roster `sssf.team-fable-med.config.yaml`, pre-registration
+- **RUNNING 2026-11-16 as fabm1 (`fabm1-20261116-680d16`), approved by Ron:** roster `sssf.team-fable-med.config.yaml`, pre-registration
   CHANGELOG 2026-11-16 (check 0 = a high-vs-medium reasoning-token smoke before execute; `low` runs only if `medium`
   holds). **CANDIDATE (2026-11-14d): a Fable 5.2 planner at `thinking: medium`**, otherwise the fab1 roster, on the same brief
   and oracle. fab1's plan cost $59.52, about 94% of it reasoning, at `high`. Question: does the spec hold (rows, traps,
