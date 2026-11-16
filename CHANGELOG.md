@@ -7892,5 +7892,5 @@ init that no UI path reaches. That is recorded, not judged.
 - fab1's `run_mutants.sh` (ported as-is) started 9 sweep+UI pairs at once, and the host ran out of memory.
 - `run_mutants.sh` is now sequential, with the reason in its header.
 - The likely cause is happy-dom not releasing memory across about 3,500 mounts. Not investigated.
-- **The same parallel runner is still in fab1's judge dir and in the local gold repo's `provenance/`.** Fix it
-  before reuse.
+- **The same parallel runner was fixed in fab1's judge dir and in the local gold repo's `provenance/`** (gold repo
+  commit `1cc0154`, Ron 2026-11-16).
