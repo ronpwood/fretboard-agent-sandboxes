@@ -7802,3 +7802,95 @@ artifact, not the app.
 - **P6 (oracle sweep) is still pending.** It runs host-side on `artifacts/tree`, so it does not need the VM.
 - **Next, agreed with Ron:** after the sweep, pre-register fabm2–4, three full-chain replicates at `medium` on the
   same pin, scored on H1–H4 at plan, to separate sampling from effort.
+
+## 2026-11-16c — fabm1 judged: 0 app-vs-spec misses, but a reachable plan-born DST-span verdict defect in Cairo; P6 missed on the supp tier
+
+**Judging:** one sweep agent ported fab1's kit to fabm1's API (`tz.ts`, `planner.ts`, `format.ts`, `ui.ts`) and ran it
+host-side on a byte-identical copy of the harvested app (`diff -r` rc=0; `bun test` 147 pass). Truth comes only from
+`meeting_oracle.ts` (unedited) and the Python-zoneinfo supplement. The zoneinfo agreement check passed for 37 zones.
+**Re-verified on the host, not inherited:**
+- I re-ran the value sweep and the UI sweep; the summaries were identical.
+- I re-ran the 9 mutant UI sweeps myself, sequentially, after the crash.
+- I worked the headline Cairo case independently in Python zoneinfo.
+Files are in `.sandbox/runs/fabm1-20261116-680d16-artifacts/judge/`.
+
+**App against its own spec: 0 misses.**
+
+| class | oracle | ext | lhi | supp |
+|---|---|---|---|---|
+| (a) DST span | 9,223 / 0 | 4,866 / 0 | 1,024 / 0 | 5,642 / 0 |
+| (b) day window, incl. no-midnight days | 12,776 / 0 | 15,448 / 0 | 830 / 0 | 3,320 / 0 |
+| (c) labels | 354,782 / 0 | 390,176 / 0 | 24,968 / 0 | 99,856 / 0 |
+| base | 2,056,985 / 0 | 892,958 / 0 | 95,352 / 0 | 383,462 / 0 |
+
+The UI was swept through the real view: oracle 2,866,686 / 0, ext 1,926,762 / 0, lhi 389,043 / 0, supp 1,140,238 / 0.
+The hand checks match truth in both `formatRange` and the UI detail: New York `01:30–03:30`, Sydney `02:30–03:30`,
+St John's `01:00–01:30`. **V100 is the only V row whose meeting straddles a transition.**
+
+**Class (d), overnight hours: N/A by declared policy, enforced.** The UI rejects every start ≥ end attempt: 2,256
+targets, 0 reached, an error each time, and the selects never moved. Overnight hours can only be set through an API
+init that no UI path reaches. That is recorded, not judged.
+
+**Class (a) on the status path: a plan-born defect.**
+- The spec says `status = classify(s, d, …)`, from the local start minute plus duration.
+- **Bucket (i), app ≠ spec: 0 everywhere.**
+- **Bucket (ii), app = spec ≠ the status read at the true end instant: only in supp.**
+  - Engine D: 131 span cases (Cairo 96, Jerusalem 35).
+  - Planner F: 88 span cases (Cairo 56, Jerusalem 32).
+  - **UI detail: 48, all Cairo.** Jerusalem is not in the catalogue, so the UI cannot reach it.
+- `spanPower`, weekday-aware: biting is 0 in the oracle, ext and lhi tiers. In supp, Cairo has 888 biting
+  meeting×profile pairs over 12 meetings; Jerusalem (API-only) has 100.
+- **Worked case, verified in Python zoneinfo:** Cairo, Thu 2026-10-29, 20:30Z, 60 min. The meeting runs 23:30 EEST to
+  23:30 EET. A person working 22:00–24:00 is inside their hours the whole meeting, but the spec rule computes the end
+  as 24:30 and the app shows "night".
+- Reachability: Cairo is in the catalogue and an end of 24:00 is selectable. It happens one night a year, for profiles
+  ending at 24:00.
+- **Edge rows are not defects.** These are meetings that end exactly at a transition: 54 in D and 30 in F, Cairo
+  spring-forward. Example: 23:30–24:00, then the clock jumps to 01:00. Such a meeting really is inside hours that end
+  at 24:00. They are reported on their own line.
+- fab1's spec stepped meeting half-hours as instants and had 0 here, supp included.
+
+**Power:** 9/9 mutants were caught by their targeted family:
+- linear end;
+- true-instant status;
+- true-end planner;
+- local-00:00 day start (Santiago no-midnight);
+- offset taken once per day;
+- Kathmandu truncated;
+- negative-offset label;
+- midnight label;
+- badge weekday.
+`true_status` is 0/6,840 in the oracle tier as expected (power 0 there) and 131/3,184 in supp.
+
+**Predictions:**
+
+| | result |
+|---|---|
+| P1 (primary) | **MISSED as written** (2026-11-16): H3 dropped. |
+| P2 | **MET:** 0 amendments. |
+| P3 | **MET:** 72,589 reasoning tokens = 7.3% of fab1's. |
+| P4 (H4) | **MISSED:** no independent reference model. |
+| P5 | **MET:** no early stop. |
+| P6 | **MISSED on the supp tier:** a reachable DST-span verdict defect in Cairo, plan-born (the app obeys its spec). Met on oracle, ext and lhi. Every class is clean against the spec. |
+| P7 | **MET:** no history-editing 400. |
+| P8 | **MET (one step below):** Ron "deployable". |
+
+**Reading:**
+- **The pre-registered literal reading stands:** P1 missed means "`high` was paying for spec work".
+- **The sweep sharpens it:**
+  - fabm1 at `medium` kept the display-path end rule (H1, V100) and the no-midnight day (H2).
+  - It wrote the status rule on the local clock. That rule is wrong on one Cairo night a year.
+  - fab1 at `high` stepped status through true instants and had no such case.
+  - So the spend bought at least one real edge (wrapped hours, H3) and one subtle one (status across a transition),
+    plus the independent oracle (H4).
+- **N=1 per arm.** fabm2–4 test whether these drops are effort or sampling.
+
+**Judge-kit memory, the cause of the host crash:**
+- Measured with `/usr/bin/time -l`: one `ui_fabm1.ts` run peaks at **33.8 GB RSS and a 45.3 GB footprint** on Ron's
+  48 GB laptop, taking 120 s.
+- The value sweep peaks at 110 MB.
+- fab1's `run_mutants.sh` (ported as-is) started 9 sweep+UI pairs at once, and the host ran out of memory.
+- `run_mutants.sh` is now sequential, with the reason in its header.
+- The likely cause is happy-dom not releasing memory across about 3,500 mounts. Not investigated.
+- **The same parallel runner is still in fab1's judge dir and in the local gold repo's `provenance/`.** Fix it
+  before reuse.
