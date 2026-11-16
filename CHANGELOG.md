@@ -7749,3 +7749,32 @@ passed on the first try. Spec `specs/266d79e5_timezone-meeting-planner.md`, comm
 **P1 (primary) is MISSED as written,** because H3 dropped. The pre-registered reading is "`high` was paying for spec
 work; do not run `low`". At N=1 a dropped marker can also be sampling (Confounds). The downstream phases continue
 unchanged.
+
+## 2026-11-16b — fabm1 run record (before any sweep): accepted at review_1, 0 amendments; Ron "deployable"
+
+**Recorded before the oracle sweep exists**, so nothing below is shaped by it. Run: adw `266d79e5`, 15:41Z → about
+16:12Z, success. The commits are harvested to `refs/sandbox/fabm1-20261116-680d16`.
+
+| phase | seat | wall | cost (pi) |
+|---|---|---|---|
+| plan | Fable 5.2 (`medium`) | 18.2 min | $5.36 |
+| test_design | Sonnet 5.5 | 5.6 min | $0.76 |
+| build + test_1 | Sonnet 5.5 | 2.5 min + 21 s | $0.41 |
+| fix_1 + test_2 | Sonnet 5.5 | — | $0.09 |
+| review_1 | Sonnet 5.5 | 3.3 min | $0.51: approved, 13/13 R, 133/133 V, 140 sweep checks + a Chromium smoke |
+| document | Sonnet 5.5 | 14 s | $0.10 |
+
+The total by pi is about $7.24 (fab1: $63.69). The billed cost is reconciled per generation before teardown.
+
+**test_1 → fix_1:** the render gate failed 3/4 checks because 4 timeline cells (`button.c`) were completely covered
+by `div#app`, so a user could not click them. The builder fixed `ui.ts` in one pass, and test_2 passed. fab1 needed no
+fix pass.
+
+**Predictions so far:**
+- **P2 MET:** 0 amendments. The test designer wrote "no row I believed wrong".
+- **P7 MET:** no history-editing 400 and no provider errors. One grep hit was `head -400` in a documenter command.
+- **P8 MET (one step below fab1):** Ron, non-blind: "Looks like a good app. The frontend might need a little polish,
+  but if the backend code is sound, this might be a minor issue, and I would consider it deployable." fab1 was "very
+  deploy-ready". The polish note fits the render-gate failure above.
+- **The reviewer's `values_swept` first pass did not fail this time.** It is a known recurring item, recorded only.
+- **P6 is pending:** the oracle sweep with fab1's judge kit, mutants first.
