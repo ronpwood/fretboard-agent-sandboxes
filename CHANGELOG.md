@@ -7620,6 +7620,34 @@ The fab1-era note says the effort pi sends is not in the trace.
   effort is lost first. A run that "held" at an effort the model never saw measures nothing.
 - Record the provider of every smoke generation.
 
+### Mount-time checks (done 2026-11-16, before approval)
+
+`fabm1-20261116-680d16` on greenfield, $80 key limit, mounted at Ron's request ("commit and mount a sandbox").
+- **Greenfield sync** `5eb5efc` was pushed first (Ron approved the push). It added the medium roster and carried
+  fab1's `setup.just` ZDR_EXEMPT change. The leak check and all 4 sync gates passed.
+- **Gates A–F pass against the roster** (`setup <id> sssf.team-fable-med.config.yaml`). Fable is EXEMPT; the Sonnet
+  seats pass under ZDR. pi on the VM is **1.5.2, the same as fab1**.
+- **BLOCKER for execute: the OpenRouter account has $13.79 left.** Gate E passed because it asks for $3 per open run.
+  fab1 billed $63.86. The $80 key limit means nothing until the account is topped up.
+
+**Check 0: PASSED.** fab1's exact smoke question was not recorded, so both levels got the same harder prompt on this
+mount: four meetings across DST transitions (New York, Sydney, St John's, Lord Howe), the first three from fab1's
+hand-verified cases. It ran 3 sessions per level, with the order alternated, through pi's own `--thinking` flag (the
+flag `agent_pi.py` passes). Reasoning tokens come from pi's usage and match OpenRouter's `native_tokens_reasoning`.
+
+| pair | high | medium |
+|---|---|---|
+| 1 | 807 (Google) | 639 (Anthropic) |
+| 2 | 910 (Google) | 766 (Google) |
+| 3 | 926 (Anthropic) | 611 (Azure) |
+| median | **910** | **639** (−30%) |
+
+- Medium is below high in every pair, and the ranges do not overlap. The setting reaches the model.
+- **Routing is mixed:** Google, Anthropic and Azure in 6 calls. fab1's planner was 74/74 Google. Medium is lower on
+  each provider seen, so the mapping looks provider-independent. The provider of every run generation is recorded.
+- A −30% drop on a short prompt does not predict the drop on a 3-hour plan. P3 is the measurement.
+- Files: `.sandbox/runs/fabm1-20261116-680d16-artifacts/check0/`.
+
 ### Predictions
 
 **The spec-hold markers** are what set fab1's spec apart. No Sonnet plan on this brief had H1–H3. H4 was not
