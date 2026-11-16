@@ -7711,3 +7711,41 @@ ADW was started with `execute <id> prompts/meeting-planner.md adws/adw_sssf_conf
 team`. The key had $79.61 and the account $113.40 left (gate E, re-run before launch). The run log shows the planner on
 `openrouter/anthropic/claude-fable-5.2`, session `sssf-266d79e5-planner-7cbd`, and its pi session records
 `thinkingLevel: "medium"`.
+
+### fabm1 plan phase (recorded at 16:00Z, before any downstream phase is read)
+
+The planner finished in **18m10s** with 10 turns and 9 tool calls (0 errors). It ended with `stop`, and every plan gate
+passed on the first try. Spec `specs/266d79e5_timezone-meeting-planner.md`, commit `cb060c5`: 13 R, **133 V rows**,
+24 traps, 7,374 words. A copy is at `.sandbox/runs/fabm1-20261116-680d16-artifacts/spec_at_plan.md`.
+
+| | fab1 (`high`) | fabm1 (`medium`) |
+|---|---|---|
+| wall time | 3h29m | 18m10s |
+| turns / tool calls | 74 / 75 | 10 / 9 |
+| reasoning tokens (pi) | 990,826 | 72,589 (7.3%) |
+| output tokens | 1,127,070 | 105,087 |
+| plan cost (pi) | $59.47 | $5.36 |
+| V rows / traps / words | 206 / 25 / 21,431 | 133 / 24 / 7,374 |
+
+**Spec-hold markers:**
+- **H1 MET.** V100 states the end rule as normative ("the local time of start+duration, not local start + duration"),
+  and trap line 274 repeats it.
+- **H2 MET.** V58, Cairo 2025-04-25, has no local midnight (22:00Z start, 46 candidates). Trap line 273 covers it.
+- **H3 MISSED.** "Not in scope (deliberately): overnight shifts (working hours that cross midnight)". This is the same
+  policy refusal as every Sonnet baseline. `workEnd` tops out at 1440.
+- **H4 MISSED.** No reference model was handed off, and the spec does not mention zoneinfo or an independent check.
+  The prototypes in `/tmp/mp` are 84 lines of TypeScript on `Intl`, the same engine family as the app, with no
+  row-by-row assertions.
+
+**Recorded beside them:**
+- **fab1's P2 is met here.** V100 is a meeting that straddles a transition: New York 2025-03-09 06:30Z, 60 min, gives
+  `01:30–03:30`. fab1 did not have such a row.
+- **The status path is linear by spec.** `status = classify(s, d, …)` uses local start minutes plus duration. Whether
+  the oracle can see this is left to the sweep. fab1's judging found span power on the status path only in the supp
+  zones.
+- **P5 met:** no early stop.
+- **P3 met by a wide margin:** 7.3% of fab1's reasoning, against a prediction of 50% or less.
+
+**P1 (primary) is MISSED as written,** because H3 dropped. The pre-registered reading is "`high` was paying for spec
+work; do not run `low`". At N=1 a dropped marker can also be sampling (Confounds). The downstream phases continue
+unchanged.
