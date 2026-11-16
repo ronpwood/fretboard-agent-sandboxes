@@ -7576,3 +7576,104 @@ These are the cases ctla's linear end failed.
 - The gold-standard export is local only: `~/Dev/learning/fab1-meeting-planner`. It contains the spec, app, docs, the
   team's commits replayed, `provenance/` (the reference model, the planner's scratch, the judge kit) and
   `provenance/planner_thinking.html`, the planner's 74 turns of thinking summaries as a readable timeline.
+
+## 2026-11-16 — PRE-REGISTRATION (DRAFT, not yet approved): fabm1, the fab1 roster with the Fable 5.2 planner at `thinking: medium`
+
+**Status: drafted, not approved.** Nothing has been mounted or run. Ron approves this text before execute, and nothing
+above the launch record changes after the approval commit.
+
+**The question:** fab1 ran its planner at `thinking: high`. The plan cost $59.52 billed and took 3h29m. Downstream
+cost $4.34. **Was most of the planner's reasoning needed for this brief, or does the spec hold at `medium`?**
+Anthropic's guidance for Fable 5.2 is that most of the gain arrives by `high`, and `medium` is the step-down for
+cost. `low` is for well-specified tasks and subagents. The planner seat is not well specified. **`low` runs only if
+`medium` holds.** If `medium` fails, `low` would fail too.
+
+**Held constant:**
+- `team` ADW; brief `prompts/meeting-planner.md`; oracle `specs/oracles/meeting_oracle.ts`, GRID unchanged.
+- The roster is `sssf.team-fable-med.config.yaml`. It is `sssf.team-fable-plan.config.yaml` with one line changed: the
+  planner's `thinking: high` becomes `thinking: medium`. The diff outside comments is that one line.
+- The prompts and the charter are locked. Anthropic suggests a `# Finishing work` paragraph for Fable at `low` or
+  `medium`. **It is not added.** That would change two things at once.
+
+**fab1 baseline, from its 74 planner generation records (`gens/`), not from pi:**
+
+| measure | fab1 (`high`) |
+|---|---|
+| generations | 74 |
+| output tokens | 1,127,070 |
+| reasoning tokens | 990,826 (88% of output) |
+| reasoning per generation | median 15,060, max 46,184 |
+| prompt tokens / cached | 12,312,324 / 11,090,078 |
+| billed | $59.52 |
+| provider | Google (Vertex), 74/74 |
+
+### Check 0, before execute: does `medium` reach the model?
+
+pi sends OpenRouter `reasoning: {effort: <level>}`. Our `models.json.tmpl` entry for Fable has no `thinkingLevelMap`,
+so the level name goes through unchanged. **Whether OpenRouter carries it to Anthropic's effort is not verified.**
+The fab1-era note says the effort pi sends is not in the trace.
+
+- **Smoke on the mount, VM key, the same pi as the run.** The fab1 DST question (273 reasoning tokens at `high` in
+  fab1's smoke), 3 fresh sessions at `high` and 3 at `medium`. Read `native_tokens_reasoning` from the generation
+  records.
+- **Gate:** the `medium` median is clearly below the `high` median. If it is not, **do not execute.** Find out where the
+  effort is lost first. A run that "held" at an effort the model never saw measures nothing.
+- Record the provider of every smoke generation.
+
+### Predictions
+
+**The spec-hold markers** are what set fab1's spec apart. No Sonnet plan on this brief had H1–H3. H4 was not
+measured on the baselines. Each is checked in the spec committed at plan, before any downstream phase:
+- **H1:** the DST end-reading rule is stated as normative (instant arithmetic).
+- **H2:** the nonexistent-midnight day bound is named, with at least one V row (fab1: V32 Cairo, V33 Santiago).
+- **H3:** wrapped/overnight hours are specified with V rows, not refused by declared policy.
+- **H4:** the planner hands off an independent reference model (fab1: `context_handoff/reference/reference_model.py`).
+
+- **P1 (primary): H1, H2 and H3 all hold.** This is the question. Prediction: met, at moderate confidence.
+- **P2: 0 value amendments downstream** (fab1: 0; every Sonnet baseline: at least 1). Recorded: the count, and who
+  proposed each.
+- **P3: planner reasoning tokens are at most half of fab1's**, so at most 495,413, from the generation records.
+  Recorded beside it: output tokens, generations, plan wall time, plan $, total $. Cost is recorded, never scored.
+- **P4: H4 holds.** The planner still builds its own reference model and asserts its literals against it. This bears
+  on the posture question (Ron: "posture is model"). Recorded: whether it still probes happy-dom and runs the render
+  gate on prototypes. Prediction: the reference model stays and the probing shrinks.
+- **P5: no early stop.** The planner ends its phase with the spec committed on the first pass. There is no gate retry
+  for a missing or incomplete spec, and no final turn that lists remaining work and stops. Anthropic says this risk
+  rises at `medium`. Prediction: met, at low confidence.
+- **P6: 0 reachable value defects across classes (a)–(d)**, judged with fab1's judge kit unchanged, mutants re-run
+  first. **This prediction has little power:** the brief is saturated for value correctness, and 2/3 Sonnet baselines
+  also met it. It is a floor check, not the question.
+- **P7: no history-editing 400** in any rejoined Fable session.
+- **P8: Ron's measure-0 verdict** is recorded, non-blind. Prediction: the same category as fab1 ("very deploy-ready")
+  or one step below.
+
+**P2 (a V row whose meeting straddles a transition) from fab1 is recorded again, not predicted.** fab1 missed it at
+`high`.
+
+**How it reads:**
+- **P1, P2 and P3 met:** most of fab1's reasoning was not needed for this brief. Next: the same pre-registration at
+  `low`.
+- **P1 met, P3 missed:** the spec held but the reasoning did not fall. Effort is not the lever on this seat, or check 0
+  misled. Do not run `low` until that is understood.
+- **P1 missed:** `high` was paying for spec work. **Do not run `low`.** Record which marker dropped.
+- **P5 missed:** record how the planner stopped. Anthropic's "Finishing work" text is the candidate fix. A prompt
+  change is Ron's call, and it would be a new arm.
+
+### Confounds
+
+- **N=1 on both sides.** fab1's spec is one sample too. A dropped marker can be sampling, not effort.
+- **Provider routing.** fab1's planner went 74/74 through Google Vertex. If this run routes elsewhere, the effort
+  mapping may differ by provider. Recorded per generation; not pinned, because pinning would change the harness.
+- The greenfield pin and the VM's pi version are recorded at mount. fab1 ran pi 1.5.2.
+- The planner's routing is non-ZDR (the `ZDR_EXEMPT` entry from fab1).
+
+### Budget
+
+**Key limit $80**, set from fab1's billed spend, not from a guess. My fab1 estimate missed by about 5×, and a key that
+runs out mid-plan loses the comparison. I have no basis for a tighter estimate at `medium`; P3 is the measurement.
+
+### Launch (after approval and check 0)
+
+```
+just sbx lifecycle execute <fabm1-id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-med.config.yaml team
+```

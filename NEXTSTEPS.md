@@ -302,14 +302,16 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
     **Result (2026-11-14d): P1 met, P2 missed as worded.** No V row pins a straddling meeting, though the app is exact
     on one. **The gate is not met as written.** Waiving it is Ron's call: the gate's intent was a clean strong-plan
     treatment, and fab1 is clean on every measured class. The spec is in `~/Dev/learning/fab1-meeting-planner`.
-- **CANDIDATE (2026-11-14d): a Fable 5.2 planner at `thinking: medium`**, otherwise the fab1 roster, on the same brief
-  and oracle. fab1's plan cost $59.52, about 94% of it reasoning, at `high`. Question: does the spec hold (rows, traps,
-  P3, 0 amendments) at a fraction of the cost? Note that **the meeting planner is now saturated** for value
-  correctness, so judge on the spec and amendments rather than the sweep, or pair this with a harder brief.
   - **Needs:** a `--spec <path>` flag on `adw_team_sdlc.py` that skips the planner, commits the given spec as the
     frozen baseline, and hands the test designer a `PlanOutput` envelope. Write a spec, smoke it on a cheap mount, then
     pre-register at N=1 per cell, about $10–15. No planner spend, which matters: fab1's plan phase alone was $16+,
     about 80% of it reasoning at $40/M, with cache misses on multi-minute turns.
+- **DRAFTED 2026-11-16 as fabm1, awaiting Ron's approval:** roster `sssf.team-fable-med.config.yaml`, pre-registration
+  CHANGELOG 2026-11-16 (check 0 = a high-vs-medium reasoning-token smoke before execute; `low` runs only if `medium`
+  holds). **CANDIDATE (2026-11-14d): a Fable 5.2 planner at `thinking: medium`**, otherwise the fab1 roster, on the same brief
+  and oracle. fab1's plan cost $59.52, about 94% of it reasoning, at `high`. Question: does the spec hold (rows, traps,
+  P3, 0 amendments) at a fraction of the cost? Note that **the meeting planner is now saturated** for value
+  correctness, so judge on the spec and amendments rather than the sweep, or pair this with a harder brief.
 - **CANDIDATES (Ron, 2026-11-14, from watching fab1's planner): is Fable a solo worker, or is the charter steering it?**
   Unprompted, fab1's planner built an independent oracle (`/tmp/plan/ref.py`), probed happy-dom, and ran the real
   render gate on throwaway prototypes. The plan phase cost $25+. There are two readings:
