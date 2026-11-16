@@ -7778,3 +7778,27 @@ fix pass.
   deploy-ready". The polish note fits the render-gate failure above.
 - **The reviewer's `values_swept` first pass did not fail this time.** It is a known recurring item, recorded only.
 - **P6 is pending:** the oracle sweep with fab1's judge kit, mutants first.
+
+**Billed-cost reconciliation (before teardown), per generation:**
+- 60/60 generations resolved, **$7.2367**: Fable 5.2 (`-20261109`) 10 generations, $5.3603; Sonnet 5.5 (`-20260928`)
+  50 generations, $1.8763. pi's estimate matched to the cent.
+- **All 10 planner generations went through Azure.** fab1's 74 all went through Google, and the check-0 smoke saw a
+  mix. This is the pre-registered provider confound.
+- The key shows $7.63. The $0.39 gap is the check-0 smoke and the gate pings.
+- Records: `.sandbox/runs/fabm1-20261116-680d16-artifacts/gens/`. Recorded, never scored.
+
+**Ron's bug report, checked (not a defect).** Ron added himself in Los Angeles, and "Best start times" seemed not to
+react. In Chromium on the live app, the list re-ranked after the add (NY 09:00 "works for everyone" → NY 10:00 "1 of
+4") and again after he moved his start to 07:00 (NY 10:00 "works for everyone"). The ranking is correct for the
+default 09:00–17:00 hours. Ron: "the app's correct and the user, in this case, is wrong". **UX gap recorded:**
+suggestions show only the organiser's time and a count, never who is outside or their local time. The spec asked for
+no more than that. The console also showed Bun's dev-server hot-reload socket reconnecting, which is a sandbox
+artifact, not the app.
+
+**Torn down 2026-11-16 (Ron: "We can tear down the VM if it's not being used now"):**
+- The key was revoked, and the gate confirmed it is absent from `/api/v1/keys`. The VM was destroyed and the record
+  closed. Spend is recorded at $7.626071594. The tree was clean. `reap` found no orphans.
+- Home: 4 commits in `refs/sandbox/fabm1-…`, traces in `.sandbox/traces/fabm1-20261116-680d16`, and artifacts.
+- **P6 (oracle sweep) is still pending.** It runs host-side on `artifacts/tree`, so it does not need the VM.
+- **Next, agreed with Ron:** after the sweep, pre-register fabm2–4, three full-chain replicates at `medium` on the
+  same pin, scored on H1–H4 at plan, to separate sampling from effort.
