@@ -190,6 +190,12 @@ Ron, to ponder; not designed. The conclusion we agreed on:
 - **Ron's proposed next step:** bring fab1 gold into this repo as the payload, archiving fretboard (`just app swap`),
   and run continuation tests, starting with the H3 change request "support overnight shifts".
   **Ron's prediction (recorded 2026-11-17, before any design): "it'll pull it off very well."**
+- **Decision for later (Ron, 2026-11-17), after the fab1 gold continuation test passes:** consolidate the repo's
+  identity. Option 1: extract the best parts (the sandbox mount system, the factory, the team ADW and rosters, the
+  judge/oracle practice) into a fresh **agent-sandbox main repo**, dropping the "Inkwell" name. Option 2: rename this
+  repo in place. That keeps the history, but carries a lot of collateral assets: archived payloads, run artifacts,
+  CHANGELOG references, the greenfield target sync, fill.just remotes and memory paths. Not designed; Ron's call when
+  the time comes.
 - **Candidates when Ron is ready:**
   - (a) a real project run with a post-plan human checkpoint, measuring Ron's spec edits and iterations to ship;
   - (b) the iteration-2 change-request test on fab1 gold.
