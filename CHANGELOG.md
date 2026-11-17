@@ -8007,3 +8007,16 @@ just sbx lifecycle execute <id> prompts/meeting-planner.md adws/adw_sssf_config/
 ```
 
 Record per mount: VM pi version (fabm1: 1.5.2), greenfield sha, key and account balance at launch.
+
+**Launched 2026-11-17.** The account had $105.32 (checked by hand before mounting; gate E re-checked it at each
+mount). All three were mounted on greenfield `5eb5efc` (the fill gate matched HEAD to the pin) with $20 keys. Gates
+A–F pass, and pi on each VM is **1.5.2, the same as fabm1**. The executes were started detached with
+`execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-med.config.yaml team`. The planner
+sessions record `thinkingLevel: "medium"` on `openrouter/anthropic/claude-fable-5.2`. The run log's first line still
+echoes the recipe's default `team-sonnet` `--config`; the later `--config` wins, as it did in fabm1.
+
+| run | adw | pid | started (UTC) | planner session |
+|---|---|---|---|---|
+| `fabm2-20261117-7add78` | `78f32656` | 1791 | 16:28:04 | `sssf-78f32656-planner-ed2f` |
+| `fabm3-20261117-bff2d9` | `25c2dedd` | 1782 | 16:28:06 | `sssf-25c2dedd-planner-5b9d` |
+| `fabm4-20261117-1ac226` | `b122b3a0` | 1772 | 16:28:08 | `sssf-b122b3a0-planner-2670` |
