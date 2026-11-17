@@ -4,9 +4,9 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Start here (next session):** fabm2–4, three replicates of fabm1 (Fable planner at `medium`). The pre-registration
-is APPROVED in CHANGELOG 2026-11-17, and the provider smoke is done ($0.85: `medium` < `high` at the median on Google,
-Azure and Anthropic; per call noisy). Approved 2026-11-17; mounting and launching. The question is whether fabm1's dropped markers (H3, H4, H5 status-over-instants) come from effort or sampling.
+**Start here (next session):** fabm2–4 are CLOSED (CHANGELOG 2026-11-17, 2026-11-17b). `medium` plans are cheap
+and mostly hold. H3 (overnight hours) is the effort-linked miss, and H5 and the UX are sampled. They were torn down
+WITHOUT harvest; the app trees are gone. Next: §0e, a plan-reviewer step (Ron: no more `high` runs).
 
 **Earlier start-here (2026-10-04):** s55m2 judged; all-Sonnet FROZEN as team default (CHANGELOG 2026-10-04b/c). Open UI
 tickets — s55m1: timeline legend; s55m2: zone search, editable members with visible hours, near-miss ranking, member
@@ -147,6 +147,18 @@ inside gaps the spec left decided the outcome. Neither idea below is designed ye
 - If a builder-prompt change is tried instead, keep it a generic invariant ("where the spec delegates a value rule,
   derive it from first principles and propose it as an amendment"), not domain coaching (memory: harness
   restraint).
+
+## 0e. IDEA (Ron, 2026-11-17, after fabm2–4): a plan-reviewer step
+
+Not designed yet. Ron's question: would a clean model reading the spec, even Sonnet, have proposed H3 (wrapped or
+overnight working hours) as an amendment? The brainstorm and candidate probe are in this session's notes. Write them
+here once the design is agreed.
+- **Free data:** four `medium` specs (fabm1–4 `spec_at_plan.md`) with known markers.
+  - fabm1 and fabm3 contain the linear status rule, a real Cairo defect.
+  - fabm4 contains the zone-entry UX gap.
+  - All four refuse H3.
+- **The brief never mentions working hours.** H3 is an invented user population, so a reviewer that proposes it is
+  doing discovery, not compliance. Watch for scope creep.
 
 ## 1. IDEAS (Ron, 2026-09-30, after the bare Sonnet 5.5 run): draft → complete, and MVP → production
 
@@ -298,9 +310,7 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
     frozen baseline, and hands the test designer a `PlanOutput` envelope. Write a spec, smoke it on a cheap mount, then
     pre-register at N=1 per cell, about $10–15. No planner spend, which matters: fab1's plan phase alone was $16+,
     about 80% of it reasoning at $40/M, with cache misses on multi-minute turns.
-- **NEXT (Ron, 2026-11-16): fabm2–4, three full-chain replicates of fabm1 at `medium`.** PRE-REGISTRATION APPROVED
-  2026-11-17 (CHANGELOG 2026-11-17), with H5 (status over true instants) added. The provider smoke is done
-  ($0.85). Approved; launching. The `high` side stays at N=1.
+- **CLOSED 2026-11-17: fabm2–4** (CHANGELOG 2026-11-17b). The `high` side will not be extended (Ron).
 - **DONE 2026-11-16 as fabm1 (`fabm1-20261116-680d16`), approved by Ron (P6 sweep pending):** roster `sssf.team-fable-med.config.yaml`, pre-registration
   CHANGELOG 2026-11-16 (check 0 = a high-vs-medium reasoning-token smoke before execute; `low` runs only if `medium`
   holds). **CANDIDATE (2026-11-14d): a Fable 5.2 planner at `thinking: medium`**, otherwise the fab1 roster, on the same brief

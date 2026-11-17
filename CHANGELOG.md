@@ -8181,3 +8181,41 @@ choice: on this brief, the planner seat sets most of the UX, and it is sampled.
 
 **UI ticket (Ron, minor):** fabm4 zone entry. Add a hint ("type a city, e.g. Paris") or an empty default, or a
 dropdown. This is the second run with a zone-entry gap (s55m2's "zone search / IANA-only entry").
+
+## 2026-11-17b — fabm2–4 closed: findings; torn down WITHOUT harvest
+
+**Torn down at Ron's request** (17:2xZ): keys revoked, VMs destroyed, and all three teardown gates pass.
+**Harvest was never run, and that was my miss.** fabm1 has a `.bundle`; these three do not. Teardown's backup keeps
+`specs/`, `app_docs/` and the trace DB. I had also copied the session dirs, planner scratch dirs and generation
+records. **The built app trees are gone.** They could probably be rebuilt by replaying the test_designer and builder
+bash heredocs (15–25 write commands per run) onto greenfield `5eb5efc`, but that means running agent-written commands
+on the host. Not done. Scoring is unaffected: it was all at plan, from saved specs and traces. No value sweep is
+possible on these apps; none was pre-registered.
+
+**Findings (fabm1–4: four Fable 5.2 plans at `medium`, against fab1 at `high`):**
+1. **The plan seat at `medium` is cheap and mostly holds.**
+   - Plan cost $5.36–$7.93 and 18–27 min, against fab1's $59.52 and 3h29m.
+   - All four plans were accepted at review_1 with 0 amendments.
+   - H1 (end rule) held 4/4, and H2 (no-midnight day) held 3/4. fabm2 sidestepped H2 with a catalogue that has no
+     such zone.
+2. **H3 (overnight hours) is the clearest effort-linked marker:** refused 4/4 at `medium`, every time as a declared
+   scope decision, which is also the Sonnet-baseline attractor. Only fab1 at `high` specified it (N=1).
+   - **The brief never mentions working hours** (`prompts/meeting-planner.md`, 107 words, "every design decision is
+     yours"). H3 is a user population the planner had to invent, not a requirement it dropped.
+3. **H5 (status over true instants) is sampled, not effort:** it held 2/3 in the replicates. fabm1's Cairo defect was a
+   draw.
+4. **H4 splits.**
+   - Building an independent check held 3/3 replicates: Python `zoneinfo` ×2, hand-coded rules ×1.
+   - Handing it off held 0/4 at `medium`, and fab1 at `high` did hand it off.
+   - What `medium` drops is the handoff, not the checking. My pre-registered rationale for H4 was wrong.
+5. **UX is set mostly in the plan, and it is sampled.** fabm3, Ron's favourite, curated a 54-zone `<select>`.
+   fabm4 chose a free-text `<datalist>` over ~419 IANA ids, prefilled with `UTC`. Its planner weighed a `<select>`
+   and rejected it ("a 400-entry select is clumsy"). The builder supplied only the visual layer.
+6. **Provider:** 50/50 `medium` planner generations went to Azure, and fab1's 74/74 went to Google. Effort and
+   provider remain confounded across high/medium. The smoke showed `medium` < `high` on every provider.
+7. **Cost of the set:** $25.95 billed, plus $0.85 for the smoke. Recorded, never scored.
+
+**Pre-registered scorecard:** P1 4/5 (H5 missed). P2–P5 met.
+
+**Next (Ron, 2026-11-17):** no more `high` runs. The interest is a **plan-reviewer step**: would a clean model
+reading the spec, even Sonnet, have proposed H3 as an amendment? See NEXTSTEPS §0e.
