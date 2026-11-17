@@ -8020,3 +8020,51 @@ echoes the recipe's default `team-sonnet` `--config`; the later `--config` wins,
 | `fabm2-20261117-7add78` | `78f32656` | 1791 | 16:28:04 | `sssf-78f32656-planner-ed2f` |
 | `fabm3-20261117-bff2d9` | `25c2dedd` | 1782 | 16:28:06 | `sssf-25c2dedd-planner-5b9d` |
 | `fabm4-20261117-1ac226` | `b122b3a0` | 1772 | 16:28:08 | `sssf-b122b3a0-planner-2670` |
+
+### fabm3 / fabm4 plan phase (recorded at ~16:53Z, before any downstream phase is read; fabm2 still planning)
+
+Specs at the plan commits are copied to `.sandbox/runs/<id>-artifacts/spec_at_plan.md`. Each planner's `/tmp/mp`
+scratch dir is saved beside it as `planner_tmp_mp/`, and its generation records are in `gens/`.
+
+| | fabm1 | fabm3 | fabm4 |
+|---|---|---|---|
+| plan commit | `cb060c5` | `38fe637` (16:50:00Z) | `e896092` (16:50:15Z) |
+| wall time (from launch) | 18m10s | ~22m | ~22m |
+| turns / tool calls (errors) | 10 / 9 (0) | 13 / 12 (0) | 13 / 12 (0) |
+| reasoning tokens (gens) | 72,589 | 82,457 | 82,447 |
+| output tokens | 105,087 | 126,589 | 125,632 |
+| plan billed | $5.36 | $6.51 | $6.51 |
+| provider | Azure 10/10 | **Azure 13/13** | **Azure 13/13** |
+| distinct V ids / words | 133 / 7,374 | 172 / 9,381 | 136 / 8,955 |
+| stop | `stop` | `stop` | `stop` |
+
+**Markers:**
+
+| | fab1 (`high`) | fabm1 | fabm3 | fabm4 |
+|---|---|---|---|---|
+| H1 end rule normative | ✓ | ✓ | **✓** R12 "the local clock time of the instant `start + length`" + V127 (NY `01:30–03:30`) | **✓** "What right means… the time that person's wall clock will actually show at that instant" + V87 (NY `01:30–03:30`, "60 real minutes later") |
+| H2 no-midnight day | ✓ | ✓ | **✓** R4 "first instant of the chosen date" + V49, V58 (Cairo 2026-04-24, 46 slots) | **✓** V34 `startOfDayUtc` Cairo → 22:00Z, V44 (46 slots) |
+| H3 wrapped hours | ✓ | ✗ | **✗** `0 ≤ workStart < workEnd ≤ 1440`; V72 "no wrap-around may rescue it" | **✗** load validates `0 ≤ start < end ≤ 1440`; V55 crosses midnight → bad |
+| H4 reference handed off | ✓ | ✗ | **✗ as defined**: see below | **✗ as defined**: see below |
+| H5 status over instants | ✓ | ✗ | **✗** R5: `s` = local start minute, `s + d ≤ workEnd`, the same linear rule as fabm1 | **✓** `statusFor` "defined minute by minute over `[start, start + duration)`", "including the transition days" |
+
+**H4 needs splitting; the pre-registered wording does not capture what happened.**
+- **Neither planner handed a reference off.** Each plan commit holds only the spec, and `context_handoff/` holds only
+  `plan.md`. As defined (fab1's `context_handoff/reference/reference_model.py`), H4 is missed in both.
+- **Both planners built one.** Each wrote an independent Python `zoneinfo` reference in `/tmp/mp/ref.py` (fabm3:
+  121 lines plus `ref2.py`; fabm4: 85 lines plus `u/v/w/x/y.py`) and derived the V-row values from it. This is
+  verified from the tool calls, not from the specs' "Team notes" claims. fabm1 built nothing like it: its 84 lines
+  were TypeScript on `Intl`.
+- So at `medium` the *disposition* to check against an independent oracle appeared in 2 of 3 plans. What's missing is
+  the handoff. My pre-registered reason for predicting H4 0/3 ("the reference came out of fab1's long prototyping")
+  is **contradicted**: both did it inside a 22-minute plan. The literal count may still come out as predicted, for a
+  different reason.
+
+**Recorded beside them:**
+- **H5 is the first marker to split between replicates** at the same roster and effort: fabm4 per-minute, fabm3
+  linear (as fabm1). That is direct evidence of sampling on this marker.
+- **H3 has been refused 3 out of 3 times at `medium`** so far. It is the Sonnet-baseline attractor.
+- **Routing:** every planner generation at `medium` (fabm1, fabm3, fabm4: 36/36) went to Azure. fab1 at `high` was 74/74 Google.
+  Effort and provider remain confounded across the high/medium comparison.
+- fabm3 and fabm4 have near-identical reasoning (82,457 vs 82,447) and cost, but different specs (`diff` differs,
+  172 vs 136 V ids). Noted as a coincidence; nothing suggests a shared session.
