@@ -8131,3 +8131,53 @@ tool error (a non-zero exit from a reference-script run; its output was used). R
     is cleared and typed into. There is no visible picker affordance.
   - This is the same UX gap as s55m2's open "zone search / IANA-only entry" ticket. Recorded, not scored. Ron's other
     "flaky" symptoms are not yet identified.
+
+### fabm2–4 downstream and billing (recorded 2026-11-17 ~17:15Z)
+
+**All three were accepted at review_1, with 0 amendments proposed.** Each ran the 13-step `team` chain once: plan,
+commit_plan, test_design, commit_tests, build, test_1, review_1, sync_spec, commit_build, changes, document,
+commit_docs. Every downstream seat ran on Sonnet 5.5, served by "Claude Platform on AWS". No history-editing 400s.
+Session dirs and every generation record are saved under `.sandbox/runs/<id>-artifacts/{sessions,gens_all}/`.
+
+| | fabm2 | fabm3 | fabm4 |
+|---|---|---|---|
+| finished (docs commit) | 17:08:15Z | 16:59:06Z | 16:59:30Z |
+| planner $ | 7.93 | 6.51 | 6.51 |
+| test_designer / builder / reviewer / documenter $ | 0.58 / 0.43 / 0.53 / 0.06 | 0.73 / 0.34 / 0.64 / 0.05 | 0.61 / 0.46 / 0.53 / 0.05 |
+| **billed (sum of gens)** | **$9.53** | **$8.27** | **$8.16** |
+| key usage (provisioning API) | $9.5271 | $8.2678 | $8.1605 |
+
+Keys and generation sums agree within $0.002 (gate C's setup ping). The set billed $25.95 in total.
+
+**Predictions completed:** P3 (0 amendments in ≥2/3) **MET, 3/3**. P4 (no early stop) **MET, 3/3**. P5 (no
+history-editing 400) **MET**. With the plan-time results, P1 is 4/5 per-marker (H5 missed: sampling, not effort) and
+P2 is met.
+
+### fabm3's UX (Ron's favourite): how much was the plan, how much the builder
+
+Each visible element was traced to `spec_at_plan.md`. **Most of the interaction design is in the plan.** The plan
+fixed:
+- **Layout and flow:** a home-zone/date/length bar; team chips with a single add row using a `<select>` of a curated
+  54-zone `ZONES` list (V130) and `09:00`/`17:00` time inputs.
+- **Results:** an exact plain-English headline sentence (`#headline`); the Ideal/Workable/Poor counts; the top-5
+  suggestion buttons; per-person detail cards with date, weekday, range, offset, the `same day`/`+1 day` shift and
+  status (R10).
+- **Grid and copy:** a person × slot grid with a verdict row and `title` text; a time axis, a legend, and a "how
+  times are ranked" note (asked for; markup left to the builder); R14, controls never re-rendered, so focus
+  survives.
+
+**The builder chose the visual layer**, which "Left to the builder" handed over explicitly:
+- The grid as one horizontal strip of square cells with hour labels.
+- **Hatching** for unsociable/poor. The plan only said "not red/green alone".
+- The green/amber/purple palette, the card styling and the selected-column outline.
+- The wording of the ranking note.
+
+That is 44 lines of `index.html` CSS and markup and 285 lines of `main.ts`.
+
+**Compared with fabm4:** fabm4's plan chose a free-text zone `<datalist>` over every IANA id, prefilled `UTC`
+(V112/V135). Its planner's reasoning shows it weighed `<select>` ("can't hold an invalid zone") and rejected it as "a
+400-entry select is clumsy". fabm3's plan curated the list and used `<select>`. Same roster, same effort, opposite
+choice: on this brief, the planner seat sets most of the UX, and it is sampled.
+
+**UI ticket (Ron, minor):** fabm4 zone entry. Add a hint ("type a city, e.g. Paris") or an empty default, or a
+dropdown. This is the second run with a zone-entry gap (s55m2's "zone search / IANA-only entry").
