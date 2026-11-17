@@ -7894,3 +7894,116 @@ init that no UI path reaches. That is recorded, not judged.
 - The likely cause is happy-dom not releasing memory across about 3,500 mounts. Not investigated.
 - **The same parallel runner was fixed in fab1's judge dir and in the local gold repo's `provenance/`** (gold repo
   commit `1cc0154`, Ron 2026-11-16).
+
+## 2026-11-17 — PRE-REGISTRATION: fabm2–4, three replicates of fabm1 at `medium`
+
+**Approved by Ron before execute** (2026-11-17, "commit it, approved — mount and launch all three"). Nothing above
+the launch record changes after the approval commit.
+
+**The question:** fabm1 (Fable 5.2 planner at `thinking: medium`) kept H1 and H2 but dropped H3 (wrapped hours), H4
+(an independent reference model), and stepped status through local minutes, where fab1 stepped true instants
+(CHANGELOG 2026-11-16c). **Were those drops caused by the effort setting, or were they one sample?** Both sides are N=1.
+This set takes `medium` to N=4. **The `high` side stays at N=1** (Ron, 2026-11-16); a second `high` run costs
+~$60.
+
+**Held constant (identical to fabm1):**
+- `team` ADW; brief `prompts/meeting-planner.md`; roster `adws/adw_sssf_config/sssf.team-fable-med.config.yaml`
+  unchanged.
+- Greenfield pin `5eb5efc`. `.sandbox/targets/greenfield.json` still records it, and the sync paths have no diff
+  since its host sha `55979b8` (checked 2026-11-17). A mount today pins the same factory as fabm1.
+- Prompts and charter locked. No `# Finishing work` paragraph.
+- **Provider not pinned** (as in fabm1): pinning would change the harness. Recorded per generation instead. The smoke
+  below is why that is acceptable.
+
+### Provider smoke (done 2026-11-17, before approval)
+
+fabm1's check-0 prompt (four meetings across DST transitions), sent **directly to OpenRouter** with
+`reasoning: {effort}` (the field pi sends) and `provider: {only: [X], allow_fallbacks: false}`. pi has no provider pin,
+so this is a different harness from check 0: no pi system prompt, and output ran ~20% longer. Each provider got 2 reps
+per level, with the order alternated. **All 12 calls were served by the pinned provider.** Billed $0.85.
+Files: `.sandbox/runs/fabm2-4-provider-smoke/`.
+
+| provider | high | medium | medium vs high (median) |
+|---|---|---|---|
+| Google (`google-vertex/global`) | 907, 922 | 632, 607 | −32% |
+| Azure | 893, 983 | 792, 843 | −13% |
+| Anthropic | 874, 854 | 639, **864** | −13% (rep 2: medium > high) |
+
+Pooled with check 0 (pi, 2026-11-16, providers as routed):
+
+| provider | high (n) | medium (n) | drop of medians |
+|---|---|---|---|
+| Google | 908.5 (4) | 632 (3) | −30% |
+| Azure | 938 (2) | 792 (3) | −16% |
+| Anthropic | 874 (3) | 639 (3) | −27% |
+
+**Reading:**
+- `medium` lowers reasoning on every provider at the median. The level reaches the model whichever provider serves it.
+- **Per call it is noisy:** one Anthropic `medium` call out-reasoned both Anthropic `high` calls. Two reps per cell is
+  too few to rank providers.
+- **Azure shows the smallest drop.** fabm1's planner ran 10/10 on Azure. So if provider mattered there, fabm1 got the
+  provider that thinks *most* at `medium`. Azure under-thinking does not explain fabm1's dropped markers.
+- **A short prompt does not predict a 3-hour plan** (the same caveat as check 0). This only rules out a gross provider
+  difference in the effort mapping.
+- Not covered: **Amazon Bedrock is now a fourth Fable endpoint** (seen in `/endpoints` 2026-11-17), so a replicate may
+  route there.
+
+### Markers (read from each spec as committed at plan, before any downstream phase is read)
+
+H1–H4 are as defined in CHANGELOG 2026-11-16. H5 is new, from the fabm1 sweep:
+- **H1:** the DST end-reading rule is normative (instant arithmetic).
+- **H2:** the nonexistent-midnight day bound is named, with at least one V row.
+- **H3:** wrapped/overnight hours are specified with V rows, not refused by declared policy.
+- **H4:** an independent reference model is handed off.
+- **H5:** the status (in-hours/night) rule is evaluated over true instants or at the true end instant, not as local
+  start minute + duration. fab1: held. fabm1: missed (`status = classify(s, d, …)`).
+
+### Predictions (mine, recorded before any replicate runs; Ron's welcome alongside)
+
+- **P1 (primary), per marker, the count of replicates holding it:** H1 3/3; H2 ≥2/3; H3 ≤1/3; H4 0/3; H5 ≤1/3.
+  This means I expect fabm1's drops to be **effort, not sampling**: refusing overnight hours is the attractor every
+  Sonnet baseline also fell into, and the reference model came out of fab1's long prototyping phase, which an
+  18-minute plan doesn't have. Moderate confidence on H3 and H4, low on H5.
+- **P2:** planner reasoning tokens ≤ 495,413 (half of fab1's) in every replicate. High confidence.
+- **P3:** 0 value amendments in at least 2 of 3. Recorded: the count and who proposed each.
+- **P4:** no early stop in any replicate (as fabm1 P5).
+- **P5:** no history-editing 400 in any rejoined Fable session.
+- **Recorded, not predicted:** the planner provider per generation (and whether `x-session-id` kept each session on
+  one provider); wall time; plan $ and total $; V rows / traps / words; acceptance and revisions used; whether a V row
+  straddles a transition.
+
+**How it reads, per marker across the four `medium` samples (fabm1 + 3):**
+- **Held in 0/3 replicates:** consistent with effort. `high` is buying it, though `high` is still N=1.
+- **Held in ≥2/3:** fabm1's drop was sampling. Effort is not the lever for that marker at this N.
+- **Held in 1/3:** `medium` can produce it, but unreliably. Unresolved without more N.
+- **If H3, H4 and H5 all read "effort":** the next question is the `high` side at N>1 (~$60 each), not `low`.
+
+### Judging
+
+- **Scored at plan** from the spec text, as fabm1's plan record was. The full chain runs only because the ADW has no
+  stop-after-plan flag; downstream costs ~$1.90.
+- **No value or UI sweep is pre-registered.** The brief is saturated for value correctness, and the UI sweep peaks
+  at 45 GB, so it only runs sequentially. If Ron wants one on a replicate, it is added before that replicate's
+  downstream is read.
+- Ron's measure-0 verdict is optional per replicate and recorded non-blind if given.
+
+### Budget
+
+- **Key limit $20 each** (Ron, 2026-11-16). fabm1 billed $7.24, with $5.36 of it plan. A replicate that goes long
+  (fab1's `high` plan was $59.52) would exhaust the key mid-run. **If that happens, it is the outcome; it is not
+  re-run.** The plan's reasoning count up to the cut is still recorded.
+- **Account:** $106.17 before the smoke (2026-11-17), ~$105.3 after. 3 × $20 is covered. Check by hand again before
+  execute; gate E only asks for $3 per open run.
+
+### Launch (after approval)
+
+Mount three in sequence, then execute all three concurrently (3–5 concurrent arms are proven):
+
+```
+just sbx mount fabm2 --limit 20 --target greenfield --config adws/adw_sssf_config/sssf.team-fable-med.config.yaml
+just sbx mount fabm3 --limit 20 --target greenfield --config adws/adw_sssf_config/sssf.team-fable-med.config.yaml
+just sbx mount fabm4 --limit 20 --target greenfield --config adws/adw_sssf_config/sssf.team-fable-med.config.yaml
+just sbx lifecycle execute <id> prompts/meeting-planner.md adws/adw_sssf_config/sssf.team-fable-med.config.yaml team   # ×3
+```
+
+Record per mount: VM pi version (fabm1: 1.5.2), greenfield sha, key and account balance at launch.

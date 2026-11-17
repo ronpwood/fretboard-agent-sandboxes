@@ -4,23 +4,15 @@ The open queue only, ordered by value. Findings, measurements and closed items a
 [CHANGELOG.md](CHANGELOG.md), cited by date tag (e.g. `CHANGELOG 2026-09-23e`). When an item
 closes, write its result entry in the changelog and delete it here.
 
-**Start here (next session):** s55m2, the s55m1 replicate, is judged (CHANGELOG 2026-10-04b).
-- **The engine replicated:** 0 value defects in 6.01M checks, with the DST span reachable (1,856 biting) and exact,
-  for $2.55.
-- **The verdict did not:** Ron said MVP ("correct engine, needs one UX revision"), where s55m1 was deployable.
-- The variance sits in the **planner seat's UX design**: same roster, structurally different spec.
-- **DECIDED 2026-10-04c: all-Sonnet is FROZEN as the team default** (Ron: "correct engine, needs one UX pass"). Synced to greenfield `2612858` (pushed). Next: §0, the UX seat idea. Was: an Opus
-  planner seat (the mix1 shape, on all-Sonnet otherwise), a usability check the reviewer can rule on, or accept
-  "engine-grade, needs a UX pass".
-- **New 2026-10-14 (Ron, while traveling):** §0a, an all-Haiku-5.5 team arm on CoF; §0b, five ideas from the
-  super-board repo. Neither is designed yet.
-- **2026-10-29:** fold1 (one authoring session) was piloted and closed: no advantage (CHANGELOG 2026-10-29c/d). §0d
-  now holds the builder-seat follow-ups.
-- s55m2 is torn down. NEXTSTEPS 7 item 8 (boilerplate `value_checks`) did not recur here (now 2/3 on Sonnet), so it is lower urgency.
-- **Open UI tickets:**
-  - s55m1: timeline legend
-  - s55m2: zone search, editable members with visible hours, near-miss ranking, member ids, organizer-local default
-    date
+**Start here (next session):** fabm2–4, three replicates of fabm1 (Fable planner at `medium`). The pre-registration
+is APPROVED in CHANGELOG 2026-11-17, and the provider smoke is done ($0.85: `medium` < `high` at the median on Google,
+Azure and Anthropic; per call noisy). Approved 2026-11-17; mounting and launching. The question is whether fabm1's dropped markers (H3, H4, H5 status-over-instants) come from effort or sampling.
+
+**Earlier start-here (2026-10-04):** s55m2 judged; all-Sonnet FROZEN as team default (CHANGELOG 2026-10-04b/c). Open UI
+tickets — s55m1: timeline legend; s55m2: zone search, editable members with visible hours, near-miss ranking, member
+ids, organizer-local default date. Still-open idea sections from that era: §0 (UX seat), §0a (all-Haiku-5.5 on CoF),
+§0b (super-board ideas), §0d (builder-seat follow-ups after fold1 closed 2026-10-29). NEXTSTEPS 7 item 8 (boilerplate
+`value_checks`) is lower urgency (did not recur in s55m2).
 
 **Recently run (2026-10-02):** an adversarial review of the whole repo by four read-only reviewers, with every
 high-severity claim verified (private Claude Doc "Adversarial Codebase Review — 2026-10-02"). Closed the same day:
@@ -306,11 +298,9 @@ mount. mix2 and the oracle lever stay open as candidates 1 and 3.
     frozen baseline, and hands the test designer a `PlanOutput` envelope. Write a spec, smoke it on a cheap mount, then
     pre-register at N=1 per cell, about $10–15. No planner spend, which matters: fab1's plan phase alone was $16+,
     about 80% of it reasoning at $40/M, with cache misses on multi-minute turns.
-- **NEXT (Ron, 2026-11-16): fabm2–4, three full-chain replicates of fabm1 at `medium`** on the same pin `5eb5efc`,
-  roster unchanged, $20 keys, scored on H1–H4 at plan. Question: did fabm1 drop H3/H4 because of effort or by
-  sampling? Pre-register after fabm1's P6 sweep. **Fold in a provider smoke (Ron):** the check-0 prompt pinned
-  through OpenRouter provider routing to each of Google, Azure and Anthropic, under $1. Record each replicate's
-  planner provider; pi's `x-session-id` keeps a session on one provider. The `high` side stays at N=1.
+- **NEXT (Ron, 2026-11-16): fabm2–4, three full-chain replicates of fabm1 at `medium`.** PRE-REGISTRATION APPROVED
+  2026-11-17 (CHANGELOG 2026-11-17), with H5 (status over true instants) added. The provider smoke is done
+  ($0.85). Approved; launching. The `high` side stays at N=1.
 - **DONE 2026-11-16 as fabm1 (`fabm1-20261116-680d16`), approved by Ron (P6 sweep pending):** roster `sssf.team-fable-med.config.yaml`, pre-registration
   CHANGELOG 2026-11-16 (check 0 = a high-vs-medium reasoning-token smoke before execute; `low` runs only if `medium`
   holds). **CANDIDATE (2026-11-14d): a Fable 5.2 planner at `thinking: medium`**, otherwise the fab1 roster, on the same brief
