@@ -8115,3 +8115,19 @@ tool error (a non-zero exit from a reference-script run; its output was used). R
   how the effort level maps (CHANGELOG 2026-11-17, provider smoke).
 - **Plan cost at `medium`:** $5.36 / $7.93 / $6.51 / $6.51 (fab1 at `high`: $59.52). Recorded, not scored.
 - P3 (amendments), P4 (no early stop: met at plan in all three) and P5 are completed after downstream.
+
+### Ron's first looks (2026-11-17, non-blind, before any judging)
+
+- **fabm3: "looks good and easy to use".** Its zone entry is a `<select>` over a curated `ZONES` list, used for both
+  `#home-zone` and `#member-zone` (spec line 402–406).
+- **fabm4: "flaky UI"; "add a person and no dropdown to pick location".** Checked in Playwright on the live VM. The
+  served bundle is current, all 175 tests pass, and there are no console errors. Typing keeps focus, row clicks
+  select, and the grid's scroll survives a re-render. The location complaint is real and **plan-born; the app obeys
+  its spec:**
+  - V112 makes a new person `zone UTC`.
+  - V135 and the DOM contract make zone entry a free-text `input.person-zone[list="zone-list"]` over all ~419 IANA
+    ids.
+  - A `<datalist>` filters on the current text, so with `UTC` prefilled Chrome offers almost nothing until the field
+    is cleared and typed into. There is no visible picker affordance.
+  - This is the same UX gap as s55m2's open "zone search / IANA-only entry" ticket. Recorded, not scored. Ron's other
+    "flaky" symptoms are not yet identified.
