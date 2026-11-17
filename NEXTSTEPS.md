@@ -182,6 +182,14 @@ Ron, to ponder; not designed. The conclusion we agreed on:
 - **What the brief is still for:** a **bench**, not a research question.
   - The floor for lesser models in the builder, test-designer and documenter seats (§0a, Haiku).
   - The regression check at each model refresh (the harness-restraint ablations).
+- **Milestone (Ron, 2026-11-17): the A/B phase of "is this harness and VM factory usable" is DONE.** The deployable
+  VM harness takes a new application end to end. The seats and the harness show no critical issues. Only the
+  sub-par models (mostly the open-source and low-cost ones) were sometimes unfit for a seat. **Possible weak link (Ron,
+  a hypothesis, untested): building tests for stacks other than Bun.** Every brief so far has been TypeScript on Bun.
+  Next: plan real application builds.
+- **Ron's proposed next step:** bring fab1 gold into this repo as the payload, archiving fretboard (`just app swap`),
+  and run continuation tests, starting with the H3 change request "support overnight shifts".
+  **Ron's prediction (recorded 2026-11-17, before any design): "it'll pull it off very well."**
 - **Candidates when Ron is ready:**
   - (a) a real project run with a post-plan human checkpoint, measuring Ron's spec edits and iterations to ship;
   - (b) the iteration-2 change-request test on fab1 gold.
