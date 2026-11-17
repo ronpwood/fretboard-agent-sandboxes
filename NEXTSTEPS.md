@@ -6,7 +6,7 @@ closes, write its result entry in the changelog and delete it here.
 
 **Start here (next session):** fabm2–4 are CLOSED (CHANGELOG 2026-11-17, 2026-11-17b). `medium` plans are cheap
 and mostly hold. H3 (overnight hours) is the effort-linked miss, and H5 and the UX are sampled. They were torn down
-WITHOUT harvest; the app trees are gone. Next: §0e, a plan-reviewer step (Ron: no more `high` runs).
+WITHOUT harvest (Ron: intended; fab1 gold is the keeper). **Read §0f first:** a framing pivot, not yet designed.
 
 **Earlier start-here (2026-10-04):** s55m2 judged; all-Sonnet FROZEN as team default (CHANGELOG 2026-10-04b/c). Open UI
 tickets — s55m1: timeline legend; s55m2: zone search, editable members with visible hours, near-miss ranking, member
@@ -148,9 +148,47 @@ inside gaps the spec left decided the outcome. Neither idea below is designed ye
   derive it from first principles and propose it as an amendment"), not domain coaching (memory: harness
   restraint).
 
+## 0f. FRAMING (Ron, 2026-11-17, after fabm2–4): the meeting planner is saturated, so the next question is the iteration loop
+
+Ron, to ponder; not designed. The conclusion we agreed on:
+
+- **What the brief has proven.** fab1 and fabm1–4 each produced a first plan that was a good place to start
+  building. What varied between runs was **design choices**, not correctness: overnight shifts, the shape of zone
+  entry, how status is read across a transition. App-vs-spec misses were 0, again and again. An oracle can say an app
+  is right; it cannot say which right app the user wanted. H3 is only a "miss" if the user works nights.
+- **Scope creep and gold-plating** (Ron): without a user feedback loop, more planner effort or a discovery reviewer
+  pushes toward "the full Word feature set when the user wanted a capable Markdown editor with spell check". This
+  tempers §0e.
+- **Takeaways for real work:**
+  - A spec is **one sample of a design**. Expect that from the first spec.
+  - **The human checkpoint belongs after the plan, before the build.** The plan costs ~$6–8 and ~20 min at `medium`
+    and holds nearly every decision worth making. A spec is cheaper to read than an app, and the checkpoint stands in
+    for the user loop the factory lacks.
+  - Correctness looks largely solved at this app size. The open risk is building the wrong thing, not building the
+    thing wrong.
+- **A candidate iterative loop:**
+  1. Plan (one spec, or two for ~$13).
+  2. **The human picks, merges or edits.** That is the feature-request channel; the amendment machinery exists.
+  3. Build the MVP.
+  4. The human uses it, and their wishes become the next change request.
+  5. Repeat.
+
+  The measures become **iterations until the human would ship** and the cost per accepted change, not defect counts.
+- **The untested gap:** every run so far has been a **first pass on a blank codebase**. Real work is iteration 2, 3,
+  4 on code the factory wrote itself. Candidate test: fab1 gold repo
+  (`~/Dev/learning/fab1-meeting-planner`) as the base, plus a change request such as "support overnight shifts". That
+  is H3 arriving as a user request instead of a planner guess. The oracle still grades it. Question: does a
+  known-good codebase stay good under change?
+- **What the brief is still for:** a **bench**, not a research question.
+  - The floor for lesser models in the builder, test-designer and documenter seats (§0a, Haiku).
+  - The regression check at each model refresh (the harness-restraint ablations).
+- **Candidates when Ron is ready:**
+  - (a) a real project run with a post-plan human checkpoint, measuring Ron's spec edits and iterations to ship;
+  - (b) the iteration-2 change-request test on fab1 gold.
+
 ## 0e. IDEA (Ron, 2026-11-17, after fabm2–4): a plan-reviewer step
 
-Not designed yet. Ron's question: would a clean model reading the spec, even Sonnet, have proposed H3 (wrapped or
+Not designed yet; **tempered by §0f** (the gold-plating risk). Ron's question: would a clean model reading the spec, even Sonnet, have proposed H3 (wrapped or
 overnight working hours) as an amendment? The brainstorm and candidate probe are in this session's notes. Write them
 here once the design is agreed.
 - **Free data:** four `medium` specs (fabm1–4 `spec_at_plan.md`) with known markers.
