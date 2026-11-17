@@ -8068,3 +8068,50 @@ scratch dir is saved beside it as `planner_tmp_mp/`, and its generation records 
   Effort and provider remain confounded across the high/medium comparison.
 - fabm3 and fabm4 have near-identical reasoning (82,457 vs 82,447) and cost, but different specs (`diff` differs,
   172 vs 136 V ids). Noted as a coincidence; nothing suggests a shared session.
+
+### fabm2 plan phase, and the set at plan (recorded at ~16:58Z, before any downstream phase is read)
+
+fabm2's planner finished last: spec `3a11cb7` committed at 16:55:27Z, ~27m after launch. 14 turns, 13 tool calls, 1
+tool error (a non-zero exit from a reference-script run; its output was used). Reasoning 121,334; output 155,969;
+**billed $7.93; Azure 14/14**. 115 distinct V ids, 7,679 words. Ended with `stop`. Files are in
+`.sandbox/runs/fabm2-20261117-7add78-artifacts/` (`spec_at_plan.md`, `planner_raw.jsonl`, `gens/`, `planner_tmp/`).
+
+**fabm2 markers:**
+- **H1 ✓.** R1 says the offset is "that zone's real offset at that instant". R4 defines `e` as "the end's local
+  minutes plus 1440 for each local calendar day crossed", which reads the end at the true end instant. No V row
+  evaluates or formats a meeting that straddles a transition (fabm1 V100, fabm3 V127 and fabm4 V87 each had one).
+- **H2 ✗, sidestepped.** R3 starts the day at "the instant of local midnight". The fixed 23-zone catalogue (R2) has
+  no zone without a local midnight in 2026: no Cairo, Santiago or Havana. So the edge cannot be reached in this app,
+  and the spec neither names it nor has a V row for it.
+- **H3 ✗.** "Deliberately out of scope: … overnight working shifts (end must be after start)".
+- **H4 ✗ as defined; a reference was built.** `/tmp/ref2.ts` (123 lines) is an independent rule-based reference
+  ("rule-based offsets (no Intl)", hand-coded 2026 transitions for 6 zones), with `ref.ts`/`ref3.ts` cross-checking
+  it against `Intl`. Nothing was handed off. It is weaker than fab1's or fabm3/4's `zoneinfo` references: only six
+  zones, with the transitions typed in by hand.
+- **H5 ✓.** R4's status uses `e`, read at the true end instant. This also gets fabm1's Cairo case right: the meeting
+  runs 23:30 EEST to 23:30 EET on the same local date, so `e` = 1410 ≤ 1440 and the status is `work`.
+
+**The set at plan (fabm2–4), against the pre-registered predictions:**
+
+| marker | fabm2 | fabm3 | fabm4 | held | predicted | | reading (pre-registered rule) |
+|---|---|---|---|---|---|---|---|
+| H1 | ✓ | ✓ | ✓ | 3/3 | 3/3 | met | not in question |
+| H2 | ✗ (sidestepped) | ✓ | ✓ | 2/3 | ≥2/3 | met | sampling; fabm2's miss is a catalogue choice, not a wrong rule |
+| H3 | ✗ | ✗ | ✗ | 0/3 | ≤1/3 | met | **effort** (4/4 refusals at `medium`; `high` is N=1) |
+| H4 | ✗ | ✗ | ✗ | 0/3 | 0/3 | met | effort, **as defined**, but see below |
+| H5 | ✓ | ✗ | ✓ | 2/3 | ≤1/3 | **MISSED** | **sampling**: fabm1's linear status rule was a draw, not the effort level |
+
+- **P1 (primary): 4 of 5 per-marker predictions met, H5 missed.** I predicted every drop was effort. H5 turned out
+  to be sampling.
+- **H4 splits into two questions, and only one is effort-like.**
+  - **Building an independent check:** 3/3 at `medium` (fabm1 0/1). fabm3/4 used Python `zoneinfo`; fabm2 used
+    hand-coded rules.
+  - **Handing it off:** 0/3, and fab1 at `high` 1/1. What `medium` dropped is the handoff, not the checking.
+  - My pre-registered rationale (that the reference came from fab1's long prototyping) is wrong. The 0/3 prediction
+    is met for a different reason.
+- **P2 met:** planner reasoning was 82k–121k in every replicate (limit 495,413).
+- **Provider:** every planner generation at `medium` went to Azure (fabm1–4: 50/50). fab1 at `high` was 74/74
+  Google. So the effort comparison is still confounded with provider. The smoke showed no gross provider difference in
+  how the effort level maps (CHANGELOG 2026-11-17, provider smoke).
+- **Plan cost at `medium`:** $5.36 / $7.93 / $6.51 / $6.51 (fab1 at `high`: $59.52). Recorded, not scored.
+- P3 (amendments), P4 (no early stop: met at plan in all three) and P5 are completed after downstream.
